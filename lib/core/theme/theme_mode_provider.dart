@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
-    // Defaulting to dark mode to showcase the dark blue aesthetic
+    // Default to the signature deep navy and purple palette.
     return ThemeMode.dark;
   }
 

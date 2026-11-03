@@ -1,37 +1,46 @@
 import 'package:flutter/material.dart';
 
-/// Centralized color palette for JP AUCTION ARENA.
-/// Designed with a signature Dark Blue and White visual style.
+/// Central color tokens for the JP AUCTION ARENA brand.
 class AppColors {
   AppColors._();
 
-  // Primary Dark Blue shades
-  static const Color primaryDarkBlue = Color(0xFF0A1E3F);
-  static const Color primaryNavy = Color(0xFF0F2D59);
-  static const Color primaryBlueAccent = Color(0xFF1976D2);
-  static const Color lightBlueAccent = Color(0xFF42A5F5);
+  static const Color deepNavy = Color(0xFF080A1D);
+  static const Color darkPurple = Color(0xFF121028);
+  static const Color softPurple = Color(0xFF211B3D);
+  static const Color raisedPurple = Color(0xFF2D254B);
 
-  // Sports Gold & Amber accents (for bids, hammer, badges)
-  static const Color goldAccent = Color(0xFFFFB300);
-  static const Color amberAccent = Color(0xFFFFA000);
+  static const Color electricBlue = Color(0xFF2A63DD);
+  static const Color actionBlue = Color(0xFF1F4FCB);
+  static const Color neonPink = Color(0xFFFF4FA8);
+  static const Color actionPink = Color(0xFFC21870);
+  static const Color magenta = Color(0xFFD946EF);
+  static const Color white = Color(0xFFFFFFFF);
 
-  // Light Theme Neutrals
-  static const Color lightBackground = Color(0xFFF4F7FB);
+  static const Color lightBackground = Color(0xFFF6F4FC);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCardBorder = Color(0xFFE2E8F0);
-  static const Color lightTextPrimary = Color(0xFF0F172A);
-  static const Color lightTextSecondary = Color(0xFF475569);
+  static const Color lightSurfaceContainer = Color(0xFFEDE9F7);
+  static const Color lightPurpleContainer = Color(0xFFE9E2F5);
+  static const Color lightCardBorder = Color(0xFFE1DCEF);
+  static const Color lightTextPrimary = Color(0xFF17132B);
+  static const Color lightTextSecondary = Color(0xFF5C5673);
 
-  // Dark Theme Neutrals
-  static const Color darkBackground = Color(0xFF071224);
-  static const Color darkSurface = Color(0xFF0D1F3C);
-  static const Color darkSurfaceContainer = Color(0xFF132A50);
-  static const Color darkCardBorder = Color(0xFF1E3A66);
-  static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  static const Color darkBackground = deepNavy;
+  static const Color darkSurface = darkPurple;
+  static const Color darkSurfaceContainer = softPurple;
+  static const Color darkCardBorder = raisedPurple;
+  static const Color darkTextPrimary = white;
+  static const Color darkTextSecondary = Color(0xFFB8B1D0);
 
-  // Status colors
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color danger = Color(0xFFEF4444);
+  static const Color muted = Color(0xFF77718D);
+
+  // Keep the existing tournament feature on the shared brand palette.
+  static const Color primaryDarkBlue = deepNavy;
+  static const Color primaryNavy = actionBlue;
+  static const Color primaryBlueAccent = actionBlue;
+  static const Color lightBlueAccent = electricBlue;
+  static const Color goldAccent = neonPink;
+  static const Color amberAccent = magenta;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/constants/app_colors.dart';
+import 'package:jp_auction_arena/core/responsive/app_breakpoints.dart';
 import 'package:jp_auction_arena/core/theme/theme_mode_provider.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/providers/tournament_providers.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/widgets/tournament_card.dart';
@@ -17,6 +18,7 @@ class TournamentListScreen extends ConsumerWidget {
     final tournamentsAsync = ref.watch(tournamentListProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isCompact = MediaQuery.sizeOf(context).width < AppBreakpoints.compact;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,25 +41,27 @@ class TournamentListScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(width: 4),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            child: FilledButton.icon(
-              onPressed: () => context.push('/tournaments/create'),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Tournament'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.goldAccent,
-                foregroundColor: Colors.black,
-                visualDensity: VisualDensity.compact,
+          if (!isCompact)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+              child: FilledButton.icon(
+                onPressed: () => context.push('/tournaments/create'),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New Tournament'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.actionPink,
+                  foregroundColor: AppColors.white,
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
             ),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/tournaments/create'),
-        backgroundColor: AppColors.goldAccent,
-        foregroundColor: Colors.black,
+        backgroundColor: AppColors.actionPink,
+        foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
         label: const Text(
           'Create Tournament',

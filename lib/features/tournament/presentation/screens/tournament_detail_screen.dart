@@ -361,7 +361,7 @@ class TournamentDetailScreen extends ConsumerWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF94A3B8),
+            color: AppColors.muted,
             fontSize: 13,
           ),
         ),

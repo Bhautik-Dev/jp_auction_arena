@@ -1,16 +1,31 @@
-# jp_auction_arena
+# JP AUCTION ARENA
 
-A new Flutter project.
+Flutter application foundation for a responsive cricket auction management
+experience on web, Android, iOS, and Windows.
 
-## Getting Started
+## Requirements
 
-This project is a starting point for a Flutter application.
+- Flutter SDK with Dart 3.9 or later
+- Platform toolchains for the targets you want to run (Android Studio, Xcode,
+  Visual Studio, or a supported browser)
 
-A few resources to get you started if this is your first Flutter project:
+## Run locally
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```shell
+flutter pub get
+flutter run -d chrome
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For another configured target, use `flutter devices` to find its device ID and
+run `flutter run -d <device-id>`.
+
+## Verify
+
+```shell
+flutter analyze
+flutter test
+```
+
+The application currently provides its shared Material 3 design system,
+responsive navigation shell, dashboard placeholder, and the existing in-memory
+tournament screens. No backend or database is connected.

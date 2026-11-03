@@ -32,7 +32,7 @@ enum TournamentStatus {
       case TournamentStatus.completed:
         return AppColors.primaryBlueAccent;
       case TournamentStatus.archived:
-        return const Color(0xFF64748B);
+        return AppColors.muted;
     }
   }
 

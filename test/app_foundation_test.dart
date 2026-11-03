@@ -54,6 +54,13 @@ void main() {
 
     expect(find.text('Create Tournament'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text(AppStrings.teams));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Teams').first, findsOneWidget);
+    expect(find.text('Create Team'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('wide layout shows the navigation rail', (

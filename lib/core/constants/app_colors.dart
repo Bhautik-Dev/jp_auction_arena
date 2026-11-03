@@ -36,6 +36,19 @@ class AppColors {
   static const Color danger = Color(0xFFEF4444);
   static const Color muted = Color(0xFF77718D);
 
+  static const List<Color> teamColorOptions = [
+    electricBlue,
+    actionBlue,
+    neonPink,
+    actionPink,
+    magenta,
+    Color(0xFF7C5CFA),
+    Color(0xFF06B6D4),
+    Color(0xFF10B981),
+    Color(0xFFFF8A4C),
+    Color(0xFFEAB308),
+  ];
+
   // Keep the existing tournament feature on the shared brand palette.
   static const Color primaryDarkBlue = deepNavy;
   static const Color primaryNavy = actionBlue;

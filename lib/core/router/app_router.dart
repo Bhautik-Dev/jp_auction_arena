@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/router/route_names.dart';
 import 'package:jp_auction_arena/features/home/presentation/screens/home_screen.dart';
 import 'package:jp_auction_arena/features/home/presentation/widgets/app_shell.dart';
+import 'package:jp_auction_arena/features/team/presentation/screens/team_detail_screen.dart';
+import 'package:jp_auction_arena/features/team/presentation/screens/team_form_screen.dart';
+import 'package:jp_auction_arena/features/team/presentation/screens/team_list_screen.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_detail_screen.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_form_screen.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_list_screen.dart';
@@ -48,6 +51,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       final id = state.pathParameters['id'] ?? '';
                       return TournamentFormScreen(tournamentId: id);
                     },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: RouteNames.teamsPath,
+            name: RouteNames.teams,
+            builder: (context, state) => const TeamListScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: RouteNames.createTeam,
+                builder: (context, state) => const TeamFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                name: RouteNames.teamDetail,
+                builder: (context, state) => TeamDetailScreen(
+                  teamId: state.pathParameters['id'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    name: RouteNames.editTeam,
+                    builder: (context, state) => TeamFormScreen(
+                      teamId: state.pathParameters['id'] ?? '',
+                    ),
                   ),
                 ],
               ),

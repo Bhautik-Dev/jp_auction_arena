@@ -12,8 +12,11 @@ class AppShell extends StatelessWidget {
   final String location;
   final Widget child;
 
-  int get _selectedIndex =>
-      location.startsWith(RouteNames.tournamentsPath) ? 1 : 0;
+  int get _selectedIndex => location.startsWith(RouteNames.teamsPath)
+      ? 2
+      : location.startsWith(RouteNames.tournamentsPath)
+      ? 1
+      : 0;
 
   static const _destinations = [
     _AppDestination(
@@ -27,6 +30,12 @@ class AppShell extends StatelessWidget {
       icon: Icons.emoji_events_outlined,
       selectedIcon: Icons.emoji_events,
       path: RouteNames.tournamentsPath,
+    ),
+    _AppDestination(
+      label: AppStrings.teams,
+      icon: Icons.groups_outlined,
+      selectedIcon: Icons.groups,
+      path: RouteNames.teamsPath,
     ),
   ];
 

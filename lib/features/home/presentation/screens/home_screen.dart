@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/constants/app_colors.dart';
 import 'package:jp_auction_arena/core/constants/app_strings.dart';
 import 'package:jp_auction_arena/core/theme/theme_mode_provider.dart';
@@ -81,7 +82,7 @@ class HomeScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
-                                'Phase 1 • Scaffold',
+                                'Phase 2 • Tournament Management',
                                 style: TextStyle(
                                   color: AppColors.lightBlueAccent,
                                   fontWeight: FontWeight.w600,
@@ -109,7 +110,7 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                   SizedBox(width: 6),
                                   Text(
-                                    'Architecture Ready',
+                                    'Online & Active',
                                     style: TextStyle(
                                       color: AppColors.success,
                                       fontWeight: FontWeight.w600,
@@ -136,9 +137,40 @@ class HomeScreen extends ConsumerWidget {
                             color: theme.textTheme.bodyMedium?.color?.withAlpha(178),
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 10,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () => context.push('/tournaments'),
+                              icon: const Icon(Icons.emoji_events_outlined, size: 20),
+                              label: const Text('Manage Tournaments'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.primaryNavy,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => context.push('/tournaments/create'),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Create Tournament'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                         const Divider(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         const Wrap(
                           spacing: 12,
                           runSpacing: 8,
@@ -156,9 +188,9 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Upcoming Modules Preview (Cards)
+                // Modules Section
                 Text(
-                  'Upcoming Modules (Roadmap)',
+                  'Arena Modules',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -174,38 +206,46 @@ class HomeScreen extends ConsumerWidget {
                         crossAxisCount: isWide ? 3 : 1,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        mainAxisExtent: 120,
+                        mainAxisExtent: 130,
                       ),
-                      children: const [
+                      children: [
                         _FeaturePreviewCard(
                           icon: Icons.emoji_events_outlined,
                           title: 'Tournaments',
-                          subtitle: 'Tournament setups, purse caps & rules',
+                          subtitle: 'Create, edit & manage seasons, dates & venues',
+                          badgeText: 'Active',
+                          badgeColor: AppColors.success,
+                          onTap: () => context.push('/tournaments'),
                         ),
-                        _FeaturePreviewCard(
+                        const _FeaturePreviewCard(
                           icon: Icons.groups_outlined,
                           title: 'Teams & Squads',
                           subtitle: 'Team rosters and remaining purse monitor',
+                          badgeText: 'Phase 3',
                         ),
-                        _FeaturePreviewCard(
+                        const _FeaturePreviewCard(
                           icon: Icons.person_outline,
                           title: 'Player Registry',
                           subtitle: 'Player categories, stats & base prices',
+                          badgeText: 'Phase 3',
                         ),
-                        _FeaturePreviewCard(
+                        const _FeaturePreviewCard(
                           icon: Icons.gavel,
                           title: 'Live Auction',
                           subtitle: 'Real-time bidding console & gavel strikes',
+                          badgeText: 'Phase 4',
                         ),
-                        _FeaturePreviewCard(
+                        const _FeaturePreviewCard(
                           icon: Icons.tv,
                           title: 'Projector Arena',
                           subtitle: '16:9 full-screen presentation display',
+                          badgeText: 'Phase 4',
                         ),
-                        _FeaturePreviewCard(
+                        const _FeaturePreviewCard(
                           icon: Icons.assessment_outlined,
                           title: 'Reports & Logs',
                           subtitle: 'Audit trail and exportable summaries',
+                          badgeText: 'Phase 5',
                         ),
                       ],
                     );
@@ -241,11 +281,17 @@ class _FeaturePreviewCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? badgeText;
+  final Color? badgeColor;
+  final VoidCallback? onTap;
 
   const _FeaturePreviewCard({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.badgeText,
+    this.badgeColor,
+    this.onTap,
   });
 
   @override
@@ -253,34 +299,67 @@ class _FeaturePreviewCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.lightBlueAccent, size: 24),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: AppColors.lightBlueAccent, size: 24),
+                  const Spacer(),
+                  if (badgeText != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (badgeColor ?? AppColors.primaryBlueAccent).withAlpha(30),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (badgeColor ?? AppColors.primaryBlueAccent).withAlpha(90),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        badgeText!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: badgeColor ?? AppColors.lightBlueAccent,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Flexible(
-              child: Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withAlpha(178),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withAlpha(178),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

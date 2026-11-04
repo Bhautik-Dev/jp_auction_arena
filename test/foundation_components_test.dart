@@ -21,11 +21,11 @@ void main() {
 
     GoRouter.of(
       tester.element(find.byType(DashboardScreen)),
-    ).go(RouteNames.tournaments);
+    ).go(RouteNames.liveAuction);
     await tester.pumpAndSettle();
 
     expect(find.byType(ComingSoonScreen), findsOneWidget);
-    expect(find.text('Tournament Management'), findsOneWidget);
+    expect(find.text('Live Auction'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

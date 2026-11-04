@@ -34,7 +34,7 @@ void main() {
     expect(lightModeApp.themeMode, ThemeMode.light);
   });
 
-  testWidgets('compact layout navigates to implemented screens only', (
+  testWidgets('compact layout navigates to implemented feature screens', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -49,23 +49,32 @@ void main() {
     expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.settings));
+    await tester.tap(find.text(AppStrings.tournaments));
     await tester.pumpAndSettle();
 
-    expect(find.text('Application Settings'), findsOneWidget);
+    expect(find.text('Tournaments'), findsWidgets);
+    expect(find.text('New Tournament'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.tap(find.text(AppStrings.teams));
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.tournaments), findsOneWidget);
-    final tournamentsTile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text(AppStrings.tournaments),
-        matching: find.byType(ListTile),
-      ),
-    );
-    expect(tournamentsTile.enabled, isFalse);
+    expect(find.text('Teams').first, findsOneWidget);
+    expect(find.text('Create Team'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text(AppStrings.players));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Players').first, findsOneWidget);
+    expect(find.text('Add Player'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Aarav Patel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Player details'), findsOneWidget);
+    expect(find.text('Base price'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -32,14 +32,28 @@
   Riverpod theme state, GoRouter destinations, shared widgets, and foundation
   tests.
 - Dashboard and application settings are available. Planned tournament, team,
-  player, auction, results, reports, and history destinations are visibly
-  marked as coming soon and contain no feature business logic.
+  player, auction, results, reports, and history destinations were initially
+  marked as coming soon.
 - No external services or dependencies were added.
-- Tournament/team/player implementation remains a known gap from the inspected
-  baseline and is not restored or reimplemented in Point 2.
 - Focused foundation tests and the Web build pass. Repository-wide analysis and
-  the full test suite remain blocked by existing tests importing the absent
-  tournament/team/player feature source files.
+  the full test suite initially exposed absent tournament/team/player feature
+  files from the inspected baseline.
+
+## CI failure remediation
+
+The supplied GitHub Actions run (run 41748477076, commit
+`4346cdbee1ddd304334ba12b3235061fcf280de6`) failed in **Run Tests** because
+the tracked tree lacked tournament, team, and player source files imported by
+the existing tests. The Web build and deployment steps were skipped. To
+resolve that compile-time failure, this follow-up restored minimal domain
+models, repository contracts and in-memory implementations, Riverpod providers,
+and the list/player registration/detail screens exercised by those tests.
+The full test suite and analyzer now pass locally.
+
+This is limited feature-foundation recovery for the CI failure, not completion
+of the full Point 3 feature scope. Tournament create/edit, team registration,
+auction setup/control, persistence, authentication, and remote integrations
+remain unimplemented.
 
 ## Baseline inspection and conflicts
 
@@ -58,11 +72,11 @@ implementations and describe intended earlier behavior:
 - Player CRUD, filtering, positive base-price/name validation, optional contact
   and team assignment, and unknown-team assignment rejection.
 
-**Conflict found:** tournament, team, and player source files referenced by
-the existing test suite are absent from the tracked baseline. Their intended
-behavior is not claimed as working and has not been restored or reimplemented
-in Point 2. Foundation-specific tests were updated to verify only the current
-shell and implemented destinations.
+**Baseline gap addressed:** tournament, team, and player source files were
+absent from the tracked baseline. A limited set of these files has now been
+added to make the existing model, repository, and widget tests compile and
+pass. Remaining functionality must be implemented in the approved feature
+phases.
 
 The manifest's current state management and navigation dependencies match the
 target direction. No checked-in evidence in the inspected source confirms

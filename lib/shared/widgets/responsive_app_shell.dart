@@ -22,6 +22,24 @@ class ResponsiveAppShell extends ConsumerWidget {
       true,
     ),
     _Destination(
+      AppStrings.tournaments,
+      Icons.emoji_events_outlined,
+      RouteNames.tournaments,
+      true,
+    ),
+    _Destination(
+      AppStrings.teams,
+      Icons.groups_outlined,
+      RouteNames.teams,
+      true,
+    ),
+    _Destination(
+      AppStrings.players,
+      Icons.sports_cricket_outlined,
+      RouteNames.players,
+      true,
+    ),
+    _Destination(
       AppStrings.settings,
       Icons.settings_outlined,
       RouteNames.settings,
@@ -32,24 +50,6 @@ class ResponsiveAppShell extends ConsumerWidget {
   static List<_Destination> get _all => [..._implemented, ..._planned];
 
   static const _planned = [
-    _Destination(
-      AppStrings.tournaments,
-      Icons.emoji_events_outlined,
-      RouteNames.tournaments,
-      false,
-    ),
-    _Destination(
-      AppStrings.teams,
-      Icons.groups_outlined,
-      RouteNames.teams,
-      false,
-    ),
-    _Destination(
-      AppStrings.players,
-      Icons.sports_cricket_outlined,
-      RouteNames.players,
-      false,
-    ),
     _Destination(
       AppStrings.auctionSetup,
       Icons.tune_rounded,
@@ -122,7 +122,15 @@ class ResponsiveAppShell extends ConsumerWidget {
       ),
       bottomNavigationBar: isCompact
           ? NavigationBar(
-              selectedIndex: path.startsWith(RouteNames.settings) ? 1 : 0,
+              selectedIndex: _implemented
+                  .indexWhere(
+                    (destination) =>
+                        path == destination.path ||
+                        (destination.path == RouteNames.players &&
+                            path.startsWith('${RouteNames.players}/')),
+                  )
+                  .clamp(0, _implemented.length - 1)
+                  .toInt(),
               onDestinationSelected: (index) =>
                   context.go(_implemented[index].path),
               destinations: _implemented
@@ -200,7 +208,7 @@ class _DesktopSidebar extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'PLANNED MODULES',
+                    'JP AUCTION ARENA',
                     style: TextStyle(
                       color: AppColors.secondaryText,
                       fontSize: 11,

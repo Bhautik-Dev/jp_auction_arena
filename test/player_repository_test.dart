@@ -5,7 +5,6 @@ import 'package:jp_auction_arena/features/player/domain/models/player.dart';
 import 'package:jp_auction_arena/features/player/domain/models/player_category.dart';
 import 'package:jp_auction_arena/features/player/domain/models/player_status.dart';
 import 'package:jp_auction_arena/features/team/data/repositories/in_memory_team_repository.dart';
-import 'package:jp_auction_arena/features/team/presentation/providers/team_providers.dart';
 import 'package:jp_auction_arena/features/tournament/data/repositories/in_memory_tournament_repository.dart';
 
 void main() {

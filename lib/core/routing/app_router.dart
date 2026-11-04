@@ -11,15 +11,15 @@ import 'package:jp_auction_arena/features/auth/presentation/screens/team_portal_
 import 'package:jp_auction_arena/features/auth/presentation/screens/unauthorized_screen.dart';
 import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:jp_auction_arena/features/auction/presentation/screens/auction_detail_screen.dart';
+import 'package:jp_auction_arena/features/auction/presentation/screens/auction_form_screen.dart';
+import 'package:jp_auction_arena/features/auction/presentation/screens/auction_list_screen.dart';
+import 'package:jp_auction_arena/features/auction/presentation/screens/auction_settings_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_detail_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_form_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_list_screen.dart';
 import 'package:jp_auction_arena/features/settings/presentation/screens/settings_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_list_screen.dart';
-import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_list_screen.dart';
-import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_detail_screen.dart';
-import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_form_screen.dart';
-import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_status_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/coming_soon_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/not_found_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/responsive_app_shell.dart';
@@ -64,6 +64,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return RouteAccessPolicy.landingFor(session.user.role);
       }
 
+      if (path == RouteNames.tournaments ||
+          path.startsWith('${RouteNames.tournaments}/')) {
+        return RouteNames.auctions;
+      }
+
       if (!_isOpenRoute(path) &&
           !RouteAccessPolicy.canAccessPath(session.user, path)) {
         return RouteNames.unauthorized;
@@ -106,34 +111,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const TeamPortalScreen(),
           ),
           GoRoute(
-            path: RouteNames.tournaments,
-            name: 'tournaments',
-            builder: (context, state) => const TournamentListScreen(),
+            path: RouteNames.auctions,
+            name: 'auctions',
+            builder: (context, state) => const AuctionListScreen(),
             routes: [
               GoRoute(
                 path: 'create',
-                name: 'tournament-create',
-                builder: (context, state) => const TournamentFormScreen(),
+                name: 'auction-create',
+                builder: (context, state) => const AuctionFormScreen(),
               ),
               GoRoute(
-                path: ':tournamentId',
-                name: 'tournament-detail',
-                builder: (context, state) => TournamentDetailScreen(
-                  tournamentId: state.pathParameters['tournamentId']!,
+                path: ':auctionId',
+                name: 'auction-detail',
+                builder: (context, state) => AuctionDetailScreen(
+                  auctionId: state.pathParameters['auctionId']!,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'tournament-edit',
-                    builder: (context, state) => TournamentFormScreen(
-                      tournamentId: state.pathParameters['tournamentId']!,
+                    name: 'auction-edit',
+                    builder: (context, state) => AuctionFormScreen(
+                      auctionId: state.pathParameters['auctionId']!,
                     ),
                   ),
                   GoRoute(
-                    path: 'status',
-                    name: 'tournament-status',
-                    builder: (context, state) => TournamentStatusScreen(
-                      tournamentId: state.pathParameters['tournamentId']!,
+                    path: 'settings',
+                    name: 'auction-settings',
+                    builder: (context, state) => AuctionSettingsScreen(
+                      auctionId: state.pathParameters['auctionId']!,
                     ),
                   ),
                 ],
@@ -191,7 +196,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RouteNames.history,
             name: 'history',
-            builder: (context, state) => const TournamentHistoryScreen(),
+            builder: (context, state) =>
+                const AuctionListScreen(historyOnly: true),
           ),
           GoRoute(
             path: RouteNames.settings,

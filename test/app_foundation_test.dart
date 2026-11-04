@@ -23,7 +23,7 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-    expect(find.text('Application overview'), findsOneWidget);
+    expect(find.text('Auction Management Dashboard'), findsOneWidget);
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.colorScheme.primary, AppColors.electricBlue);
     expect(app.themeMode, ThemeMode.dark);
@@ -48,19 +48,19 @@ void main() {
     await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Application overview'), findsOneWidget);
+    expect(find.text('Auction Management Dashboard'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(
       find.descendant(
         of: find.byType(NavigationBar),
-        matching: find.text(AppStrings.tournaments),
+        matching: find.text(AppStrings.auctions),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tournaments'), findsWidgets);
-    expect(find.text('New Tournament'), findsOneWidget);
+    expect(find.text('Auctions'), findsWidgets);
+    expect(find.text('Create New Auction'), findsWidgets);
     expect(tester.takeException(), isNull);
 
     await tester.tap(
@@ -108,7 +108,7 @@ void main() {
     await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text('Application overview'), findsOneWidget);
+    expect(find.text('Auction Management Dashboard'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

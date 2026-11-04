@@ -1,5 +1,6 @@
 enum AppPermission {
   viewDashboard,
+  manageAuctions,
   manageTournaments,
   viewTournament,
   manageTeams,

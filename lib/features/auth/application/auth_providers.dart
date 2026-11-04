@@ -63,4 +63,22 @@ class AuthSessionController extends AsyncNotifier<UserSession?> {
       ),
     );
   }
+
+  void assignAuction(String auctionId) {
+    final session = state.whenOrNull(data: (value) => value);
+    if (session == null ||
+        (session.user.role != AppRole.superAdmin &&
+            session.user.role != AppRole.tournamentAdmin)) {
+      return;
+    }
+    state = AsyncData(
+      UserSession(
+        user: session.user.copyWith(
+          auctionIds: {...session.user.auctionIds, auctionId},
+        ),
+        rememberMe: session.rememberMe,
+        signedInAt: session.signedInAt,
+      ),
+    );
+  }
 }

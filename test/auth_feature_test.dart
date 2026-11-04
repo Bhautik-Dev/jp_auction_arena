@@ -195,12 +195,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Your team dashboard'), findsOneWidget);
+    expect(find.text('Your Team Dashboard'), findsOneWidget);
     expect(find.text('Ahmedabad Strikers'), findsOneWidget);
     expect(find.text('Vadodara Warriors'), findsNothing);
 
     GoRouter.of(
-      tester.element(find.text('Your team dashboard')),
+      tester.element(find.text('Your Team Dashboard')),
     ).go(RouteNames.teams);
     await tester.pumpAndSettle();
 
@@ -225,10 +225,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tournament overview'), findsOneWidget);
+    expect(find.text('Public Auction Dashboard'), findsOneWidget);
     expect(find.text('Public live view'), findsOneWidget);
     GoRouter.of(
-      tester.element(find.text('Tournament overview')),
+      tester.element(find.text('Public Auction Dashboard')),
     ).go(RouteNames.settings);
     await tester.pumpAndSettle();
 
@@ -263,7 +263,7 @@ void main() {
     await tester.tap(find.textContaining('Super Admin -'));
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
-    expect(find.text('Application overview'), findsOneWidget);
+    expect(find.text('Auction Management Dashboard'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Log out'));
     await tester.pumpAndSettle();

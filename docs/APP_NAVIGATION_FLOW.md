@@ -1,192 +1,143 @@
 # JP AUCTION ARENA — Navigation Flow
 
-This is the target navigation map for the approved product scope. Points 3-5
-implement local demo login, role-aware route guards, the dashboard, and
-tournament management; other destinations remain conceptual until their
-feature phases.
-The shared app shell and role-aware access rules apply to signed-in modules; a
-navigation destination never grants permission by itself.
+The application is auction-first: an Auction is the primary workflow and owns
+all future team/player registrations and auction transactions. The previous
+tournament-management URL redirects to Auctions; do not extend it as a general
+tournament product. Points 3-5 provide local demo authentication, role-aware
+navigation, auction dashboard metrics, and auction creation/management.
 
 ## 1. Entry and access flow
 
 ```mermaid
 flowchart TD
-    A[App launch] --> B[Splash Screen]
-    B --> C{First run?}
-    C -- Yes --> D[Onboarding / App Introduction]
-    C -- No --> E{Session available?}
-    D --> E
-    E -- No --> F[Login]
-    F --> G[Forgot Password]
-    G --> F
-    F --> H{Authenticated and authorized?}
-    E -- Yes --> H
-    H -- No --> F
-    H -- Yes --> I[Role-aware Dashboard]
+    A[App launch] --> B[Splash]
+    B --> C{Session available?}
+    C -- No --> D[Login]
+    D --> E[Forgot Password]
+    E --> D
+    C -- Yes --> F[Role-aware Dashboard]
+    D --> F
+    F --> G[Auction Management]
     P[Public live link] --> Q[Public Live Auction View: read-only]
 ```
 
-An authenticated user's role and tournament/team assignments determine the
-dashboard shortcuts and accessible routes. A public live link is separate from
-the admin shell, is read-only, and exposes only explicitly published fields.
-The current Point 3 login uses in-memory demo accounts only; it is not
-production authentication. All roles land on the dashboard, whose content and
-quick navigation are scoped by role. Team Managers can continue to their
-assigned-team view; Public Viewers can open the separate read-only public live
-view.
+Demo sign-in and sessions are local and non-production. Super Admins can access
+all auctions. Tournament Admins / Auction Operators can create auctions and
+manage assigned auction IDs. Team Managers cannot create or control auctions;
+Public Viewers have read-only public access. Route guards are a UX boundary,
+not trusted server authorization.
 
-## 2. Signed-in shell and feature navigation
+## 2. Auction management flow
 
 ```mermaid
 flowchart LR
-    D[Dashboard] --> T[Tournament Management]
-    D --> N[Notifications]
-    D --> S[Application Settings]
-    D --> H[Help and Support]
-
-    T --> TL[Tournament List]
-    TL --> CE[Create / Edit Tournament]
-    TL --> TD[Tournament Details]
-    TL --> TH[Tournament History / Archives]
-    TD --> SM[Tournament Status Management]
-    TD --> TM[Team Management]
-    TD --> PM[Player Management]
-    TD --> AC[Auction Configuration]
-    TD --> TR[Tournament Reports and Statistics]
-    TM --> TRG[Team Registration]
-    TM --> TDT[Team Details]
-    TM --> PS[Team Purse and Squad Configuration]
-    PM --> PR[Player Registration]
-    PM --> PDT[Player Details]
-    PM --> IE[Player Import / Export]
-    AC --> AR[Auction Rules and Bid Increments]
-    AC --> PRE[Auction Pre-check / Ready]
-    PS --> PRE
-    PR --> PRE
-    PRE --> LC[Live Auction Control Room]
-    LC --> PD[Live Auction Projector Display]
-    LC --> TV[Team Mobile View]
-    LC --> PV[Public Live Auction View]
-    LC --> SU[Sold / Unsold Player Management]
-    SU --> R[Auction Results]
-    R --> TR
-    TH --> TD
-
-    D --> UA[User and Role Management]
-    D --> SUB[Subscription and Payment Management]
-    D --> AL[Audit Logs]
-    D --> BR[Backup and Restore]
+    D[Role-aware Dashboard] --> CTA[CREATE NEW AUCTION]
+    D --> L[Auction List]
+    CTA --> C[Create Auction]
+    L --> F[Search / Status Filter / Date Sort]
+    F --> V[Auction Details]
+    V --> E[Edit Draft / Ready Auction]
+    V --> S[Auction Settings]
+    V --> A[Status Management]
+    L --> H[Auction History / Archives]
+    A --> R[Completed Auction]
+    R --> H
+    H --> V
+    V -. future .-> TM[Auction Team Management]
+    V -. future .-> PM[Auction Player Management]
+    V -. future .-> CFG[Auction Rules and Pre-check]
+    CFG -. future .-> LIVE[Live Bidding Control Room]
+    LIVE -. future .-> DISP[Projector / Team / Public Views]
 ```
 
-The diagram presents relationships, not the permission to enter every
-destination. Implemented tournament routes are list/search/filter, create/edit,
-details, lifecycle status management, and completed/archive history. Creation,
-editing, activation, completion, archive/restore, and deletion are subject to
-role/assignment and lifecycle rules; archived tournaments are read-only until
-an authorized restore. Only one tournament may be active. A Team Owner's Team
-Mobile View is restricted to the assigned team and is read-only for auction
-activity. Projector and public views cannot navigate into control functions.
-Team and player destinations shown above are planned, not implemented.
+### Implemented Point 5 screens
 
-## 3. Tournament lifecycle sequence
+1. **Auction List:** search by name/location/organizer, filter by status, sort
+   by auction date, view details, edit pre-live auctions, activate a Ready
+   auction, archive Completed auctions, and restore archived history.
+2. **Create Auction:** create an independent Draft auction.
+3. **Edit Auction:** update Draft or Ready configuration. Live, Paused,
+   Completed, and Archived auction configuration is locked.
+4. **Auction Details:** event identity, date/time, format, status, configured
+   team and squad limits, purse, progress, and lifecycle actions. Team/player
+   counts are shown as not registered until auction-scoped registration exists.
+5. **Auction Settings:** configuration summary and edit entry point. Bid
+   increments/rules are not yet implemented.
+6. **Auction History / Archives:** Completed and Archived auctions; records are
+   retained and can be restored by an authorized admin/operator.
 
-1. **Dashboard → Tournament Management → Tournament List.** Search by name,
-   filter by status, sort by date, and open tournament details or history.
-2. **Create / Edit Tournament.** Enter identity/description, location,
-   tournament and registration dates, format, team capacity, squad limits,
-   organizer/contact, and notes. New tournaments start as Draft or Upcoming;
-   logo/image is currently a placeholder/reference.
-3. **Tournament Details → Status Management.** Authorized Super Admins and
-   assigned Tournament Admins manage the lifecycle. Activation is rejected if
-   another tournament is active. Completion and archive preserve the record;
-   archived records are read-only until restored. In-memory data is volatile.
-4. **Team Management → Team Registration → Team Details.** Register teams,
-   owners/managers, and tournament-specific configuration.
-5. **Player Management → Player Registration → Player Details.** Register
-   player profiles for the tournament, categorize them, set base-price
-   eligibility, and manage data import/export.
-6. **Auction Configuration → Auction Rules and Bid Increments.** Select the
-   auction format and define prices, increments, squad/category constraints,
-   and auction rules.
-7. **Team Purse and Squad Configuration.** Configure each team's purse and
-   limits. Validate all team settings against the tournament configuration.
-8. **Auction Pre-check / Ready Screen.** Show blocking issues and confirmations
-   before opening a session (for example missing team setup, invalid limits, or
-   unregistered players).
-9. **Live Auction Control Room.** Authorized operator starts and controls the
-   live session. It publishes state to read-only projector, assigned team, and
-   public views.
-10. **Sold / Unsold Player Management → Auction Results.** Resolve remaining
-    players and review final squads and immutable transaction history.
-11. **Tournament Reports and Statistics → Tournament History / Archives.**
-    Produce and retain tournament summaries and exports.
+Auction creation captures auction name, optional logo/image reference and
+description, date/start time, optional location, auction type, cricket format,
+maximum teams, min/max players per team, purse/currency, status, organizer,
+and optional contact details. Image upload is not implemented.
 
-Steps 4-11 are planned future flows. Current tournament management does not
-implement team/player workflows, auction setup/operations, reports, or durable
-storage.
-
-## 4. Live auction navigation and state flow
+## 3. Auction lifecycle and invariants
 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft
-    Draft --> Configured: rules, teams, players, limits valid
-    Configured --> Ready: pre-check passes
-    Ready --> Live: authorized operator starts
-    Live --> Live: authorized bid/lot action
-    Live --> Paused: authorized operator pauses
-    Paused --> Live: authorized operator resumes
-    Live --> Resolved: each lot sold / unsold / unavailable
-    Resolved --> Completed: authorized operator closes session
-    Completed --> Archived: tournament is completed and archived
+    Draft --> Ready: configuration passes validation
+    Ready --> Draft: authorized operator
+    Ready --> Live: authorized operator; no other Live auction
+    Live --> Paused: authorized operator
+    Paused --> Live: authorized operator; no other Live auction
+    Live --> Completed: authorized operator
+    Paused --> Completed: authorized operator
+    Completed --> Archived: authorized operator
+    Archived --> Completed: authorized restore
 ```
 
-For each player lot, the authoritative transition is:
+- Only one auction may be Live at a time. Multiple Draft, Ready, Paused,
+  Completed, and Archived auctions may exist.
+- Completed auctions remain in history. Archived auctions are read-only except
+  for authorized restoration. No delete operation is exposed.
+- Team purse must be positive and finite; squad minimum and maximum must be
+  positive and ordered; team capacity must allow at least two teams.
+- Live and later-stage auction data cannot be edited in ways that could mutate
+  existing bid/transaction history. Live bidding and transaction history are
+  not implemented in Point 5.
+- Separate auctions have separate IDs and repository records. Team/player
+  registration, bid history, rules, and results are future auction-scoped
+  entities; no cross-auction registration is implemented yet.
 
-```text
-remaining/available -> sold(team, final price)
-                    -> unsold
-                    -> unavailable(reason, where required)
-```
+## 4. Role-aware navigation
 
-Only one terminal outcome may be committed for a lot. A sale updates the
-player's tournament registration, team roster, purse ledger, transaction
-history, and audit event atomically (or through a designed transactional
-workflow with equivalent recovery guarantees). Public and team screens consume
-the resulting state; they do not issue commands. Realtime delivery may be
-delayed, so clients must reconcile against authoritative state after reconnect.
-
-## 5. Role-aware navigation summary
-
-| Role | Primary navigation | Restricted destinations/actions |
+| Role | Auction routes | Restrictions |
 |---|---|---|
-| Super Admin | All modules, all tournaments, administration | No product restriction beyond safeguards and auditability |
-| Tournament Admin / Auction Operator | Assigned tournament dashboard, tournament/team/player setup, auction setup/control, results and reports | User/global role management, global subscriptions, backups, or other tournaments unless separately granted |
-| Team Owner / Team Manager | Assigned team's mobile view, purse/squad, published progress/results, notifications, help/settings | No bidding, auction start/pause/resolve, other teams' private data, tournament configuration |
-| Public Viewer | Published public live view, projector output, published results | No sign-in-only/private data, edits, commands, bids, or control room |
+| Super Admin | All auction list/detail/create/edit/settings/history and lifecycle actions | All mutations remain subject to domain validation and status rules |
+| Tournament Admin / Auction Operator | Create auctions; list and manage assigned auction IDs | Cannot manage unassigned auctions or global users, billing, backup, or app settings unless separately granted |
+| Team Owner / Team Manager | Assigned team view and approved public auction information | No auction creation, configuration, bidding, lifecycle control, or other-team private information |
+| Public Viewer | Published read-only live auction view and approved results | No private auction setup, mutations, bids, or operator controls |
 
-Detailed action permissions and invariants are in
-[APP_BLUEPRINT.md](./APP_BLUEPRINT.md#user-roles-and-permissions).
+Team and public dashboards only receive live auction summaries; no team or
+player data is exposed there until it is scoped and published for an auction.
+The team dashboard's existing sample team data is clearly demo-only and not yet
+associated with an auction.
 
-## 6. Navigation and access behavior
+## 5. Future auction-connected flow
 
-- Preserve the selected tournament context while navigating among its teams,
-  players, setup, auction, and reports.
-- Keep list → detail → edit flows reversible with clear back navigation and
-  unsaved-change confirmation.
-- Scope shell destinations by role and assignment. Deep links must repeat
-  authorization checks, including after a session change.
-- Treat live control and live display as distinct route families/layouts; do
-  not expose operator controls in team or public views.
-- Open projector mode in a presentation-friendly route without changing
-  authoritative auction state.
-- Use a single shared responsive navigation shell for ordinary app modules.
-  Adapt its presentation for Web/Windows wide layouts and mobile touch layouts.
-- Provide clear loading, empty, permission-denied, offline, and recoverable
-  connection states. Do not present stale data as live-confirmed.
-- Keep public routes limited to published tournament and auction fields.
+These are reserved future routes, not working links or features in Point 5:
 
-## 7. Route inventory cross-reference
+1. Auction Details → auction-scoped Team Registration and Team Details.
+2. Auction Details → auction-scoped Player Registration, Profiles, and
+   Import/Export.
+3. Auction Settings → base-price policy, bid increments, rules, team purses,
+   squad/category limits, and blocking Ready checks.
+4. Ready auction → authorized Live Auction Control Room.
+5. Live Auction → separate read-only projector, assigned team, and public
+   displays; authorized operator commands only.
+6. Auction transactions → sold/unsold player management, immutable results,
+   reports, archives, audit events, and recovery.
 
-The complete 32-screen inventory, grouped by product module and primary access
-role, is maintained in [APP_BLUEPRINT.md](./APP_BLUEPRINT.md#complete-screen-inventory).
+## 6. Route and platform behavior
+
+- GoRouter uses one shared responsive shell. Auctions is the main module
+  destination; the legacy tournament URL redirects to Auctions.
+- Auction routes repeat authentication, permission, and operator-assignment
+  checks. Hiding an action is never considered authorization.
+- Wide layouts use sidebar/rail navigation; compact layouts use mobile
+  navigation and touch-friendly controls.
+- Form, detail, loading, empty, and error states use the global JP AUCTION ARENA
+  design system.
+- No Supabase, Node.js API, payments, cloud persistence, or realtime service is
+  connected. Auction data uses volatile in-memory repositories.

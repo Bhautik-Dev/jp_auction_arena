@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:jp_auction_arena/core/constants/app_colors.dart';
 import 'package:jp_auction_arena/core/theme/app_spacing.dart';
 import 'package:jp_auction_arena/features/dashboard/domain/models/dashboard_snapshot.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.dart';
 import 'package:jp_auction_arena/shared/widgets/app_card.dart';
 
 class DashboardDemoNotice extends StatelessWidget {
@@ -30,7 +31,7 @@ class DashboardDemoNotice extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               const Text(
                 'Dashboard figures use synthetic, in-memory sample records. '
-                'They are not real tournament or auction activity.',
+                'They are not real auction activity.',
               ),
             ],
           ),
@@ -190,57 +191,53 @@ class DashboardNotificationPanel extends StatelessWidget {
   );
 }
 
-class DashboardTournamentOverviewCard extends StatelessWidget {
-  const DashboardTournamentOverviewCard({required this.tournament, super.key});
+class DashboardAuctionOverviewCard extends StatelessWidget {
+  const DashboardAuctionOverviewCard({required this.auction, super.key});
 
-  final DashboardTournamentSummary tournament;
+  final DashboardAuctionSummary auction;
 
   @override
-  Widget build(BuildContext context) => AppCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.emoji_events_outlined,
-              color: AppColors.softPurple,
-              size: 28,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tournament.name,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text('${tournament.seasonYear} · ${tournament.status.label}'),
-                ],
+  Widget build(BuildContext context) {
+    final time = TimeOfDay(
+      hour: auction.startTimeMinutes ~/ 60,
+      minute: auction.startTimeMinutes % 60,
+    ).format(context);
+    final format = auction.cricketFormat == CricketFormat.custom
+        ? auction.customFormat ?? 'Custom'
+        : auction.cricketFormat.label;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.gavel_rounded,
+                color: AppColors.softPurple,
+                size: 28,
               ),
-            ),
-            Chip(label: Text(tournament.status.label)),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Team registration · ${tournament.registeredTeamCount} of '
-          '${tournament.teamLimit}',
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        LinearProgressIndicator(
-          value: tournament.teamLimit == 0
-              ? 0
-              : (tournament.registeredTeamCount / tournament.teamLimit)
-                    .clamp(0, 1)
-                    .toDouble(),
-        ),
-      ],
-    ),
-  );
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  auction.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Chip(label: Text(auction.status.label)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '${DateFormat.yMMMd().format(auction.auctionDate)} · $time · $format',
+          ),
+          Text(
+            '${auction.maxTeams} max teams · '
+            '${auction.minPlayersPerTeam}–${auction.maxPlayersPerTeam} players/team',
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class DashboardTeamOverviewCard extends StatelessWidget {

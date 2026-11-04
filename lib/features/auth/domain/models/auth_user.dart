@@ -7,6 +7,7 @@ class AuthUser {
     required this.displayName,
     required this.role,
     this.tournamentIds = const {},
+    this.auctionIds = const {},
     this.teamIds = const {},
   });
 
@@ -15,11 +16,13 @@ class AuthUser {
   final String displayName;
   final AppRole role;
   final Set<String> tournamentIds;
+  final Set<String> auctionIds;
   final Set<String> teamIds;
 
   AuthUser copyWith({
     String? displayName,
     Set<String>? tournamentIds,
+    Set<String>? auctionIds,
     Set<String>? teamIds,
   }) => AuthUser(
     id: id,
@@ -27,6 +30,7 @@ class AuthUser {
     displayName: displayName ?? this.displayName,
     role: role,
     tournamentIds: tournamentIds ?? this.tournamentIds,
+    auctionIds: auctionIds ?? this.auctionIds,
     teamIds: teamIds ?? this.teamIds,
   );
 }

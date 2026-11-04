@@ -1,11 +1,12 @@
+import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/app_role.dart';
 import 'package:jp_auction_arena/features/team/domain/models/team_status.dart';
-import 'package:jp_auction_arena/features/tournament/domain/models/tournament_status.dart';
 
 class DashboardSnapshot {
   const DashboardSnapshot({
     required this.role,
-    required this.tournaments,
+    required this.auctions,
     required this.teams,
     required this.registeredPlayerCount,
     required this.soldPlayerCount,
@@ -20,7 +21,7 @@ class DashboardSnapshot {
   });
 
   final AppRole role;
-  final List<DashboardTournamentSummary> tournaments;
+  final List<DashboardAuctionSummary> auctions;
   final List<DashboardTeamSummary> teams;
   final int registeredPlayerCount;
   final int soldPlayerCount;
@@ -33,38 +34,59 @@ class DashboardSnapshot {
   final List<String> notifications;
   final bool isDemoData;
 
-  DashboardTournamentSummary? get activeTournament {
-    for (final tournament in tournaments) {
-      if (tournament.status == TournamentStatus.active) return tournament;
+  DashboardAuctionSummary? get liveAuction {
+    for (final auction in auctions) {
+      if (auction.status == AuctionStatus.live) return auction;
     }
     return null;
   }
 
-  int get completedTournamentCount => tournaments
-      .where((tournament) => tournament.status == TournamentStatus.completed)
-      .length;
+  int get draftAuctionCount =>
+      auctions.where((auction) => auction.status == AuctionStatus.draft).length;
 
-  int get activeTournamentCount => tournaments
-      .where((tournament) => tournament.status == TournamentStatus.active)
+  int get upcomingAuctionCount =>
+      auctions.where((auction) => auction.status == AuctionStatus.ready).length;
+
+  int get liveAuctionCount =>
+      auctions.where((auction) => auction.status == AuctionStatus.live).length;
+
+  int get completedAuctionCount => auctions
+      .where(
+        (auction) =>
+            auction.status == AuctionStatus.completed ||
+            auction.status == AuctionStatus.archived,
+      )
       .length;
 }
 
-class DashboardTournamentSummary {
-  const DashboardTournamentSummary({
+class DashboardAuctionSummary {
+  const DashboardAuctionSummary({
     required this.id,
     required this.name,
-    required this.seasonYear,
+    required this.auctionDate,
+    required this.startTimeMinutes,
     required this.status,
-    required this.registeredTeamCount,
-    required this.teamLimit,
+    required this.cricketFormat,
+    required this.customFormat,
+    required this.maxTeams,
+    required this.maxPlayersPerTeam,
+    required this.minPlayersPerTeam,
+    required this.totalPursePerTeam,
+    required this.baseCurrency,
   });
 
   final String id;
   final String name;
-  final String seasonYear;
-  final TournamentStatus status;
-  final int registeredTeamCount;
-  final int teamLimit;
+  final DateTime auctionDate;
+  final int startTimeMinutes;
+  final AuctionStatus status;
+  final CricketFormat cricketFormat;
+  final String? customFormat;
+  final int maxTeams;
+  final int maxPlayersPerTeam;
+  final int minPlayersPerTeam;
+  final double totalPursePerTeam;
+  final String baseCurrency;
 }
 
 class DashboardTeamSummary {
@@ -86,8 +108,6 @@ class DashboardTeamSummary {
   final TeamStatus status;
   final int registeredPlayerCount;
   final int soldPlayerCount;
-
-  /// Example-only purse amount; the team feature has no purse configuration.
   final int illustrativePurse;
 
   int get illustrativeRemainingPurse => illustrativePurse;

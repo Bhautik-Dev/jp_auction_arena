@@ -2,6 +2,7 @@ abstract final class AppStrings {
   static const appName = 'JP AUCTION ARENA';
   static const welcomeTitle = 'Welcome to JP AUCTION ARENA';
   static const dashboard = 'Dashboard';
+  static const auctions = 'Auctions';
   static const tournaments = 'Tournaments';
   static const teams = 'Teams';
   static const players = 'Players';

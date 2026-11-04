@@ -26,9 +26,9 @@ class ResponsiveAppShell extends ConsumerWidget {
       true,
     ),
     _Destination(
-      AppStrings.tournaments,
-      Icons.emoji_events_outlined,
-      RouteNames.tournaments,
+      AppStrings.auctions,
+      Icons.gavel_rounded,
+      RouteNames.auctions,
       true,
     ),
     _Destination(
@@ -103,7 +103,11 @@ class ResponsiveAppShell extends ConsumerWidget {
         .watch(authSessionProvider)
         .whenOrNull(data: (session) => session?.user);
     final destinations = _visibleDestinations(user);
-    final selectedIndex = _selectedIndex(path, destinations);
+    final bottomDestinations = _compactDestinations(path, destinations);
+    final selectedIndex = _selectedIndex(
+      path,
+      isCompact ? bottomDestinations : destinations,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -156,8 +160,8 @@ class ResponsiveAppShell extends ConsumerWidget {
           ? NavigationBar(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) =>
-                  context.go(destinations[index].path),
-              destinations: destinations
+                  context.go(bottomDestinations[index].path),
+              destinations: bottomDestinations
                   .map(
                     (item) => NavigationDestination(
                       icon: Icon(item.icon),
@@ -191,6 +195,19 @@ class ResponsiveAppShell extends ConsumerWidget {
         )
         .clamp(0, destinations.length - 1)
         .toInt();
+  }
+
+  static List<_Destination> _compactDestinations(
+    String path,
+    List<_Destination> destinations,
+  ) {
+    if (destinations.length <= 4) return destinations;
+    final compact = destinations.take(4).toList();
+    final active = destinations.where((item) => item.path == path);
+    if (active.isNotEmpty && !compact.contains(active.first)) {
+      compact[compact.length - 1] = active.first;
+    }
+    return compact;
   }
 
   static String _titleForLocation(String path) {

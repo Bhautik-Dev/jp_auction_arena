@@ -1,188 +1,117 @@
 # JP AUCTION ARENA — Feature Roadmap
 
-## Roadmap rules
+## Product direction
 
-- The agreed product direction and requirements in
-  [APP_BLUEPRINT.md](./APP_BLUEPRINT.md) remain the source of truth.
-- Deliver modules in dependency order, preserving a unified navigation and
-  design system.
-- Do not describe planned services as operational until implemented and tested.
-- Points 1-5 are complete. Point 6 and later work require explicit approval.
+JP AUCTION ARENA is a cricket player auction management application, not a
+general tournament administration system. Auctions are the product's root
+aggregate: each auction will own its team registrations, player registrations,
+purse configuration, rules, bid history, transactions, and results.
 
-## Point 1 — Complete app blueprint, requirements, and navigation flow
+The previous tournament-management implementation is retained in source and
+its legacy URL redirects to Auctions, but it is no longer the product's primary
+workflow. Do not extend it as a general tournament module. Existing demo team
+and player screens are not yet associated with auction IDs and are not linked
+from auction details.
 
-**Status: completed.**
+Do not claim a future service is operational until implemented and tested.
+Points 1-4 establish the blueprint, Flutter foundation, demo authentication,
+roles, dashboard, and responsive navigation. Point 5 is auction creation and
+management. Stop after Point 5 and wait for approval before Point 6.
 
-- Define architecture, modules, all 32 requested screens, navigation, roles,
-  permissions, logical data entities, invariants, and future integration
-  boundaries.
-- Preserve the one-active-tournament rule, completed tournament archives,
-  team purse/squad limits, role-based auction control, audit history, and
-  consistent live state as mandatory design requirements.
-- Do not add feature modules, implement live auction, or integrate Supabase,
-  Node.js, authentication providers, realtime services, or payments in this
-  point.
+## Point 1 — Product blueprint
 
-## Point 2 — Project foundation and global app structure
+**Status: completed and updated to auction-first direction.**
 
-**Status: foundation implemented.**
+- Defines the cricket-auction architecture, roles, permissions, data boundaries,
+  screen groups, navigation, invariants, and future service plan.
+- Auctions have independent identities; team/player registrations and
+  transaction data must never cross auction boundaries.
+- Preserves the shared Material 3 JP AUCTION ARENA design system and the
+  one-live-auction, immutable-history, role-scope, and audit requirements.
 
-- Added the app composition root, Material 3 brand themes, responsive shell,
-  Riverpod theme state, GoRouter destinations, shared widgets, and foundation
-  tests.
-- Application settings are available; Point 4 adds the role-aware dashboard
-  experience. Feature modules remain separate from the foundation.
-- No external services or dependencies were added.
-- Focused foundation tests and the Web build pass. Repository-wide analysis and
-  the full test suite initially exposed absent tournament/team/player feature
-  files from the inspected baseline.
+## Point 2 — Project foundation
+
+**Status: implemented.**
+
+- Flutter, Riverpod, GoRouter, feature-based layers, shared components,
+  responsive shell, and branded Material 3 theme are in place.
+- No extra dependencies or external services are introduced by Point 5.
 
 ## CI failure remediation
 
-The supplied GitHub Actions run (run 41748477076, commit
-`4346cdbee1ddd304334ba12b3235061fcf280de6`) failed in **Run Tests** because
-the tracked tree lacked tournament, team, and player source files imported by
-the existing tests. The Web build and deployment steps were skipped. To
-resolve that compile-time failure, this follow-up restored minimal domain
-models, repository contracts and in-memory implementations, Riverpod providers,
-and the list/player registration/detail screens exercised by those tests.
-The full test suite and analyzer now pass locally.
+The supplied GitHub Actions run failed because baseline tests imported absent
+tournament/team/player models and repositories. Minimal in-memory contracts,
+models, and screens were added so those tests could compile. Those recovered
+team/player records remain demo foundations; they are not yet auction-scoped
+and must not be presented as complete auction registration.
 
-This is limited feature-foundation recovery for the CI failure, not completion
-of the full tournament/team/player feature scope. Tournament create/edit, team
-registration, auction setup/control, persistence, and remote integrations
-remain unimplemented.
+## Point 3 — Authentication and roles
 
-## Point 3 — Authentication and user role management
+**Status: demo/local foundation implemented.**
 
-**Status: demo/local authentication and client access foundation implemented.**
+- Demo sign-in, session state, route guards, role/permission definitions,
+  logout, and unauthorized/loading screens are implemented.
+- Super Admin and Tournament Admin / Auction Operator can manage auctions.
+  Operators are scoped to assigned auction IDs. Team Managers and Public
+  Viewers cannot create or control auctions.
+- Demo credentials are synthetic and not production accounts. Authorization is
+  client-side only; trusted backend and database policies remain future work.
 
-- Added login, forgot-password, session-loading, unauthorized, team-portal, and
-  public-view routes/screens using the shared theme and GoRouter.
-- Added an `AuthRepository` contract, in-memory demo implementation, Riverpod
-  session controller, centralized role/permission definitions, assignment
-  checks, route guards, role landing routes, and confirmed logout.
-- Synthetic credentials are listed in the README. They are demonstration
-  values, not real accounts. Password reset and persistent sessions are not
-  available in the local demo. No external authentication or Supabase service
-  is connected.
-- Route guards are a client-side UX/access foundation; they are not a security
-  boundary. Production authorization must also be enforced by trusted backend
-  and database policies.
-- No auction setup or live-auction functionality was implemented.
+## Point 4 — Dashboard and navigation
 
-## Point 4 — Dashboard and main navigation experience
+**Status: implemented and now auction-first.**
 
-**Status: role-adaptive dashboard and responsive navigation implemented.**
+- Role-aware dashboard summarizes auction records and provides a prominent
+  **CREATE NEW AUCTION** action for authorized admins/operators.
+- Team and public roles receive read-only views. The team demo record is
+  explicitly identified as not yet associated with an auction.
+- The responsive shell's primary feature destination is Auctions. The legacy
+  tournament URL redirects to Auctions.
 
-- Added dedicated Super Admin, Tournament Admin / Auction Operator, Team
-  Owner / Team Manager, and Public Viewer dashboard layouts using the shared
-  design system.
-- Added reusable statistic, quick-action, recent-activity, notification,
-  tournament overview, team overview, progress, and demo-data widgets. Shared
-  loading, error, and empty states are used for asynchronous data.
-- Added a dashboard repository contract and Riverpod provider. The demo
-  implementation composes existing in-memory tournament, team, and player
-  repositories; role scopes limit returned tournament/team summaries.
-- All displayed sample records are marked as synthetic demo data. Auction
-  readiness, team purse examples, recent activity, and notifications are
-  illustrative or unavailable—not live data. Tournament/player association
-  and purse transactions are not modeled yet.
-- All roles now land on the role-aware dashboard. Shell destinations and
-  dashboard quick actions are checked against the existing route access
-  policy; team and public views expose no administrative actions.
-- No tournament/team/player management logic, auction setup, live auction, or
-  external services were added.
+## Point 5 — Auction creation and management
 
-## Baseline inspection and conflicts
+**Status: implemented locally; see known limits below.**
 
-The manifest declares Flutter/Dart with Riverpod and GoRouter. Before Point 2,
-the tracked `lib/` tree contained only `lib/main.dart`, which imported a missing
-`lib/app.dart`. The Point 2 work adds the foundation entry and shared app
-structure. Existing tests still refer to absent tournament/team/player
-implementations and describe intended earlier behavior:
+- Auction list, create/edit, details, settings, and completed/archive history.
+- Fields include name, optional logo reference/description/location, date and
+  start time, auction type, cricket format, team/squad limits, purse/currency,
+  status, organizer, and optional contact.
+- Domain validation covers required fields, past dates, time bounds, team and
+  squad limits, positive finite purse, currency code, and custom formats.
+- Lifecycle supports Draft → Ready → Live ↔ Paused → Completed → Archived;
+  archived auctions can be restored to Completed. Only one auction may be
+  Live. Live, paused, completed, and archived records cannot be edited.
+- Role checks and operator auction assignment are enforced in the application
+  service. The repository independently enforces lifecycle and single-live
+  invariants. Completed records are retained; no delete operation exists.
+- Storage is in-memory and volatile. Seed records are labelled demo data.
+  Auction team/player registration, bid rules, live bidding, transaction
+  history, cloud persistence, and server-side authorization are not implemented.
 
-- Responsive compact and wide navigation, dark/light branded themes, dashboard
-  navigation, and the tournament/team/player screens.
-- Tournament model duration, copy/serialization, lifecycle helpers, seeded
-  data, filtering, and CRUD/status operations.
-- Team CRUD, per-tournament unique team names/short names, tournament capacity,
-  status/search filtering, and deletion safeguards for history/assignments.
-- Player CRUD, filtering, positive base-price/name validation, optional contact
-  and team assignment, and unknown-team assignment rejection.
+## Proposed future sequence — approval required
 
-**Baseline gap addressed:** tournament, team, and player source files were
-absent from the tracked baseline. A limited set of these files has now been
-added to make the existing model, repository, and widget tests compile and
-pass. Remaining functionality must be implemented in the approved feature
-phases.
-
-The manifest's current state management and navigation dependencies match the
-target direction. Point 3 provides only local demo authentication and
-client-side guards; no backend, persistent database, production authentication,
-payments, or realtime integration is present.
-
-## Point 5 — Complete tournament management
-
-**Status: completed.**
-
-- Added tournament list/search/status filtering/date sorting, create/edit,
-  details, lifecycle management, and completed/archive history screens.
-- Added tournament fields for identity, event and registration dates, format,
-  team capacity, squad limits, organizer, contact, and notes. Image selection
-  remains a placeholder/reference only.
-- Enforced required-field/date/squad validation, role and assignment checks,
-  valid lifecycle transitions, one-active-tournament globally, archive
-  protection, and guarded deletion in the management/domain and repository
-  layers.
-- Dashboard tournament summaries now read from the tournament repository.
-- Persistence remains in-memory and volatile. Authorization is client-side;
-  trusted backend enforcement, transaction data, and durable recovery are not
-  implemented. Team and player management remain future work.
-
-## Proposed implementation sequence (future work; approval required)
-
-| Phase | Scope | Prerequisites / exit criteria |
+| Point | Scope | Key exit criteria |
 |---|---|---|
-| Point 6 — Team and player management | Tournament-scoped team/player CRUD, capacity and assignment rules, player profiles, and import/export boundaries | Tournament management; test access, capacity, and entity invariants |
-| Point 7 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player management; test constraints and one-active invariant |
-| Point 8 — Trusted identity and cloud persistence | Replace demo auth with Supabase Authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
-| Point 9 — Live auction engine and displays | Implement authoritative bid/session transactions, control room, projector, assigned team view, and public read-only view; synchronize clients | Point 7 and trusted command boundary; concurrency, audit, reconnect, and purse consistency tests |
-| Point 10 — Results, reports, history, audit, and recovery | Derive results from transactions; reports/analytics; archives; audit logs; backup and restore workflows | Durable authoritative transaction/event data |
-| Point 11 — Offline/LAN mode | SQLite mobile cache and WebSocket local network mode with explicit authority, replay, and reconciliation | Defined offline consistency and recovery model |
-| Point 12 — Subscription, payment, and white-label | Entitlements, subscription plans/payments, tenant branding | Provider/security/privacy design and deployment needs |
-| Point 13 — External data compatibility and hardening | CSV/Excel completion, future CricHeroes mapping, cross-platform QA, accessibility, operational monitoring | Stable data contracts and regression coverage |
+| 6 — Auction team/player registration and settings | Auction-scoped team/player registration, purse allocations, player profiles, base prices, increments, squad/category rules, setup readiness | Every record scoped by auction ID; capacity and purse rules tested; import/export boundaries |
+| 7 — Trusted identity and persistence | Supabase Authentication/PostgreSQL and trusted authorization; Node.js API only where needed | Server-side role/auction isolation; durable migration and recovery design |
+| 8 — Live auction engine | Operator control room, bid/session state, player outcomes, append-only transactions and audit | Concurrency, single-live/session, purse consistency, reconnect and replay tests |
+| 9 — Auction displays, team view, results and reports | Projector/public read-only screens, assigned-team view, results and analytics | All views derived from the same authoritative auction transaction state |
+| 10 — Offline/LAN mode | SQLite cache and WebSocket local network mode | Single authority, durable event log, replay and cloud reconciliation |
+| 11 — Administration and operations | Notifications, audit, backup/restore, subscriptions/payments, white-label | Security, retention, entitlements, provider and recovery design |
+| 12 — Data exchange and hardening | CSV/Excel and future CricHeroes compatibility, accessibility and platform QA | Stable contracts and tested mappings; no compatibility claims before verification |
 
-Phase names and order beyond Point 1 are a planning proposal, not a commitment
-to start work. In particular, Live Auction implementation begins only in its
-approved future phase.
+## Deferred capability coverage
 
-## Future capability coverage
-
-| Capability | Planned home | Status |
-|---|---|---|
-| Multiple auction formats | Auction setup / live auction | Reserved; not implemented |
-| Configurable base prices | Player registration / auction setup | Reserved; not implemented |
-| Bid increments and auction rules | Auction setup | Reserved; not implemented |
-| Team purse management | Team management / auction setup | Reserved; not implemented |
-| Squad size and category limits | Team management / auction setup | Reserved; not implemented |
-| Player statistics and profiles | Player management / reporting | Reserved; not implemented in current source |
-| Live auction projector mode | Public display | Reserved; not implemented |
-| Mobile team dashboard | Role-specific dashboard / team portal | Demo UI implemented; live purse and auction data unavailable |
-| Offline and local network auction mode | Local data / live auction | Reserved; no SQLite or WebSocket integration |
-| Reports and analytics | Results and reporting | Reserved; not implemented |
-| Audit logs and transaction history | Administration / live auction | Reserved; not implemented |
-| Backup and recovery | Administration | Reserved; not implemented |
-| White-label branding | Settings / administration | Reserved; not implemented |
-| Subscription plans and payments | Administration | Later phase; no payment integration |
-| Secure role-based access | Identity/access and backend policy | Requirement reserved; no authentication service integrated |
-| Supabase/PostgreSQL | Cloud data/auth | Future plan; not integrated |
-| Node.js business API | Trusted backend logic | Future option; not integrated |
-| Supabase Realtime | Cloud synchronization | Future plan; not integrated |
-| CSV/Excel interchange | Import/export | Required future support; inspect current implementation after baseline recovery |
-| CricHeroes compatibility | Import/export adapter | Future compatibility goal; not integrated or guaranteed |
+Multiple auction formats and currencies, configurable base prices, bid
+increments, team purse and squad/category limits, player profiles/statistics,
+projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
+backup/recovery, white-label branding, subscriptions/payments, secure
+role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
+Realtime, CSV/Excel, and future CricHeroes compatibility are reserved. Only
+capabilities described as implemented under Points 1-5 are available now.
 
 ## Approval gate
 
-Point 5 is complete. Stop here and obtain explicit user approval before
-starting Point 6.
+Point 5 is complete. Stop and obtain explicit user approval before starting
+Point 6. Do not start team/player auction registration or live bidding without
+that approval.

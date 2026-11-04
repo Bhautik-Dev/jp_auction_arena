@@ -16,6 +16,7 @@ abstract final class RouteAccessPolicy {
 
   static bool canAccessPath(AuthUser user, String path) {
     if (path == unauthorized) return true;
+    if (_matches(path, RouteNames.tournaments)) return false;
 
     if (path == teamPortal) {
       return RolePermissions.allows(
@@ -34,19 +35,19 @@ abstract final class RouteAccessPolicy {
       return false;
     }
 
-    if (user.role == AppRole.tournamentAdmin && _isTournamentScoped(path)) {
-      if (path == RouteNames.tournamentCreate) {
-        return user.tournamentIds.isNotEmpty;
+    if (user.role == AppRole.tournamentAdmin && _isAuctionScoped(path)) {
+      if (path == RouteNames.auctionCreate || path == RouteNames.auctions) {
+        return true;
       }
-      final tournamentId = _tournamentIdFrom(path);
-      if (tournamentId != null) {
-        return RolePermissions.canAccessTournament(
+      final auctionId = _auctionIdFrom(path);
+      if (auctionId != null) {
+        return RolePermissions.canAccessAuction(
           user.role,
-          user.tournamentIds,
-          tournamentId,
+          user.auctionIds,
+          auctionId,
         );
       }
-      return user.tournamentIds.isNotEmpty;
+      return user.auctionIds.isNotEmpty;
     }
 
     return true;
@@ -55,6 +56,9 @@ abstract final class RouteAccessPolicy {
   static AppPermission? _permissionFor(String path) {
     if (_matches(path, RouteNames.dashboard)) {
       return AppPermission.viewDashboard;
+    }
+    if (_matches(path, RouteNames.auctions)) {
+      return AppPermission.manageAuctions;
     }
     if (_matches(path, RouteNames.tournaments)) {
       return AppPermission.manageTournaments;
@@ -89,8 +93,8 @@ abstract final class RouteAccessPolicy {
   static bool _matches(String path, String route) =>
       path == route || path.startsWith('$route/');
 
-  static bool _isTournamentScoped(String path) =>
-      path.startsWith(RouteNames.tournaments) ||
+  static bool _isAuctionScoped(String path) =>
+      path.startsWith(RouteNames.auctions) ||
       path.startsWith(RouteNames.teams) ||
       path.startsWith(RouteNames.players) ||
       path.startsWith('/app/auction/') ||
@@ -98,8 +102,8 @@ abstract final class RouteAccessPolicy {
       path.startsWith(RouteNames.reports) ||
       path.startsWith(RouteNames.history);
 
-  static String? _tournamentIdFrom(String path) {
-    final match = RegExp(r'^/app/tournaments/([^/]+)').firstMatch(path);
+  static String? _auctionIdFrom(String path) {
+    final match = RegExp(r'^/app/auctions/([^/]+)').firstMatch(path);
     if (match?.group(1) == 'create') return null;
     return match?.group(1);
   }

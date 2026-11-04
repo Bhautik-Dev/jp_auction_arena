@@ -6,6 +6,7 @@ abstract final class RolePermissions {
 
   static const _tournamentAdmin = {
     AppPermission.viewDashboard,
+    AppPermission.manageAuctions,
     AppPermission.manageTournaments,
     AppPermission.viewTournament,
     AppPermission.manageTeams,
@@ -50,6 +51,12 @@ abstract final class RolePermissions {
     Set<String> assignedIds,
     String tournamentId,
   ) => role == AppRole.superAdmin || assignedIds.contains(tournamentId);
+
+  static bool canAccessAuction(
+    AppRole role,
+    Set<String> assignedIds,
+    String auctionId,
+  ) => role == AppRole.superAdmin || assignedIds.contains(auctionId);
 
   static bool canAccessTeam(
     AppRole role,

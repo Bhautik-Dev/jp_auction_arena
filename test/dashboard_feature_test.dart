@@ -10,7 +10,7 @@ import 'package:jp_auction_arena/features/dashboard/application/dashboard_provid
 import 'package:jp_auction_arena/features/dashboard/presentation/screens/dashboard_screen.dart';
 
 void main() {
-  testWidgets('Super Admin sees application-wide demo overview', (
+  testWidgets('Super Admin sees auction metrics and create action', (
     tester,
   ) async {
     final repository = await _signedInRepository('admin@demo.jp');
@@ -23,18 +23,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.text('Application overview'), findsOneWidget);
+    expect(find.text('Auction Management Dashboard'), findsOneWidget);
     expect(find.text('DEMO DATA · NOT LIVE'), findsOneWidget);
-    expect(find.text('Total tournaments'), findsOneWidget);
-    expect(find.text('Completed tournaments'), findsOneWidget);
+    expect(find.text('Total Auctions'), findsOneWidget);
+    expect(find.text('Draft Auctions'), findsOneWidget);
+    expect(find.text('Upcoming Auctions'), findsOneWidget);
+    expect(find.text('Live Auctions'), findsOneWidget);
+    expect(find.text('Completed Auctions'), findsOneWidget);
+    expect(find.text('CREATE NEW AUCTION'), findsOneWidget);
     expect(find.text('Quick actions'), findsOneWidget);
     expect(find.text('System notifications'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Tournament Admin sees assigned tournament summary', (
-    tester,
-  ) async {
+  testWidgets('Tournament Admin sees assigned auction summary', (tester) async {
     final repository = await _signedInRepository('operator@demo.jp');
     await tester.pumpWidget(
       ProviderScope(
@@ -44,12 +46,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tournament control center'), findsOneWidget);
-    expect(find.text('Assigned tournament'), findsOneWidget);
-    expect(find.text('Gujarat Premier Auction Arena 2026'), findsOneWidget);
-    expect(find.text('Auction readiness'), findsOneWidget);
-    expect(find.text('Not configured'), findsOneWidget);
-    expect(find.text('Western Cricket League 2026'), findsNothing);
+    expect(find.text('Auction Operator Workspace'), findsOneWidget);
+    expect(find.text('Assigned auctions'), findsOneWidget);
+    expect(find.text('JP Premier League Player Auction 2026'), findsWidgets);
+    expect(find.text('Upcoming Auctions'), findsOneWidget);
+    expect(find.text('Practice Auction - Evening Session'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -65,7 +66,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Your team dashboard'), findsOneWidget);
+    expect(find.text('Your Team Dashboard'), findsOneWidget);
     expect(find.text('Ahmedabad Strikers'), findsOneWidget);
     expect(find.text('Vadodara Warriors'), findsNothing);
     expect(find.textContaining('Illustrative demo purse'), findsOneWidget);
@@ -94,9 +95,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tournament overview'), findsOneWidget);
-    expect(find.text('Participating teams'), findsOneWidget);
-    expect(find.text('Gujarat Premier Auction Arena 2026'), findsOneWidget);
+    expect(find.text('Public Auction Dashboard'), findsOneWidget);
+    expect(find.text('No public live auction'), findsOneWidget);
     expect(find.text('Public live view'), findsOneWidget);
     expect(find.text('Create Team'), findsNothing);
     expect(find.text('Tournaments'), findsNothing);
@@ -115,7 +115,7 @@ void main() {
     expect(find.text('Public Live Auction'), findsOneWidget);
     await tester.tap(find.byTooltip('Back to dashboard'));
     await tester.pumpAndSettle();
-    expect(find.text('Tournament overview'), findsOneWidget);
+    expect(find.text('Public Auction Dashboard'), findsOneWidget);
   });
 
   test('dashboard data repository scopes teams by role assignment', () async {
@@ -141,10 +141,7 @@ void main() {
     final publicSnapshot = await repository.loadForUser(publicViewer);
 
     expect(teamSnapshot.teams.map((team) => team.id), ['team_001']);
-    expect(publicSnapshot.teams.map((team) => team.name), [
-      'Ahmedabad Strikers',
-      'Vadodara Warriors',
-    ]);
+    expect(publicSnapshot.teams, isEmpty);
     expect(teamSnapshot.role, AppRole.teamManager);
     expect(publicSnapshot.isDemoData, isTrue);
   });

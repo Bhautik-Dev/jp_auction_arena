@@ -272,48 +272,52 @@ class _DesktopSidebar extends StatelessWidget {
             child: _BrandHeader(),
           ),
           Expanded(
-            child: NavigationRail(
-              extended: true,
-              selectedIndex: ResponsiveAppShell._selectedIndex(
-                currentPath,
-                destinations,
-              ),
-              onDestinationSelected: (index) {
-                final destination = destinations[index];
-                if (destination.enabled) {
-                  context.go(destination.path);
-                }
-              },
-              leading: const Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.md),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'JP AUCTION ARENA',
-                    style: TextStyle(
-                      color: AppColors.secondaryText,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              child: NavigationRail(
+                extended: true,
+                selectedIndex: ResponsiveAppShell._selectedIndex(
+                  currentPath,
+                  destinations,
+                ),
+                onDestinationSelected: (index) {
+                  final destination = destinations[index];
+                  if (destination.enabled) {
+                    context.go(destination.path);
+                  }
+                },
+                leading: const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'JP AUCTION ARENA',
+                      style: TextStyle(
+                        color: AppColors.secondaryText,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ),
+                destinations:
+                    [...destinations, ...ResponsiveAppShell._planned]
+                        .map(
+                          (destination) => NavigationRailDestination(
+                            icon: Icon(destination.icon),
+                            label: Text(
+                              destination.enabled
+                                  ? destination.label
+                                  : '${destination.label} - Soon',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            disabled: !destination.enabled,
+                          ),
+                        )
+                        .toList(),
               ),
-              destinations: [...destinations, ...ResponsiveAppShell._planned]
-                  .map(
-                    (destination) => NavigationRailDestination(
-                      icon: Icon(destination.icon),
-                      label: Text(
-                        destination.enabled
-                            ? destination.label
-                            : '${destination.label} - Soon',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      disabled: !destination.enabled,
-                    ),
-                  )
-                  .toList(),
             ),
           ),
           const Padding(

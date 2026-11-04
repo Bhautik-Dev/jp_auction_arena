@@ -3,9 +3,9 @@
 The application is auction-first: an Auction is the primary workflow and owns
 all future team/player registrations and auction transactions. The previous
 tournament-management URL redirects to Auctions; do not extend it as a general
-tournament product. Points 3-6 provide local demo authentication, role-aware
+tournament product. Points 3-8 provide local demo authentication, role-aware
 navigation, auction management, auction-scoped team registration, and auction-scoped player
-registration.
+registration, plus per-auction bid increment configuration.
 
 ## 1. Entry and access flow
 
@@ -55,8 +55,9 @@ flowchart LR
     PL --> PR[Register / Edit Player]
     PL --> PD[Player Profile]
     PL --> PI[CSV Import / Export]
-    V -. future .-> CFG[Auction Rules and Pre-check]
-    CFG -. future .-> LIVE[Live Bidding Control Room]
+    V --> CFG[Auction Settings and Bid Increment Rules]
+    CFG -. future .-> CHECK[Pre-check]
+    CHECK -. future .-> LIVE[Live Bidding Control Room]
     LIVE -. future .-> DISP[Projector / Team / Public Views]
 ```
 
@@ -71,8 +72,9 @@ flowchart LR
 4. **Auction Details:** event identity, date/time, format, status, configured
    team and squad limits, purse, progress, and lifecycle actions. Registered
    team and player counts come from their auction-scoped repositories.
-5. **Auction Settings:** configuration summary and edit entry point. Bid
-   increments/rules are not yet implemented.
+5. **Auction Settings:** configuration summary, per-auction bid increment
+   tiers, and the unsold-player re-entry preference. Rule configuration is
+   limited to Draft/Ready auctions and authorized admins/operators.
 6. **Auction History / Archives:** Completed and Archived auctions; records are
    retained and can be restored by an authorized admin/operator.
 
@@ -157,10 +159,11 @@ associated with an auction.
 
 ## 5. Future auction-connected flow
 
-These are reserved future routes, not working links or features in Point 7:
+These are reserved future routes, not yet working links or features:
 
-1. Auction Settings → base-price policy, bid increments, rules, team purses,
-   squad/category limits, and blocking Ready checks.
+1. Auction Settings → configurable base-price policy, team purses,
+   squad/category limits, and blocking Ready checks. Bid increments are
+   configurable, but are not consumed by a live bidding workflow yet.
 2. Ready auction → authorized Live Auction Control Room.
 3. Live Auction → separate read-only projector, assigned team, and public
    displays; authorized operator commands only.

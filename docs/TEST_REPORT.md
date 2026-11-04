@@ -19,3 +19,15 @@ registration form behavior.
 The app remains a local demo implementation. These results do not verify
 production backend security, cross-device synchronization, or other platform
 builds.
+
+## Point 8 validation
+
+- `flutter analyze` — passed with no issues.
+- `flutter test` — passed, 92 tests.
+- `flutter build web --release` — passed; output generated at `build/web`.
+- `git diff --check` — passed.
+
+Auction rule tests cover tier validation, threshold selection and next-bid
+calculation, role and operator-assignment checks, auction isolation,
+read-only enforcement after Live, and saving edited tiers from the responsive
+settings screen. These checks do not imply live bidding or durable persistence.

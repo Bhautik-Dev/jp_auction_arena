@@ -16,6 +16,7 @@ Do not claim a future service is operational until implemented and tested.
 Points 1-4 establish the blueprint, Flutter foundation, demo authentication,
 roles, dashboard, and responsive navigation. Point 5 is auction creation and
 management. Points 6-7 establish auction-scoped team and player registrations.
+Point 8 adds per-auction bid increment rules and their settings editor.
 
 ## Point 1 — Product blueprint
 
@@ -130,11 +131,31 @@ auction execution remain future work.**
 - Image upload, file downloads, Excel/PDF support, durable persistence,
   Supabase, and server-authoritative authorization are not implemented.
 
+## Point 8 — Auction configuration and rule engine
+
+**Status: implemented locally; live execution and purse/squad management remain
+future work.**
+
+- Added per-auction bid increment tiers, with a default increment of 1,000
+  currency units from a zero bid threshold.
+- Added domain validation for non-empty auction IDs, a zero-based first tier,
+  strictly increasing thresholds, and positive increments. The rule engine
+  selects an increment at threshold boundaries and calculates the next bid.
+- Added an authorized rule-management service. Super Admins can manage any
+  auction; Tournament Admins / Auction Operators are restricted to assigned
+  auctions. Rule writes are limited to Draft and Ready auctions.
+- Expanded Auction Settings with responsive tier editing, a saved unsold-player
+  re-entry preference, loading/error handling, and per-auction in-memory
+  persistence.
+- The re-entry preference is configuration only; rounds and re-entry execution
+  are not implemented. Starting prices still come from each player registration.
+- This point does not implement team purse tracking, squad enforcement,
+  preparation checks, live bidding, transaction history, or durable storage.
+
 ## Remaining agreed points
 
 | Point | Scope | Current status |
 |---|---|---|
-| 8 | Auction configuration and rule engine | Not started |
 | 9 | Team purse and squad management | Not started |
 | 10 | Auction preparation and player order | Not started |
 | 11-12 | Live auction control room and bidding engine | Not started |
@@ -151,6 +172,6 @@ projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
 backup/recovery, white-label branding, subscriptions/payments, secure
 role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
 Realtime, Excel, and future CricHeroes compatibility are reserved. Only
-capabilities described under Points 1-7 are available locally as described
+capabilities described under Points 1-8 are available locally as described
 above; deferred services remain unavailable until separately implemented and
 tested.

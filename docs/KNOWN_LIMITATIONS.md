@@ -19,7 +19,12 @@
 - Player registrations are auction-scoped but are volatile in-memory records.
   Player team assignment and Sold/Unsold result operations are intentionally
   not part of player management and await later auction phases.
-- Auction rules, live bidding, transaction and audit ledgers, public/team live
-  screens, and reports are not implemented.
+- Bid increment tiers can be configured per auction and their selection/next
+  bid can be calculated by the domain rule engine. Rule sets are volatile
+  in-memory data and are not consumed by live bidding, which is not implemented.
+- Unsold-player re-entry is a stored preference only; auction rounds and
+  re-entry behavior are not implemented.
+- Purse/squad enforcement, auction preparation checks, transaction and audit
+  ledgers, public/team live screens, and reports are not implemented.
 - Supabase, PostgreSQL, Node.js, Realtime, payments, push notifications,
   SQLite, and local-network synchronization are not connected.

@@ -27,6 +27,9 @@ English is the interface language.
 - Point 5 implements auction list/search/status filtering/date sorting,
   create/edit, details, settings, history/archive, lifecycle validation, and
   in-memory repository state.
+- Point 8 implements per-auction bid increment tiers, increment validation and
+  calculation, admin/operator access checks, Draft/Ready write locks, and a
+  responsive Auction Settings editor. Rules remain in-memory.
 - Point 7 implements auction-scoped player registration, profile details,
   search/category/status filters, pre-live edits, availability, CSV text
   import/export, role checks, and safe retention of auction outcomes.
@@ -222,12 +225,12 @@ common shell; they are not unrelated mini-apps.
 | 31 | Application Settings | Settings/support | User preferences; global settings for Super Admin |
 | 32 | Help and Support | Settings/support | All |
 
-Points 5-7 implement Auction List, Create/Edit Auction, Auction Details,
+Points 5-8 implement Auction List, Create/Edit Auction, Auction Details,
 Auction Settings, Auction History/Archives, auction-scoped Team Management,
-and auction-scoped Player Management. Auction rules/increments, pre-check,
-live bidding, display, results, reporting, administration, and external
-services remain future work unless explicitly identified otherwise in the
-roadmap.
+auction-scoped Player Management, and basic per-auction bid increment rules.
+Purse/squad enforcement, preparation checks, live bidding, display, results,
+reporting, administration, and external services remain future work unless
+explicitly identified otherwise in the roadmap.
 
 ## 7. User roles and permissions
 

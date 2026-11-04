@@ -18,11 +18,14 @@ claim production readiness or completion of the full product scope.
   search/category/status filters, pre-live edits, availability, CSV text
   import/export, route/service access checks, auction isolation, and safe
   retention of sold/unsold registrations.
+- **Point 8:** per-auction bid increment tiers, domain validation/calculation,
+  role and operator-assignment checks, Draft/Ready write restrictions, and a
+  responsive rules editor in Auction Settings.
 
 ## Remaining scope
 
-Points 8-29 remain incomplete: auction rules and preparation; purse/squad
-tracking; live auction and bidding; projector,
+Points 9-29 remain incomplete: purse/squad tracking; preparation; live auction
+and bidding; projector,
 team-owner and public live views; sold/unsold administration; results and
 analytics; user administration; notifications; audit and transaction ledger;
 file-based CSV/Excel/PDF exchange; offline/LAN mode; cloud backend; payments;
@@ -34,3 +37,7 @@ Current auction/team/player repositories are local in-memory implementations.
 Data does not survive app restarts. Demo authentication and role checks are
 not production security; trusted server-side authorization and database
 policies are required before release.
+
+Auction rule sets are also in-memory. Bid increment selection/next-bid
+calculation is implemented as domain logic, but no live bidding workflow
+consumes it. Unsold-player re-entry is stored as a setting only.

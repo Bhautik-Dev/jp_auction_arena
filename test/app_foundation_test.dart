@@ -19,6 +19,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: JpAuctionArenaApp()));
     await tester.pumpAndSettle();
+    await _signInAsSuperAdmin(tester);
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
@@ -44,6 +45,7 @@ void main() {
 
     await tester.pumpWidget(const ProviderScope(child: JpAuctionArenaApp()));
     await tester.pumpAndSettle();
+    await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
@@ -88,9 +90,18 @@ void main() {
 
     await tester.pumpWidget(const ProviderScope(child: JpAuctionArenaApp()));
     await tester.pumpAndSettle();
+    await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+Future<void> _signInAsSuperAdmin(WidgetTester tester) async {
+  final account = find.textContaining('Super Admin -');
+  await tester.ensureVisible(account);
+  await tester.tap(account);
+  await tester.tap(find.text('Login'));
+  await tester.pumpAndSettle();
 }

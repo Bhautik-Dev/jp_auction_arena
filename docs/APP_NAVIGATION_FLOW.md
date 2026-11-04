@@ -1,9 +1,10 @@
 # JP AUCTION ARENA — Navigation Flow
 
-This is the target navigation map for the approved product scope. Routes are
-conceptual until implemented. The shared app shell and role-aware access rules
-apply to all signed-in modules; a navigation destination never grants
-permission by itself.
+This is the target navigation map for the approved product scope. Point 3
+implements the login, session, role landing, and client-side route-guard
+foundation; other destinations are conceptual until their feature phases.
+The shared app shell and role-aware access rules apply to signed-in modules; a
+navigation destination never grants permission by itself.
 
 ## 1. Entry and access flow
 
@@ -27,6 +28,10 @@ flowchart TD
 An authenticated user's role and tournament/team assignments determine the
 dashboard shortcuts and accessible routes. A public live link is separate from
 the admin shell, is read-only, and exposes only explicitly published fields.
+The current Point 3 login uses in-memory demo accounts only; it is not
+production authentication. Team managers are redirected to their team portal,
+public viewers to the public live view, and administrative roles to the
+dashboard.
 
 ## 2. Signed-in shell and feature navigation
 
@@ -169,4 +174,3 @@ Detailed action permissions and invariants are in
 
 The complete 32-screen inventory, grouped by product module and primary access
 role, is maintained in [APP_BLUEPRINT.md](./APP_BLUEPRINT.md#complete-screen-inventory).
-

@@ -1,4 +1,8 @@
 abstract final class RouteNames {
+  static const splash = '/splash';
+  static const login = '/login';
+  static const forgotPassword = '/forgot-password';
+  static const unauthorized = '/unauthorized';
   static const dashboard = '/app/dashboard';
   static const tournaments = '/app/tournaments';
   static const teams = '/app/teams';
@@ -9,4 +13,6 @@ abstract final class RouteNames {
   static const reports = '/app/reports';
   static const history = '/app/history';
   static const settings = '/app/settings';
+  static const teamPortal = '/app/team';
+  static const publicLive = '/live/:eventId';
 }

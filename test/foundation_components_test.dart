@@ -18,6 +18,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: JpAuctionArenaApp()));
     await tester.pumpAndSettle();
+    final account = find.textContaining('Super Admin -');
+    await tester.ensureVisible(account);
+    await tester.tap(account);
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
 
     GoRouter.of(
       tester.element(find.byType(DashboardScreen)),

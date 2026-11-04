@@ -7,8 +7,7 @@
 - Deliver modules in dependency order, preserving a unified navigation and
   design system.
 - Do not describe planned services as operational until implemented and tested.
-- Point 1 was documentation and scope definition only. Point 2 is complete;
-  Point 3 and later work require explicit approval.
+- Points 1-3 are complete. Point 4 and later work require explicit approval.
 
 ## Point 1 — Complete app blueprint, requirements, and navigation flow
 
@@ -51,9 +50,27 @@ and the list/player registration/detail screens exercised by those tests.
 The full test suite and analyzer now pass locally.
 
 This is limited feature-foundation recovery for the CI failure, not completion
-of the full Point 3 feature scope. Tournament create/edit, team registration,
-auction setup/control, persistence, authentication, and remote integrations
+of the full tournament/team/player feature scope. Tournament create/edit, team
+registration, auction setup/control, persistence, and remote integrations
 remain unimplemented.
+
+## Point 3 — Authentication and user role management
+
+**Status: demo/local authentication and client access foundation implemented.**
+
+- Added login, forgot-password, session-loading, unauthorized, team-portal, and
+  public-view routes/screens using the shared theme and GoRouter.
+- Added an `AuthRepository` contract, in-memory demo implementation, Riverpod
+  session controller, centralized role/permission definitions, assignment
+  checks, route guards, role landing routes, and confirmed logout.
+- Synthetic credentials are listed in the README. They are demonstration
+  values, not real accounts. Password reset and persistent sessions are not
+  available in the local demo. No external authentication or Supabase service
+  is connected.
+- Route guards are a client-side UX/access foundation; they are not a security
+  boundary. Production authorization must also be enforced by trusted backend
+  and database policies.
+- No Point 4 auction setup or live-auction functionality was implemented.
 
 ## Baseline inspection and conflicts
 
@@ -87,14 +104,14 @@ integration. These remain future work.
 
 | Phase | Scope | Prerequisites / exit criteria |
 |---|---|---|
-| Point 3 — Tournament, team, and player foundation | Implement domain contracts, validation, in-memory/local repositories as appropriate, list/detail/forms, tournament lifecycle, team capacity, player registration, and import/export boundaries | Foundation; test core entity and lifecycle invariants |
-| Point 4 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player foundation; test constraints and one-active invariant |
-| Point 5 — Trusted identity and cloud persistence | Design and implement Supabase authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
-| Point 6 — Live auction engine and displays | Implement authoritative bid/session transactions, control room, projector, assigned team view, and public read-only view; synchronize clients | Point 4 and trusted command boundary; concurrency, audit, reconnect, and purse consistency tests |
-| Point 7 — Results, reports, history, audit, and recovery | Derive results from transactions; reports/analytics; archives; audit logs; backup and restore workflows | Durable authoritative transaction/event data |
-| Point 8 — Offline/LAN mode | SQLite mobile cache and WebSocket local network mode with explicit authority, replay, and reconciliation | Defined offline consistency and recovery model |
-| Point 9 — Subscription, payment, and white-label | Entitlements, subscription plans/payments, tenant branding | Provider/security/privacy design and deployment needs |
-| Point 10 — External data compatibility and hardening | CSV/Excel completion, future CricHeroes mapping, cross-platform QA, accessibility, operational monitoring | Stable data contracts and regression coverage |
+| Point 4 — Tournament, team, and player management | Complete domain workflows, tournament lifecycle, team capacity, player registration, and import/export boundaries | Auth role foundation; test core entity and lifecycle invariants |
+| Point 5 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player management; test constraints and one-active invariant |
+| Point 6 — Trusted identity and cloud persistence | Replace demo auth with Supabase Authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
+| Point 7 — Live auction engine and displays | Implement authoritative bid/session transactions, control room, projector, assigned team view, and public read-only view; synchronize clients | Point 5 and trusted command boundary; concurrency, audit, reconnect, and purse consistency tests |
+| Point 8 — Results, reports, history, audit, and recovery | Derive results from transactions; reports/analytics; archives; audit logs; backup and restore workflows | Durable authoritative transaction/event data |
+| Point 9 — Offline/LAN mode | SQLite mobile cache and WebSocket local network mode with explicit authority, replay, and reconciliation | Defined offline consistency and recovery model |
+| Point 10 — Subscription, payment, and white-label | Entitlements, subscription plans/payments, tenant branding | Provider/security/privacy design and deployment needs |
+| Point 11 — External data compatibility and hardening | CSV/Excel completion, future CricHeroes mapping, cross-platform QA, accessibility, operational monitoring | Stable data contracts and regression coverage |
 
 Phase names and order beyond Point 1 are a planning proposal, not a commitment
 to start work. In particular, Live Auction implementation begins only in its
@@ -127,5 +144,5 @@ approved future phase.
 
 ## Approval gate
 
-Point 2 is complete. Stop here and obtain explicit user approval before
-starting Point 3.
+Point 3 is complete. Stop here and obtain explicit user approval before
+starting Point 4.

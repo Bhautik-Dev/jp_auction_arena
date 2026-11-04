@@ -1,5 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
+import 'package:jp_auction_arena/features/auth/application/route_access_policy.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/auth_loading_screen.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/login_screen.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/public_live_screen.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/team_portal_screen.dart';
+import 'package:jp_auction_arena/features/auth/presentation/screens/unauthorized_screen.dart';
 import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_detail_screen.dart';
@@ -13,10 +22,77 @@ import 'package:jp_auction_arena/shared/widgets/not_found_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/responsive_app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final refreshNotifier = _RouterRefreshNotifier();
+  ref.listen(authSessionProvider, (previous, next) {
+    refreshNotifier.refresh();
+  });
+  ref.onDispose(refreshNotifier.dispose);
+
   final router = GoRouter(
-    initialLocation: RouteNames.dashboard,
+    initialLocation: RouteNames.splash,
+    refreshListenable: refreshNotifier,
+    redirect: (context, state) {
+      final path = state.uri.path;
+      final authState = ref.read(authSessionProvider);
+
+      if (authState.isLoading) {
+        return path == RouteNames.splash ? null : RouteNames.splash;
+      }
+
+      final session = authState.whenOrNull(data: (value) => value);
+      if (path == RouteNames.splash) {
+        return session == null
+            ? RouteNames.login
+            : RouteAccessPolicy.landingFor(session.user.role);
+      }
+
+      final isPublicRoute = path.startsWith('/live/');
+      if (session == null) {
+        if (path == RouteNames.login ||
+            path == RouteNames.forgotPassword ||
+            path == RouteNames.unauthorized ||
+            isPublicRoute) {
+          return null;
+        }
+        return RouteNames.login;
+      }
+
+      if (path == RouteNames.login || path == RouteNames.forgotPassword) {
+        return RouteAccessPolicy.landingFor(session.user.role);
+      }
+
+      if (!_isOpenRoute(path) &&
+          !RouteAccessPolicy.canAccessPath(session.user, path)) {
+        return RouteNames.unauthorized;
+      }
+      return null;
+    },
     routes: [
-      GoRoute(path: '/', redirect: (context, state) => RouteNames.dashboard),
+      GoRoute(path: '/', redirect: (context, state) => RouteNames.splash),
+      GoRoute(
+        path: RouteNames.splash,
+        builder: (context, state) => const AuthLoadingScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.forgotPassword,
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.unauthorized,
+        builder: (context, state) => const UnauthorizedScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.publicLive,
+        builder: (context, state) => const PublicLiveScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.teamPortal,
+        builder: (context, state) => const TeamPortalScreen(),
+      ),
       ShellRoute(
         builder: (context, state, child) => ResponsiveAppShell(child: child),
         routes: [
@@ -98,3 +174,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+bool _isOpenRoute(String path) => path == RouteNames.unauthorized;
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}

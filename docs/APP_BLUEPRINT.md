@@ -9,9 +9,10 @@ navigation, and consistent tournament data across operator, team, and public
 views.
 
 This document defines the target product architecture and reserves space for
-the requested future capabilities. It is a blueprint only: it does not assert
-that authentication, cloud services, auction execution, payments, or live
-synchronization are implemented.
+the requested future capabilities. Point 3 implements only local demo
+authentication and client-side access guards. This document does not assert
+that production authentication, cloud services, auction execution, payments,
+or live synchronization are implemented.
 
 ## 2. Current baseline and evidence
 
@@ -21,14 +22,14 @@ foundation. Existing tests describe intended earlier behavior for responsive
 navigation, tournament CRUD/status/filtering, team validation/capacity, and
 player CRUD/validation/filtering.
 
-At the time this blueprint was prepared, the tracked `lib/` tree contains only
-`lib/main.dart`. That entry point imports `package:jp_auction_arena/app.dart`,
-which is absent. The README and tests also refer to absent app, router, theme,
-and tournament/team/player feature files. Consequently, the README/test
-descriptions are evidence of intended or previously developed behavior, not
-confirmation that those features currently build or run. See
-[FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) for the discrepancy and validation
-status.
+Before the Point 2 foundation, the tracked `lib/` tree contained only
+`lib/main.dart` and had no app entrypoint. Foundation work added the app,
+theme, shell, router, and shared widgets. Subsequent CI-failure remediation
+added limited in-memory tournament/team/player models, repositories, and
+screens. Point 3 adds local demo authentication and client-side role guards.
+These current implementations do not include persistent storage, production
+authentication, or backend-enforced authorization. See
+[FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) for phase status and limitations.
 
 ## 3. Product principles and critical invariants
 
@@ -130,7 +131,7 @@ Suggested route hierarchy (names are illustrative, not implemented routes):
   /notifications
   /settings
   /help
-/live/:publicEventKey                 (published, read-only view)
+/live/:eventId                        (published, read-only view)
 ```
 
 The route names above are a planning convention. Final URLs should be settled
@@ -151,7 +152,7 @@ system.
 | Module | Responsibility | Depends on |
 |---|---|---|
 | App foundation | App startup, theme, shared shell, routing, responsive primitives, common errors | Shared design system; identity/access for guarded routes |
-| Identity and access | Sign-in lifecycle, user profiles, roles, tournament/team assignments, permission policies | App foundation; future authentication provider |
+| Identity and access | Sign-in lifecycle, user profiles, roles, tournament/team assignments, permission policies | Demo repository and client-side policies; future trusted identity provider |
 | Dashboard | Role-appropriate overview and shortcuts | Identity/access; tournament, auction, and notification summaries |
 | Tournament management | Create/edit lifecycle, single-active constraint, details, archive/history | Identity/access; team, player, auction setup |
 | Team management | Team registration, owners/managers, colors/logos, purse/squad configuration | Identity/access; tournament; player registration |
@@ -216,9 +217,11 @@ unrelated product features.
 
 ## User roles and permissions
 
-Permissions are enforced at every command/data boundary and scoped to the
-user's tournament or team assignment. The matrix describes the product
-baseline; finer-grained grants may be added without weakening these rules.
+The matrix describes the product authorization baseline; permissions must be
+enforced at every trusted command/data boundary and scoped to the user's
+tournament or team assignment. Current Point 3 guards enforce client
+navigation only and are not a security boundary. Finer-grained grants may be
+added without weakening these rules.
 
 | Capability | Super Admin | Tournament Admin / Auction Operator | Team Owner / Team Manager | Public Viewer |
 |---|---|---|---|---|

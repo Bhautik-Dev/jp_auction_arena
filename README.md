@@ -45,8 +45,24 @@ feature, expose repository contracts from the domain layer, and implement them
 in the data layer. Use `AsyncValue` with the shared async-state widgets for
 loading, error, and data rendering.
 
-The application currently uses in-memory repositories and local UI state.
-There is no authentication, backend, database, auction engine, payment, or
+## Demo authentication
+
+The local demo authentication is for development and tests only. It is
+in-memory, does not persist sessions across app restarts, and is not production
+authentication. Demo credentials are synthetic and must never be reused as
+real account credentials:
+
+| Role | Email | Password |
+|---|---|---|
+| Super Admin | `admin@demo.jp` | `DemoAdmin!2026` |
+| Tournament Admin / Auction Operator | `operator@demo.jp` | `DemoOperator!2026` |
+| Team Owner / Team Manager | `team@demo.jp` | `DemoTeam!2026` |
+| Public Viewer | `viewer@demo.jp` | `DemoViewer!2026` |
+
+Replace `AuthRepository` with a Supabase Authentication adapter in a future
+approved phase. No Supabase or external authentication service is connected.
+The application otherwise uses in-memory feature repositories and local UI
+state. There is no backend, persistent database, auction engine, payment, or
 realtime service integration.
 See [docs/APP_BLUEPRINT.md](docs/APP_BLUEPRINT.md),
 [docs/APP_NAVIGATION_FLOW.md](docs/APP_NAVIGATION_FLOW.md), and

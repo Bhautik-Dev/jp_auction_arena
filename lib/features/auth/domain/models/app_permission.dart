@@ -1,0 +1,18 @@
+enum AppPermission {
+  viewDashboard,
+  manageTournaments,
+  viewTournament,
+  manageTeams,
+  viewAssignedTeam,
+  managePlayers,
+  viewPlayers,
+  configureAuction,
+  operateAuction,
+  viewAuction,
+  viewResults,
+  viewReports,
+  viewHistory,
+  manageUsers,
+  manageSettings,
+  viewPublicLive,
+}

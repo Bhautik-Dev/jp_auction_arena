@@ -7,6 +7,10 @@ import 'package:jp_auction_arena/core/responsive/app_breakpoints.dart';
 import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/core/theme/app_spacing.dart';
 import 'package:jp_auction_arena/core/theme/theme_mode_provider.dart';
+import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
+import 'package:jp_auction_arena/features/auth/application/route_access_policy.dart';
+import 'package:jp_auction_arena/features/auth/domain/models/auth_user.dart';
+import 'package:jp_auction_arena/shared/widgets/app_confirmation_dialog.dart';
 import 'package:jp_auction_arena/shared/widgets/responsive_page_container.dart';
 
 class ResponsiveAppShell extends ConsumerWidget {
@@ -37,6 +41,12 @@ class ResponsiveAppShell extends ConsumerWidget {
       AppStrings.players,
       Icons.sports_cricket_outlined,
       RouteNames.players,
+      true,
+    ),
+    _Destination(
+      'My Team',
+      Icons.shield_outlined,
+      RouteAccessPolicy.teamPortal,
       true,
     ),
     _Destination(
@@ -83,7 +93,11 @@ class ResponsiveAppShell extends ConsumerWidget {
     final isCompact = AppBreakpoints.usesBottomNavigation(width);
     final isWide = AppBreakpoints.usesExtendedNavigation(width);
     final path = GoRouterState.of(context).uri.path;
-    final selectedIndex = _selectedIndex(path);
+    final user = ref
+        .watch(authSessionProvider)
+        .whenOrNull(data: (session) => session?.user);
+    final destinations = _visibleDestinations(user);
+    final selectedIndex = _selectedIndex(path, destinations);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,31 +123,35 @@ class ResponsiveAppShell extends ConsumerWidget {
                   : Icons.dark_mode_outlined,
             ),
           ),
+          IconButton(
+            tooltip: 'Log out',
+            onPressed: () => _confirmLogout(context, ref),
+            icon: const Icon(Icons.logout),
+          ),
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
-      drawer: isCompact ? _MobileDrawer(currentPath: path) : null,
+      drawer: isCompact && destinations.isNotEmpty
+          ? _MobileDrawer(currentPath: path, destinations: destinations)
+          : null,
       body: Row(
         children: [
-          if (!isCompact && isWide) _DesktopSidebar(currentPath: path),
-          if (!isCompact && !isWide) _CompactRail(selectedIndex: selectedIndex),
+          if (!isCompact && isWide)
+            _DesktopSidebar(currentPath: path, destinations: destinations),
+          if (!isCompact && !isWide && destinations.isNotEmpty)
+            _CompactRail(
+              selectedIndex: selectedIndex,
+              destinations: destinations,
+            ),
           Expanded(child: ResponsivePageContainer(child: child)),
         ],
       ),
-      bottomNavigationBar: isCompact
+      bottomNavigationBar: isCompact && destinations.isNotEmpty
           ? NavigationBar(
-              selectedIndex: _implemented
-                  .indexWhere(
-                    (destination) =>
-                        path == destination.path ||
-                        (destination.path == RouteNames.players &&
-                            path.startsWith('${RouteNames.players}/')),
-                  )
-                  .clamp(0, _implemented.length - 1)
-                  .toInt(),
+              selectedIndex: selectedIndex,
               onDestinationSelected: (index) =>
-                  context.go(_implemented[index].path),
-              destinations: _implemented
+                  context.go(destinations[index].path),
+              destinations: destinations
                   .map(
                     (item) => NavigationDestination(
                       icon: Icon(item.icon),
@@ -146,16 +164,49 @@ class ResponsiveAppShell extends ConsumerWidget {
     );
   }
 
-  static int _selectedIndex(String path) => _all
-      .indexWhere((destination) => destination.path == path)
-      .clamp(0, _all.length - 1)
-      .toInt();
+  static List<_Destination> _visibleDestinations(AuthUser? user) {
+    if (user == null) return const [];
+    return _implemented
+        .where(
+          (destination) =>
+              RouteAccessPolicy.canAccessPath(user, destination.path),
+        )
+        .toList();
+  }
+
+  static int _selectedIndex(String path, List<_Destination> destinations) {
+    if (destinations.isEmpty) return 0;
+    return destinations
+        .indexWhere(
+          (destination) =>
+              path == destination.path ||
+              (destination.path == RouteNames.players &&
+                  path.startsWith('${RouteNames.players}/')),
+        )
+        .clamp(0, destinations.length - 1)
+        .toInt();
+  }
 
   static String _titleForLocation(String path) {
     for (final destination in _all) {
       if (destination.path == path) return destination.label;
     }
     return AppStrings.appName;
+  }
+
+  static Future<void> _confirmLogout(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await AppConfirmationDialog.show(
+      context,
+      title: 'Log out?',
+      message: 'You will return to the login screen.',
+      confirmLabel: 'Log out',
+    );
+    if (!confirmed || !context.mounted) return;
+    await ref.read(authSessionProvider.notifier).signOut();
+    if (context.mounted) context.go(RouteAccessPolicy.login);
   }
 }
 
@@ -169,9 +220,13 @@ class _Destination {
 }
 
 class _DesktopSidebar extends StatelessWidget {
-  const _DesktopSidebar({required this.currentPath});
+  const _DesktopSidebar({
+    required this.currentPath,
+    required this.destinations,
+  });
 
   final String currentPath;
+  final List<_Destination> destinations;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -196,9 +251,12 @@ class _DesktopSidebar extends StatelessWidget {
           Expanded(
             child: NavigationRail(
               extended: true,
-              selectedIndex: ResponsiveAppShell._selectedIndex(currentPath),
+              selectedIndex: ResponsiveAppShell._selectedIndex(
+                currentPath,
+                destinations,
+              ),
               onDestinationSelected: (index) {
-                final destination = ResponsiveAppShell._all[index];
+                final destination = destinations[index];
                 if (destination.enabled) {
                   context.go(destination.path);
                 }
@@ -218,7 +276,7 @@ class _DesktopSidebar extends StatelessWidget {
                   ),
                 ),
               ),
-              destinations: ResponsiveAppShell._all
+              destinations: [...destinations, ...ResponsiveAppShell._planned]
                   .map(
                     (destination) => NavigationRailDestination(
                       icon: Icon(destination.icon),
@@ -249,14 +307,15 @@ class _DesktopSidebar extends StatelessWidget {
 }
 
 class _CompactRail extends StatelessWidget {
-  const _CompactRail({required this.selectedIndex});
+  const _CompactRail({required this.selectedIndex, required this.destinations});
 
   final int selectedIndex;
+  final List<_Destination> destinations;
 
   @override
   Widget build(BuildContext context) => NavigationRail(
     selectedIndex: selectedIndex,
-    destinations: ResponsiveAppShell._all
+    destinations: destinations
         .map(
           (item) => NavigationRailDestination(
             icon: Icon(item.icon),
@@ -271,16 +330,17 @@ class _CompactRail extends StatelessWidget {
         )
         .toList(),
     onDestinationSelected: (index) {
-      final destination = ResponsiveAppShell._all[index];
+      final destination = destinations[index];
       if (destination.enabled) context.go(destination.path);
     },
   );
 }
 
 class _MobileDrawer extends StatelessWidget {
-  const _MobileDrawer({required this.currentPath});
+  const _MobileDrawer({required this.currentPath, required this.destinations});
 
   final String currentPath;
+  final List<_Destination> destinations;
 
   @override
   Widget build(BuildContext context) => Drawer(
@@ -292,7 +352,7 @@ class _MobileDrawer extends StatelessWidget {
             padding: EdgeInsets.all(AppSpacing.md),
             child: _BrandHeader(),
           ),
-          for (final destination in ResponsiveAppShell._implemented)
+          for (final destination in destinations)
             _NavigationTile(
               destination: destination,
               selected: currentPath == destination.path,

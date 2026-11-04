@@ -195,11 +195,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Team Mobile View'), findsOneWidget);
-    expect(find.text('Your team workspace'), findsOneWidget);
+    expect(find.text('Your team dashboard'), findsOneWidget);
+    expect(find.text('Ahmedabad Strikers'), findsOneWidget);
+    expect(find.text('Vadodara Warriors'), findsNothing);
 
     GoRouter.of(
-      tester.element(find.text('Your team workspace')),
+      tester.element(find.text('Your team dashboard')),
     ).go(RouteNames.teams);
     await tester.pumpAndSettle();
 
@@ -224,10 +225,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Public view'), findsOneWidget);
+    expect(find.text('Tournament overview'), findsOneWidget);
+    expect(find.text('Public live view'), findsOneWidget);
     GoRouter.of(
-      tester.element(find.text('Public view')),
-    ).go(RouteNames.dashboard);
+      tester.element(find.text('Tournament overview')),
+    ).go(RouteNames.settings);
     await tester.pumpAndSettle();
 
     expect(find.text('Access not allowed'), findsOneWidget);
@@ -261,7 +263,7 @@ void main() {
     await tester.tap(find.textContaining('Super Admin -'));
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome to JP AUCTION ARENA'), findsOneWidget);
+    expect(find.text('Application overview'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Log out'));
     await tester.pumpAndSettle();
@@ -291,7 +293,7 @@ void main() {
     expect(find.textContaining('No reset email was sent.'), findsOneWidget);
   });
 
-  test('role landing routes preserve role-specific entry flow', () {
+  test('all roles land on the role-aware dashboard', () {
     expect(
       RouteAccessPolicy.landingFor(AppRole.superAdmin),
       RouteNames.dashboard,
@@ -302,11 +304,11 @@ void main() {
     );
     expect(
       RouteAccessPolicy.landingFor(AppRole.teamManager),
-      RouteAccessPolicy.teamPortal,
+      RouteNames.dashboard,
     );
     expect(
       RouteAccessPolicy.landingFor(AppRole.publicViewer),
-      RouteAccessPolicy.publicLive,
+      RouteNames.dashboard,
     );
 
     const viewer = AuthUser(
@@ -322,6 +324,10 @@ void main() {
     expect(
       RouteAccessPolicy.canAccessPath(viewer, RouteNames.settings),
       isFalse,
+    );
+    expect(
+      RouteAccessPolicy.canAccessPath(viewer, RouteNames.dashboard),
+      isTrue,
     );
   });
 }

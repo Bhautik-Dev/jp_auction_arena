@@ -12,11 +12,7 @@ abstract final class RouteAccessPolicy {
   static const teamPortal = RouteNames.teamPortal;
   static const publicLive = '/live/demo-event';
 
-  static String landingFor(AppRole role) => switch (role) {
-    AppRole.superAdmin || AppRole.tournamentAdmin => RouteNames.dashboard,
-    AppRole.teamManager => teamPortal,
-    AppRole.publicViewer => publicLive,
-  };
+  static String landingFor(AppRole role) => RouteNames.dashboard;
 
   static bool canAccessPath(AuthUser user, String path) {
     if (path == unauthorized) return true;

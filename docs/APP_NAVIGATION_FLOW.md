@@ -29,9 +29,10 @@ An authenticated user's role and tournament/team assignments determine the
 dashboard shortcuts and accessible routes. A public live link is separate from
 the admin shell, is read-only, and exposes only explicitly published fields.
 The current Point 3 login uses in-memory demo accounts only; it is not
-production authentication. Team managers are redirected to their team portal,
-public viewers to the public live view, and administrative roles to the
-dashboard.
+production authentication. All roles land on the dashboard, whose content and
+quick navigation are scoped by role. Team Managers can continue to their
+assigned-team view; Public Viewers can open the separate read-only public live
+view.
 
 ## 2. Signed-in shell and feature navigation
 

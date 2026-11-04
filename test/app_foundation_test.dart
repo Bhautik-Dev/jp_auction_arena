@@ -23,7 +23,7 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-    expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
+    expect(find.text('Application overview'), findsOneWidget);
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.colorScheme.primary, AppColors.electricBlue);
     expect(app.themeMode, ThemeMode.dark);
@@ -48,24 +48,39 @@ void main() {
     await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
+    expect(find.text('Application overview'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.tournaments));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.tournaments),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Tournaments'), findsWidgets);
     expect(find.text('New Tournament'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.teams));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.teams),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Teams').first, findsOneWidget);
     expect(find.text('Create Team'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.players));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.players),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Players').first, findsOneWidget);
@@ -93,7 +108,7 @@ void main() {
     await _signInAsSuperAdmin(tester);
 
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
+    expect(find.text('Application overview'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

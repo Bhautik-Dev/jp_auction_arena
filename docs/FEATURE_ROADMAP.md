@@ -7,7 +7,7 @@
 - Deliver modules in dependency order, preserving a unified navigation and
   design system.
 - Do not describe planned services as operational until implemented and tested.
-- Points 1-3 are complete. Point 4 and later work require explicit approval.
+- Points 1-4 are complete. Point 5 and later work require explicit approval.
 
 ## Point 1 — Complete app blueprint, requirements, and navigation flow
 
@@ -25,14 +25,13 @@
 
 ## Point 2 — Project foundation and global app structure
 
-**Status: foundation implemented; feature modules intentionally not started.**
+**Status: foundation implemented.**
 
 - Added the app composition root, Material 3 brand themes, responsive shell,
   Riverpod theme state, GoRouter destinations, shared widgets, and foundation
   tests.
-- Dashboard and application settings are available. Planned tournament, team,
-  player, auction, results, reports, and history destinations were initially
-  marked as coming soon.
+- Application settings are available; Point 4 adds the role-aware dashboard
+  experience. Feature modules remain separate from the foundation.
 - No external services or dependencies were added.
 - Focused foundation tests and the Web build pass. Repository-wide analysis and
   the full test suite initially exposed absent tournament/team/player feature
@@ -70,7 +69,30 @@ remain unimplemented.
 - Route guards are a client-side UX/access foundation; they are not a security
   boundary. Production authorization must also be enforced by trusted backend
   and database policies.
-- No Point 4 auction setup or live-auction functionality was implemented.
+- No auction setup or live-auction functionality was implemented.
+
+## Point 4 — Dashboard and main navigation experience
+
+**Status: role-adaptive dashboard and responsive navigation implemented.**
+
+- Added dedicated Super Admin, Tournament Admin / Auction Operator, Team
+  Owner / Team Manager, and Public Viewer dashboard layouts using the shared
+  design system.
+- Added reusable statistic, quick-action, recent-activity, notification,
+  tournament overview, team overview, progress, and demo-data widgets. Shared
+  loading, error, and empty states are used for asynchronous data.
+- Added a dashboard repository contract and Riverpod provider. The demo
+  implementation composes existing in-memory tournament, team, and player
+  repositories; role scopes limit returned tournament/team summaries.
+- All displayed sample records are marked as synthetic demo data. Auction
+  readiness, team purse examples, recent activity, and notifications are
+  illustrative or unavailable—not live data. Tournament/player association
+  and purse transactions are not modeled yet.
+- All roles now land on the role-aware dashboard. Shell destinations and
+  dashboard quick actions are checked against the existing route access
+  policy; team and public views expose no administrative actions.
+- No tournament/team/player management logic, auction setup, live auction, or
+  external services were added.
 
 ## Baseline inspection and conflicts
 
@@ -96,22 +118,22 @@ pass. Remaining functionality must be implemented in the approved feature
 phases.
 
 The manifest's current state management and navigation dependencies match the
-target direction. No checked-in evidence in the inspected source confirms
-completed authentication, backend, database, payments, or realtime
-integration. These remain future work.
+target direction. Point 3 provides only local demo authentication and
+client-side guards; no backend, persistent database, production authentication,
+payments, or realtime integration is present.
 
 ## Proposed implementation sequence (future work; approval required)
 
 | Phase | Scope | Prerequisites / exit criteria |
 |---|---|---|
-| Point 4 — Tournament, team, and player management | Complete domain workflows, tournament lifecycle, team capacity, player registration, and import/export boundaries | Auth role foundation; test core entity and lifecycle invariants |
-| Point 5 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player management; test constraints and one-active invariant |
-| Point 6 — Trusted identity and cloud persistence | Replace demo auth with Supabase Authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
-| Point 7 — Live auction engine and displays | Implement authoritative bid/session transactions, control room, projector, assigned team view, and public read-only view; synchronize clients | Point 5 and trusted command boundary; concurrency, audit, reconnect, and purse consistency tests |
-| Point 8 — Results, reports, history, audit, and recovery | Derive results from transactions; reports/analytics; archives; audit logs; backup and restore workflows | Durable authoritative transaction/event data |
-| Point 9 — Offline/LAN mode | SQLite mobile cache and WebSocket local network mode with explicit authority, replay, and reconciliation | Defined offline consistency and recovery model |
-| Point 10 — Subscription, payment, and white-label | Entitlements, subscription plans/payments, tenant branding | Provider/security/privacy design and deployment needs |
-| Point 11 — External data compatibility and hardening | CSV/Excel completion, future CricHeroes mapping, cross-platform QA, accessibility, operational monitoring | Stable data contracts and regression coverage |
+| Point 5 — Tournament, team, and player management | Complete domain workflows, tournament lifecycle, team capacity, player registration, and import/export boundaries | Auth role foundation; test core entity and lifecycle invariants |
+| Point 6 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player management; test constraints and one-active invariant |
+| Point 7 — Trusted identity and cloud persistence | Replace demo auth with Supabase Authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
+| Point 8 — Live auction engine and displays | Implement authoritative bid/session transactions, control room, projector, assigned team view, and public read-only view; synchronize clients | Point 6 and trusted command boundary; concurrency, audit, reconnect, and purse consistency tests |
+| Point 9 — Results, reports, history, audit, and recovery | Derive results from transactions; reports/analytics; archives; audit logs; backup and restore workflows | Durable authoritative transaction/event data |
+| Point 10 — Offline/LAN mode | SQLite mobile cache and WebSocket local network mode with explicit authority, replay, and reconciliation | Defined offline consistency and recovery model |
+| Point 11 — Subscription, payment, and white-label | Entitlements, subscription plans/payments, tenant branding | Provider/security/privacy design and deployment needs |
+| Point 12 — External data compatibility and hardening | CSV/Excel completion, future CricHeroes mapping, cross-platform QA, accessibility, operational monitoring | Stable data contracts and regression coverage |
 
 Phase names and order beyond Point 1 are a planning proposal, not a commitment
 to start work. In particular, Live Auction implementation begins only in its
@@ -128,7 +150,7 @@ approved future phase.
 | Squad size and category limits | Team management / auction setup | Reserved; not implemented |
 | Player statistics and profiles | Player management / reporting | Reserved; not implemented in current source |
 | Live auction projector mode | Public display | Reserved; not implemented |
-| Mobile team dashboard | Team portal | Reserved; not implemented |
+| Mobile team dashboard | Role-specific dashboard / team portal | Demo UI implemented; live purse and auction data unavailable |
 | Offline and local network auction mode | Local data / live auction | Reserved; no SQLite or WebSocket integration |
 | Reports and analytics | Results and reporting | Reserved; not implemented |
 | Audit logs and transaction history | Administration / live auction | Reserved; not implemented |
@@ -144,5 +166,5 @@ approved future phase.
 
 ## Approval gate
 
-Point 3 is complete. Stop here and obtain explicit user approval before
-starting Point 4.
+Point 4 is complete. Stop here and obtain explicit user approval before
+starting Point 5.

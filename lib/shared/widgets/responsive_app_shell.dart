@@ -50,6 +50,12 @@ class ResponsiveAppShell extends ConsumerWidget {
       true,
     ),
     _Destination(
+      'Public Live',
+      Icons.visibility_outlined,
+      RouteAccessPolicy.publicLive,
+      true,
+    ),
+    _Destination(
       AppStrings.settings,
       Icons.settings_outlined,
       RouteNames.settings,

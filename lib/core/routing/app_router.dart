@@ -89,10 +89,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.publicLive,
         builder: (context, state) => const PublicLiveScreen(),
       ),
-      GoRoute(
-        path: RouteNames.teamPortal,
-        builder: (context, state) => const TeamPortalScreen(),
-      ),
       ShellRoute(
         builder: (context, state, child) => ResponsiveAppShell(child: child),
         routes: [
@@ -100,6 +96,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RouteNames.dashboard,
             name: 'dashboard',
             builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.teamPortal,
+            name: 'team-portal',
+            builder: (context, state) => const TeamPortalScreen(),
           ),
           GoRoute(
             path: RouteNames.tournaments,

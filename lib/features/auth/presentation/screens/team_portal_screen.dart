@@ -12,33 +12,27 @@ class TeamPortalScreen extends ConsumerWidget {
     final session = ref
         .watch(authSessionProvider)
         .whenOrNull(data: (value) => value);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Team Mobile View')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: AppCard(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your team workspace',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text('Signed in as ${session?.user.displayName ?? ''}.'),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'This role can only view its assigned team. Team purse, '
-                    'squad, and live auction data are not connected in this '
-                    'authentication foundation.',
-                  ),
-                ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: AppCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your team workspace',
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-            ),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Signed in as ${session?.user.displayName ?? ''}.'),
+              const SizedBox(height: AppSpacing.md),
+              const Text(
+                'This role can only view its assigned team. Team purse, '
+                'squad, and live auction data are not connected in this '
+                'authentication foundation.',
+              ),
+            ],
           ),
         ),
       ),

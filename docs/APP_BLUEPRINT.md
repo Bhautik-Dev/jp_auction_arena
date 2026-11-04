@@ -30,6 +30,8 @@ screens. Point 3 adds local demo authentication and client-side role guards.
 These current implementations do not include persistent storage, production
 authentication, or backend-enforced authorization. See
 [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) for phase status and limitations.
+The Point 4 dashboard reads through a repository boundary and uses role-scoped
+synthetic demo data; its summaries do not represent live tournament activity.
 
 ## 3. Product principles and critical invariants
 

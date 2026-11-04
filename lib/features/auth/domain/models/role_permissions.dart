@@ -30,6 +30,7 @@ abstract final class RolePermissions {
   };
 
   static const _publicViewer = {
+    AppPermission.viewDashboard,
     AppPermission.viewPublicLive,
     AppPermission.viewResults,
   };

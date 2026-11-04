@@ -61,6 +61,20 @@ void main() {
     expect(find.text('Teams').first, findsOneWidget);
     expect(find.text('Create Team'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text(AppStrings.players));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Players').first, findsOneWidget);
+    expect(find.text('Add Player'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Aarav Patel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Player details'), findsOneWidget);
+    expect(find.text('Base price'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('wide layout shows the navigation rail', (

@@ -7,6 +7,7 @@ class AppStrings {
   static const String dashboard = 'Dashboard';
   static const String tournaments = 'Tournaments';
   static const String teams = 'Teams';
+  static const String players = 'Players';
   static const String foundationBadge = 'APPLICATION FOUNDATION';
   static const String welcomeTitle = 'Welcome to the arena';
   static const String welcomeDescription =

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/router/route_names.dart';
 import 'package:jp_auction_arena/features/home/presentation/screens/home_screen.dart';
 import 'package:jp_auction_arena/features/home/presentation/widgets/app_shell.dart';
+import 'package:jp_auction_arena/features/player/presentation/screens/player_detail_screen.dart';
+import 'package:jp_auction_arena/features/player/presentation/screens/player_form_screen.dart';
+import 'package:jp_auction_arena/features/player/presentation/screens/player_list_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_detail_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_form_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_list_screen.dart';
@@ -69,15 +72,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: RouteNames.teamDetail,
-                builder: (context, state) => TeamDetailScreen(
-                  teamId: state.pathParameters['id'] ?? '',
-                ),
+                builder: (context, state) =>
+                    TeamDetailScreen(teamId: state.pathParameters['id'] ?? ''),
                 routes: [
                   GoRoute(
                     path: 'edit',
                     name: RouteNames.editTeam,
                     builder: (context, state) => TeamFormScreen(
                       teamId: state.pathParameters['id'] ?? '',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: RouteNames.playersPath,
+            name: RouteNames.players,
+            builder: (context, state) => const PlayerListScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: RouteNames.createPlayer,
+                builder: (context, state) => const PlayerFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                name: RouteNames.playerDetail,
+                builder: (context, state) => PlayerDetailScreen(
+                  playerId: state.pathParameters['id'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    name: RouteNames.editPlayer,
+                    builder: (context, state) => PlayerFormScreen(
+                      playerId: state.pathParameters['id'] ?? '',
                     ),
                   ),
                 ],

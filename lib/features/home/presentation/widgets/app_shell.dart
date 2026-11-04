@@ -12,7 +12,9 @@ class AppShell extends StatelessWidget {
   final String location;
   final Widget child;
 
-  int get _selectedIndex => location.startsWith(RouteNames.teamsPath)
+  int get _selectedIndex => location.startsWith(RouteNames.playersPath)
+      ? 3
+      : location.startsWith(RouteNames.teamsPath)
       ? 2
       : location.startsWith(RouteNames.tournamentsPath)
       ? 1
@@ -36,6 +38,12 @@ class AppShell extends StatelessWidget {
       icon: Icons.groups_outlined,
       selectedIcon: Icons.groups,
       path: RouteNames.teamsPath,
+    ),
+    _AppDestination(
+      label: AppStrings.players,
+      icon: Icons.people_alt_outlined,
+      selectedIcon: Icons.people_alt,
+      path: RouteNames.playersPath,
     ),
   ];
 

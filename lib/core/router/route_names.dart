@@ -28,4 +28,16 @@ class RouteNames {
 
   static const String editTeam = 'editTeam';
   static const String editTeamPath = '/teams/:id/edit';
+
+  static const String players = 'players';
+  static const String playersPath = '/players';
+
+  static const String createPlayer = 'createPlayer';
+  static const String createPlayerPath = '/players/create';
+
+  static const String playerDetail = 'playerDetail';
+  static const String playerDetailPath = '/players/:id';
+
+  static const String editPlayer = 'editPlayer';
+  static const String editPlayerPath = '/players/:id/edit';
 }

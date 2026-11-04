@@ -18,9 +18,18 @@ claim production readiness or completion of the full product scope.
   search/category/status filters, pre-live edits, availability, CSV text
   import/export, route/service access checks, auction isolation, and safe
   retention of sold/unsold registrations.
-- **Point 8:** per-auction bid increment tiers, domain validation/calculation,
-  role and operator-assignment checks, Draft/Ready write restrictions, and a
-  responsive rules editor in Auction Settings.
+- **Point 8:** per-auction fixed or tiered bid increments, tier-range
+  validation/next-bid calculation, player base-price defaults, category and
+  optional overseas/wicketkeeper limits, timer/extension settings, player
+  ordering, and unsold re-entry configuration. The responsive editor includes
+  rule summaries and Save/Cancel. Auction details display a rule summary;
+  player registration suggests the configured category/default base price.
+  Domain services validate purse, squad, base prices, configured limits, timer
+  and increment rules; rule access is role/auction scoped and writes are locked
+  after Live.
+
+Point 8 verification: `flutter analyze` passed; `flutter test` passed (96 tests);
+`flutter build web --release` passed; `git diff --check` passed.
 
 ## Remaining scope
 
@@ -40,4 +49,6 @@ policies are required before release.
 
 Auction rule sets are also in-memory. Bid increment selection/next-bid
 calculation is implemented as domain logic, but no live bidding workflow
-consumes it. Unsold-player re-entry is stored as a setting only.
+consumes it. Timer, ordering, category/overseas/wicketkeeper limits, and
+unsold-player re-entry are settings only; there is no live execution or squad
+assignment enforcement for those rules yet.

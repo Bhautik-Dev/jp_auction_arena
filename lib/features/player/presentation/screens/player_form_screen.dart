@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/theme/app_spacing.dart';
+import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
 import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
 import 'package:jp_auction_arena/features/player/domain/models/player.dart';
 import 'package:jp_auction_arena/features/player/domain/models/player_category.dart';
@@ -35,7 +36,26 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
   final _wicketsController = TextEditingController(text: '0');
   PlayerCategory? _category;
   String? _loadedPlayerId;
+  String? _rulesLoadedAuctionId;
+  String? _suggestedBasePrice;
+  int? _defaultBasePrice;
+  Map<PlayerCategory, int> _categoryBasePrices = const {};
   bool _isSaving = false;
+
+  @override
+  void didUpdateWidget(covariant PlayerFormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.auctionId != oldWidget.auctionId) {
+      _rulesLoadedAuctionId = null;
+      _defaultBasePrice = null;
+      _categoryBasePrices = const {};
+      _suggestedBasePrice = null;
+      _priceController.clear();
+    }
+    if (widget.playerId != oldWidget.playerId) {
+      _loadedPlayerId = null;
+    }
+  }
 
   @override
   void dispose() {
@@ -55,7 +75,23 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
   @override
   Widget build(BuildContext context) {
     final playerId = widget.playerId;
-    if (playerId == null) return _form(context, null);
+    if (playerId == null) {
+      final rules = ref.watch(auctionRulesProvider(widget.auctionId));
+      final loadedRules = rules.whenOrNull(data: (value) => value);
+      if (loadedRules != null &&
+          _rulesLoadedAuctionId != loadedRules.auctionId) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _rulesLoadedAuctionId != loadedRules.auctionId) {
+            _defaultBasePrice = loadedRules.defaultPlayerBasePrice;
+            _categoryBasePrices = loadedRules.categoryBasePrices;
+            _rulesLoadedAuctionId = loadedRules.auctionId;
+            _applyBasePriceSuggestion(_category);
+            setState(() {});
+          }
+        });
+      }
+      return _form(context, null);
+    }
     return ref
         .watch(
           playerForAuctionProvider((
@@ -135,7 +171,10 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) => setState(() => _category = value),
+              onChanged: (value) {
+                setState(() => _category = value);
+                _applyBasePriceSuggestion(value);
+              },
               validator: (value) => value == null ? 'Choose a category' : null,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -153,6 +192,9 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
               label: 'Base price',
               controller: _priceController,
               keyboardType: TextInputType.number,
+              hint: _suggestedBasePrice == null
+                  ? null
+                  : 'Configured default: $_suggestedBasePrice',
               validator: (value) {
                 final price = int.tryParse(value?.trim() ?? '');
                 return price == null || price <= 0
@@ -227,6 +269,18 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
     _runsController.text = player.runsScored.toString();
     _wicketsController.text = player.wicketsTaken.toString();
     _category = player.category;
+  }
+
+  void _applyBasePriceSuggestion(PlayerCategory? category) {
+    final suggested = category == null
+        ? _defaultBasePrice
+        : _categoryBasePrices[category] ?? _defaultBasePrice;
+    final nextSuggestion = suggested?.toString();
+    if (_priceController.text.isEmpty ||
+        _priceController.text == _suggestedBasePrice) {
+      _priceController.text = nextSuggestion ?? '';
+    }
+    _suggestedBasePrice = nextSuggestion;
   }
 
   Future<void> _submit(Player? existing) async {

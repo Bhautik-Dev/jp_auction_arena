@@ -1,4 +1,5 @@
 import 'package:jp_auction_arena/features/auction/domain/errors/auction_exceptions.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/auction.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_rule_set.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
 import 'package:jp_auction_arena/features/auction/domain/repositories/auction_repository.dart';
@@ -21,22 +22,29 @@ class AuctionRuleManagementService {
   final AuctionRuleEngine _engine;
 
   Future<AuctionRuleSet> getRules(AuthUser actor, String auctionId) async {
-    await _authorize(actor, auctionId, requireEditable: false);
-    return await _repository.getByAuctionId(auctionId) ??
+    final auction = await _authorize(actor, auctionId, requireEditable: false);
+    final rules =
+        await _repository.getByAuctionId(auctionId) ??
         AuctionRuleSet(
           auctionId: auctionId,
           bidIncrementTiers: AuctionRuleEngine.defaultRules,
           allowUnsoldPlayerReentry: false,
         );
+    _engine.validate(rules, auction: auction);
+    return rules;
   }
 
   Future<AuctionRuleSet> saveRules(AuthUser actor, AuctionRuleSet rules) async {
-    await _authorize(actor, rules.auctionId, requireEditable: true);
-    _engine.validate(rules);
+    final auction = await _authorize(
+      actor,
+      rules.auctionId,
+      requireEditable: true,
+    );
+    _engine.validate(rules, auction: auction);
     return _repository.save(rules);
   }
 
-  Future<void> _authorize(
+  Future<Auction> _authorize(
     AuthUser actor,
     String auctionId, {
     required bool requireEditable,
@@ -64,5 +72,6 @@ class AuctionRuleManagementService {
         'Auction rules are read-only after the auction becomes Live.',
       );
     }
+    return auction;
   }
 }

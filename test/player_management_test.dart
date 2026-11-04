@@ -61,6 +61,23 @@ void main() {
     );
   });
 
+  test(
+    'validates player base prices against the selected auction purse',
+    () async {
+      await expectLater(
+        service.create(_admin, _player('Invalid price').copyWith(basePrice: 0)),
+        throwsA(isA<PlayerValidationException>()),
+      );
+      await expectLater(
+        service.create(
+          _admin,
+          _player('Over purse').copyWith(basePrice: 10000001),
+        ),
+        throwsA(isA<PlayerValidationException>()),
+      );
+    },
+  );
+
   test('filters scoped registrations by query, category, and status', () async {
     final batsman = await service.create(_admin, _player('Riya Patel'));
     final bowler = await service.create(

@@ -8,6 +8,7 @@ import 'package:jp_auction_arena/features/auction/domain/models/auction.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_rule_set.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_type.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/bid_increment_mode.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/bid_increment_tier.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.dart';
 import 'package:jp_auction_arena/features/auction/domain/services/auction_rule_engine.dart';
@@ -18,6 +19,7 @@ import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
 import 'package:jp_auction_arena/features/auth/data/repositories/demo_auth_repository.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/app_role.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/auth_user.dart';
+import 'package:jp_auction_arena/features/player/domain/models/player_category.dart';
 
 void main() {
   const engine = AuctionRuleEngine();
@@ -57,7 +59,19 @@ void main() {
   );
 
   group('AuctionRuleEngine', () {
-    test('selects thresholds and calculates the next bid', () {
+    test('calculates fixed increments', () {
+      const fixed = AuctionRuleSet(
+        auctionId: 'one',
+        bidIncrementMode: BidIncrementMode.fixed,
+        fixedBidIncrement: 750,
+        bidIncrementTiers: [],
+        allowUnsoldPlayerReentry: false,
+      );
+      expect(engine.incrementFor(fixed, 12000), 750);
+      expect(engine.nextBid(fixed, 12000), 12750);
+    });
+
+    test('selects tiered increments at inclusive boundaries', () {
       expect(engine.incrementFor(rules, 0), 500);
       expect(engine.incrementFor(rules, 9999), 500);
       expect(engine.incrementFor(rules, 10000), 1000);
@@ -65,7 +79,7 @@ void main() {
       expect(engine.nextBid(rules, 12000), 13000);
     });
 
-    test('rejects invalid auction rules and negative bids', () {
+    test('rejects overlapping or invalid bid ranges and negative bids', () {
       expect(
         () => engine.validate(
           const AuctionRuleSet(
@@ -90,10 +104,115 @@ void main() {
         throwsA(isA<AuctionValidationException>()),
       );
       expect(
+        () => engine.validate(
+          rules.copyWith(
+            bidIncrementTiers: const [
+              BidIncrementTier(
+                minimumBid: 0,
+                maximumBid: 10000,
+                increment: 500,
+              ),
+              BidIncrementTier(minimumBid: 9000, increment: 1000),
+            ],
+          ),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules.copyWith(
+            bidIncrementTiers: const [
+              BidIncrementTier(minimumBid: 0, maximumBid: -1, increment: 500),
+            ],
+          ),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
         () => engine.incrementFor(rules, -1),
         throwsA(isA<AuctionValidationException>()),
       );
     });
+
+    test('validates base prices, purse, squad, and category limits', () {
+      expect(
+        () => engine.validate(
+          rules.copyWith(defaultPlayerBasePrice: 0),
+          auction: _auction(id: 'one'),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules.copyWith(defaultPlayerBasePrice: 10000001),
+          auction: _auction(id: 'one'),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules,
+          auction: _auction(id: 'one').copyWith(totalPursePerTeam: 0),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules,
+          auction: _auction(id: 'one').copyWith(maxPlayersPerTeam: 5),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules.copyWith(
+            categoryMaximums: {
+              for (final category in PlayerCategory.values) category: 1,
+            },
+          ),
+          auction: _auction(id: 'one'),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+      expect(
+        () => engine.validate(
+          rules.copyWith(categoryMaximums: {PlayerCategory.batsman: 19}),
+          auction: _auction(id: 'one'),
+        ),
+        throwsA(isA<AuctionValidationException>()),
+      );
+    });
+
+    test(
+      'validates timer thresholds, extension limits, and optional limits',
+      () {
+        expect(
+          () => engine.validate(rules.copyWith(bidTimerSeconds: 4)),
+          throwsA(isA<AuctionValidationException>()),
+        );
+        expect(
+          () => engine.validate(rules.copyWith(warningThresholdSeconds: 30)),
+          throwsA(isA<AuctionValidationException>()),
+        );
+        expect(
+          () => engine.validate(
+            rules.copyWith(
+              bidTimerExtensionEnabled: true,
+              bidTimerExtensionSeconds: 121,
+              maximumBidTimerExtensions: 1,
+            ),
+          ),
+          throwsA(isA<AuctionValidationException>()),
+        );
+        expect(
+          () => engine.validate(
+            rules.copyWith(maximumOverseasPlayers: 19, maximumWicketkeepers: 1),
+            auction: _auction(id: 'one'),
+          ),
+          throwsA(isA<AuctionValidationException>()),
+        );
+      },
+    );
   });
 
   group('AuctionRuleManagementService', () {
@@ -112,6 +231,14 @@ void main() {
       );
       await expectLater(
         service.getRules(unassignedOperator, 'one'),
+        throwsA(isA<AuctionAuthorizationException>()),
+      );
+      await expectLater(
+        service.saveRules(manager, rules),
+        throwsA(isA<AuctionAuthorizationException>()),
+      );
+      await expectLater(
+        service.saveRules(unassignedOperator, rules),
         throwsA(isA<AuctionAuthorizationException>()),
       );
     });
@@ -153,7 +280,7 @@ void main() {
       final service = _service(auctions: [liveAuction]);
 
       await expectLater(
-        service.saveRules(admin, rules),
+        service.saveRules(admin, rules.copyWith(bidTimerSeconds: 45)),
         throwsA(isA<AuctionTransitionException>()),
       );
     });
@@ -193,24 +320,38 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Auction Settings & Rules'), findsOneWidget);
-    await tester.ensureVisible(find.text('Bid increments'));
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<TextFormField>(find.byType(TextFormField).at(1))
-          .controller
-          ?.text,
-      '1000',
+    expect(find.text('Auction Rules & Configuration'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Bid increment rules'),
+      500,
+      scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('tier-0-increment')), findsOneWidget);
 
     await tester.tap(find.text('Add increment tier'));
     await tester.pumpAndSettle();
-    final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(2), '10000');
-    await tester.enterText(fields.at(3), '1500');
-    await tester.ensureVisible(find.text('Save Auction Rules'));
-    await tester.tap(find.text('Save Auction Rules'));
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('tier-1-minimum')),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('tier-1-minimum')),
+      '10000',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('tier-1-increment')),
+      '1500',
+    );
+    await tester.scrollUntilVisible(
+      find.text('Save Rules'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Save Rules'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save Rules'));
     await tester.pumpAndSettle();
 
     final saved = await container

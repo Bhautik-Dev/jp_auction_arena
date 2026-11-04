@@ -133,24 +133,34 @@ auction execution remain future work.**
 
 ## Point 8 — Auction configuration and rule engine
 
-**Status: implemented locally; live execution and purse/squad management remain
-future work.**
+**Status: configuration and domain validation implemented locally; live
+execution and purse/squad tracking remain future work.**
 
-- Added per-auction bid increment tiers, with a default increment of 1,000
-  currency units from a zero bid threshold.
-- Added domain validation for non-empty auction IDs, a zero-based first tier,
-  strictly increasing thresholds, and positive increments. The rule engine
-  selects an increment at threshold boundaries and calculates the next bid.
-- Added an authorized rule-management service. Super Admins can manage any
-  auction; Tournament Admins / Auction Operators are restricted to assigned
-  auctions. Rule writes are limited to Draft and Ready auctions.
-- Expanded Auction Settings with responsive tier editing, a saved unsold-player
-  re-entry preference, loading/error handling, and per-auction in-memory
-  persistence.
-- The re-entry preference is configuration only; rounds and re-entry execution
-  are not implemented. Starting prices still come from each player registration.
-- This point does not implement team purse tracking, squad enforcement,
-  preparation checks, live bidding, transaction history, or durable storage.
+- Added per-auction fixed and tiered bid increments. Tiers support optional
+  inclusive maximums, reject invalid/overlapping ranges, and calculate the
+  increment and next valid bid. Fixed increments and tier boundaries are
+  covered by unit tests.
+- Added rule validation for positive purse/base prices, squad ordering,
+  category caps, optional overseas/wicketkeeper caps, timer/warning/extension
+  bounds, and unsold re-entry limits. Existing auction fields remain the source
+  for auction format/type, currency, team purse, and min/max squad size.
+- Added optional default and category-specific player base prices. Player
+  registration suggests the configured category/default value; the player
+  service enforces positive base prices that do not exceed the auction purse.
+- Added player order selection, bid timer and extension settings, category
+  limits, optional overseas/wicketkeeper limits, and unsold re-entry controls.
+- The responsive settings editor provides loading/error states, readable
+  summaries, and Save/Cancel. Auction Details show the saved rule summary.
+- Super Admin and assigned Tournament Admin / Auction Operator access is
+  enforced in the rule service. Rule writes are limited to Draft and Ready
+  auctions. Rules are isolated by auction ID and stored in memory.
+- Timer execution, player sequencing, category/overseas/wicketkeeper squad
+  enforcement, re-auction rounds, purse deductions, live bidding,
+  transactions, and durable persistence are not implemented. The player model
+  currently has no overseas-player attribute.
+- Verification on this checkout: `flutter analyze` passed; `flutter test`
+  passed (96 tests); `flutter build web --release` passed; `git diff --check`
+  passed.
 
 ## Remaining agreed points
 

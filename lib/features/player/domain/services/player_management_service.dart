@@ -63,11 +63,13 @@ class PlayerManagementService {
         'New players must start as available and unassigned.',
       );
     }
+    await _validateBasePrice(player);
     return _playerRepository.createPlayer(player);
   }
 
   Future<Player> update(AuthUser actor, Player player) async {
     await _authorize(actor, player.auctionId);
+    await _validateBasePrice(player);
     final existing = await _playerRepository.getPlayerById(player.id);
     if (existing == null || existing.auctionId != player.auctionId) {
       throw PlayerValidationException(
@@ -219,7 +221,29 @@ class PlayerManagementService {
     if (players.isEmpty) {
       throw const PlayerValidationException('CSV contains no player records.');
     }
+    for (final player in players) {
+      await _validateBasePrice(player);
+    }
     return _playerRepository.importPlayers(players);
+  }
+
+  Future<void> _validateBasePrice(Player player) async {
+    if (player.basePrice <= 0) {
+      throw const PlayerValidationException(
+        'Player base price must be greater than zero.',
+      );
+    }
+    final auction = await _auctionRepository.getAuctionById(player.auctionId);
+    if (auction == null) {
+      throw PlayerValidationException(
+        'Auction ${player.auctionId} was not found.',
+      );
+    }
+    if (player.basePrice > auction.totalPursePerTeam) {
+      throw const PlayerValidationException(
+        'Player base price cannot exceed the auction team purse.',
+      );
+    }
   }
 
   Future<String> exportCsv(AuthUser actor, String auctionId) async {

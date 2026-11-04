@@ -19,11 +19,18 @@
 - Player registrations are auction-scoped but are volatile in-memory records.
   Player team assignment and Sold/Unsold result operations are intentionally
   not part of player management and await later auction phases.
-- Bid increment tiers can be configured per auction and their selection/next
-  bid can be calculated by the domain rule engine. Rule sets are volatile
-  in-memory data and are not consumed by live bidding, which is not implemented.
-- Unsold-player re-entry is a stored preference only; auction rounds and
-  re-entry behavior are not implemented.
+- Auction rules are volatile in-memory data. Fixed/tiered increment
+  calculations, base-price defaults, timer settings, player ordering, category
+  caps, optional overseas/wicketkeeper limits, and re-entry preferences can be
+  configured and validated, but do not execute in a live auction.
+- Player base-price defaults are suggestions in registration; player base
+  prices are validated as positive and no greater than the auction purse.
+- Category, overseas-player, and wicketkeeper caps are stored settings only.
+  Overseas-player eligibility cannot be evaluated because Player has no
+  overseas attribute; squad assignment enforcement is deferred.
+- Player order, timer extensions, and unsold-player re-entry are stored
+  preferences only; auction sequencing, timer behavior, and re-auction rounds
+  are not implemented.
 - Purse/squad enforcement, auction preparation checks, transaction and audit
   ledgers, public/team live screens, and reports are not implemented.
 - Supabase, PostgreSQL, Node.js, Realtime, payments, push notifications,

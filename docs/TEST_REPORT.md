@@ -23,11 +23,13 @@ builds.
 ## Point 8 validation
 
 - `flutter analyze` — passed with no issues.
-- `flutter test` — passed, 92 tests.
+- `flutter test` — passed, 96 tests.
 - `flutter build web --release` — passed; output generated at `build/web`.
 - `git diff --check` — passed.
 
-Auction rule tests cover tier validation, threshold selection and next-bid
-calculation, role and operator-assignment checks, auction isolation,
-read-only enforcement after Live, and saving edited tiers from the responsive
-settings screen. These checks do not imply live bidding or durable persistence.
+Auction rule tests cover fixed/tiered calculations, tier boundaries and
+overlaps, base-price/purse/squad/category/timer validation, authorization,
+auction isolation, Live-status write locks, and editing/saving through the
+responsive settings screen. Player tests cover purse validation and configured
+category base-price suggestions. These checks do not imply live bidding,
+squad-limit enforcement, or durable persistence.

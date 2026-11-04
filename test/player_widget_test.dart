@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/theme/app_theme.dart';
 import 'package:jp_auction_arena/features/auction/data/repositories/in_memory_auction_repository.dart';
+import 'package:jp_auction_arena/features/auction/data/repositories/in_memory_auction_rule_set_repository.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/auction_rule_set.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/bid_increment_tier.dart';
 import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
 import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
 import 'package:jp_auction_arena/features/auth/data/repositories/demo_auth_repository.dart';
@@ -91,6 +94,22 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(fixture.auth),
           auctionRepositoryProvider.overrideWithValue(fixture.auctions),
+          auctionRuleSetRepositoryProvider.overrideWithValue(
+            InMemoryAuctionRuleSetRepository(
+              auctionRepository: fixture.auctions,
+              initialRules: {
+                'auction_one': const AuctionRuleSet(
+                  auctionId: 'auction_one',
+                  bidIncrementTiers: [
+                    BidIncrementTier(minimumBid: 0, increment: 1000),
+                  ],
+                  allowUnsoldPlayerReentry: false,
+                  defaultPlayerBasePrice: 20000,
+                  categoryBasePrices: {PlayerCategory.allRounder: 30000},
+                ),
+              },
+            ),
+          ),
           teamRepositoryProvider.overrideWithValue(fixture.teams),
           playerRepositoryProvider.overrideWithValue(fixture.players),
         ],
@@ -108,7 +127,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Enter a player name'), findsOneWidget);
     expect(find.text('Choose a category'), findsOneWidget);
-    expect(find.text('Enter a valid base price'), findsOneWidget);
+    expect(find.text('Enter a valid base price'), findsNothing);
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Player name'),
@@ -119,6 +138,15 @@ void main() {
         .widget<DropdownButtonFormField<PlayerCategory>>(categoryField);
     categoryWidget.onChanged!(PlayerCategory.allRounder);
     await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Base price'),
+          )
+          .controller
+          ?.text,
+      '30000',
+    );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Batting style'),
       'Right-hand bat',
@@ -126,10 +154,6 @@ void main() {
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Bowling style'),
       'Right-arm spin',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Base price'),
-      '25000',
     );
     await tester.ensureVisible(find.text('Add player'));
     await tester.tap(find.text('Add player'));

@@ -5,7 +5,7 @@ all future team/player registrations and auction transactions. The previous
 tournament-management URL redirects to Auctions; do not extend it as a general
 tournament product. Points 3-8 provide local demo authentication, role-aware
 navigation, auction management, auction-scoped team registration, and auction-scoped player
-registration, plus per-auction bid increment configuration.
+registration, plus per-auction auction-rule configuration.
 
 ## 1. Entry and access flow
 
@@ -72,9 +72,11 @@ flowchart LR
 4. **Auction Details:** event identity, date/time, format, status, configured
    team and squad limits, purse, progress, and lifecycle actions. Registered
    team and player counts come from their auction-scoped repositories.
-5. **Auction Settings:** configuration summary, per-auction bid increment
-   tiers, and the unsold-player re-entry preference. Rule configuration is
-   limited to Draft/Ready auctions and authorized admins/operators.
+5. **Auction Settings:** fixed/tiered bid increments, player base-price
+   defaults, category/optional player limits, timer and extension settings,
+   player order, and unsold re-entry configuration. Purse/currency and
+   min/max squad size are read from the auction configuration. Rule changes
+   require an authorized admin/operator and are locked after Live.
 6. **Auction History / Archives:** Completed and Archived auctions; records are
    retained and can be restored by an authorized admin/operator.
 
@@ -161,9 +163,9 @@ associated with an auction.
 
 These are reserved future routes, not yet working links or features:
 
-1. Auction Settings → configurable base-price policy, team purses,
-   squad/category limits, and blocking Ready checks. Bid increments are
-   configurable, but are not consumed by a live bidding workflow yet.
+1. Auction Settings → team purse tracking, squad/category enforcement,
+   overseas-player eligibility, and blocking Ready checks. Configured timer,
+   ordering, increment, and re-entry rules are not consumed by live bidding yet.
 2. Ready auction → authorized Live Auction Control Room.
 3. Live Auction → separate read-only projector, assigned team, and public
    displays; authorized operator commands only.

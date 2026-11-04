@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/features/auction/domain/errors/auction_exceptions.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/bid_increment_mode.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.dart';
 import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
@@ -129,6 +130,7 @@ class _AuctionDetailContent extends ConsumerWidget {
           label: 'Players per team',
           value: '${auction.minPlayersPerTeam}–${auction.maxPlayersPerTeam}',
         ),
+        _AuctionRuleSummary(auction: auction),
         const SizedBox(height: 16),
         Text('Auction progress', style: Theme.of(context).textTheme.titleLarge),
         _DetailRow(
@@ -187,9 +189,6 @@ class _AuctionDetailContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Auction rules and live bidding are planned for later phases.',
-        ),
       ],
     );
   }
@@ -212,6 +211,7 @@ class _AuctionDetailContent extends ConsumerWidget {
           ? 'Resume Auction'
           : 'Activate Auction';
     }
+
     if (next == AuctionStatus.paused) return 'Pause Auction';
     if (next == AuctionStatus.completed) return 'Complete Auction';
     return 'Archive Auction';
@@ -267,6 +267,62 @@ class _AuctionDetailContent extends ConsumerWidget {
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
+  }
+}
+
+class _AuctionRuleSummary extends ConsumerWidget {
+  const _AuctionRuleSummary({required this.auction});
+
+  final Auction auction;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rules = ref.watch(auctionRulesProvider(auction.id));
+    return rules.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: LinearProgressIndicator(),
+      ),
+      error: (error, stackTrace) => Card(
+        child: ListTile(
+          leading: const Icon(Icons.error_outline),
+          title: const Text('Auction rules unavailable'),
+          subtitle: Text('$error'),
+          trailing: IconButton(
+            tooltip: 'Retry loading auction rules',
+            onPressed: () => ref.invalidate(auctionRulesProvider(auction.id)),
+            icon: const Icon(Icons.refresh),
+          ),
+        ),
+      ),
+      data: (value) {
+        final bidSummary = value.bidIncrementMode == BidIncrementMode.fixed
+            ? 'Fixed increment: ${value.fixedBidIncrement}'
+            : 'Tiered increments: ${value.bidIncrementTiers.length} configured';
+        final configuredBasePrice =
+            value.defaultPlayerBasePrice ??
+            value.categoryBasePrices.values.firstOrNull;
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.tune),
+            title: const Text('Configured auction rules'),
+            subtitle: Text(
+              '$bidSummary · ${value.playerOrderMode.label} · '
+              'Bid timer ${value.bidTimerSeconds}s · '
+              'Warning ${value.warningThresholdSeconds}s · '
+              'Unsold re-entry ${value.allowUnsoldPlayerReentry ? 'enabled' : 'disabled'}'
+              '${configuredBasePrice == null ? '' : ' · Base price from $configuredBasePrice ${auction.baseCurrency}'}',
+            ),
+            trailing: IconButton(
+              tooltip: 'Edit auction rules',
+              onPressed: () =>
+                  context.go(RouteNames.auctionSettingsPath(auction.id)),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

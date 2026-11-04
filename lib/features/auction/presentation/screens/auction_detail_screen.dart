@@ -10,7 +10,10 @@ import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.d
 import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
 import 'package:jp_auction_arena/features/auction/presentation/widgets/auction_widgets.dart';
 import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
+import 'package:jp_auction_arena/features/auth/domain/models/app_permission.dart';
+import 'package:jp_auction_arena/features/auth/domain/models/role_permissions.dart';
 import 'package:jp_auction_arena/features/dashboard/application/dashboard_providers.dart';
+import 'package:jp_auction_arena/features/team/presentation/providers/team_providers.dart';
 import 'package:jp_auction_arena/shared/widgets/app_states.dart';
 
 class AuctionDetailScreen extends ConsumerWidget {
@@ -39,6 +42,17 @@ class _AuctionDetailContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref
+        .watch(authSessionProvider)
+        .whenOrNull(data: (value) => value);
+    final canManageTeams =
+        session != null &&
+        RolePermissions.allows(session.user.role, AppPermission.manageTeams) &&
+        RolePermissions.canAccessAuction(
+          session.user.role,
+          session.user.auctionIds,
+          auction.id,
+        );
     final localTime = TimeOfDay(
       hour: auction.startTimeMinutes ~/ 60,
       minute: auction.startTimeMinutes % 60,
@@ -87,15 +101,7 @@ class _AuctionDetailContent extends ConsumerWidget {
           'Teams and players',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.groups_outlined),
-            title: Text('Teams: Not registered'),
-            subtitle: Text(
-              'Auction-specific team registration is not implemented yet.',
-            ),
-          ),
-        ),
+        _AuctionTeamSummary(auctionId: auction.id, maxTeams: auction.maxTeams),
         const Card(
           child: ListTile(
             leading: Icon(Icons.sports_cricket_outlined),
@@ -151,6 +157,13 @@ class _AuctionDetailContent extends ConsumerWidget {
               icon: const Icon(Icons.tune),
               label: const Text('Auction Settings'),
             ),
+            if (canManageTeams)
+              OutlinedButton.icon(
+                onPressed: () =>
+                    context.go(RouteNames.auctionTeamsPath(auction.id)),
+                icon: const Icon(Icons.groups_outlined),
+                label: const Text('Manage Teams'),
+              ),
             ..._availableStatusActions(auction.status).map(
               (action) => FilledButton.tonal(
                 onPressed: () => _changeStatus(context, ref, action),
@@ -161,8 +174,7 @@ class _AuctionDetailContent extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         const Text(
-          'Team Management, Player Management, auction rules, and live bidding '
-          'will be connected in later phases. No unrelated screens are linked here.',
+          'Player Management, auction rules, and live bidding will be connected in later phases.',
         ),
       ],
     );
@@ -242,6 +254,36 @@ class _AuctionDetailContent extends ConsumerWidget {
       }
     }
   }
+}
+
+class _AuctionTeamSummary extends ConsumerWidget {
+  const _AuctionTeamSummary({required this.auctionId, required this.maxTeams});
+
+  final String auctionId;
+  final int maxTeams;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ref
+      .watch(teamsForAuctionProvider(auctionId))
+      .when(
+        loading: () => const Card(
+          child: ListTile(
+            leading: Icon(Icons.groups_outlined),
+            title: Text('Loading team registrations...'),
+          ),
+        ),
+        error: (error, stackTrace) => AppErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(teamsForAuctionProvider(auctionId)),
+        ),
+        data: (teams) => Card(
+          child: ListTile(
+            leading: const Icon(Icons.groups_outlined),
+            title: Text('Teams: ${teams.length} / $maxTeams registered'),
+            subtitle: const Text('Registrations are isolated to this auction.'),
+          ),
+        ),
+      );
 }
 
 class _DetailRow extends StatelessWidget {

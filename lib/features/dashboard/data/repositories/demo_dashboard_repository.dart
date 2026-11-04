@@ -29,10 +29,21 @@ class DemoDashboardRepository implements DashboardRepository {
     final allTeams = await _teamRepository.getTeams();
     final allPlayers = await _playerRepository.getPlayers();
     final allAuctions = await _auctionRepository.getAuctions();
-
+    final accessibleAuctions = switch (user.role) {
+      AppRole.superAdmin => allAuctions,
+      AppRole.tournamentAdmin =>
+        allAuctions.where((item) => user.auctionIds.contains(item.id)).toList(),
+      AppRole.teamManager || AppRole.publicViewer =>
+        allAuctions
+            .where((item) => item.status == auction_status.AuctionStatus.live)
+            .toList(),
+    };
+    final auctionIds = accessibleAuctions.map((auction) => auction.id).toSet();
     final accessibleTeams = switch (user.role) {
-      AppRole.superAdmin => allTeams,
-      AppRole.tournamentAdmin => <Team>[],
+      AppRole.superAdmin =>
+        allTeams.where((team) => auctionIds.contains(team.auctionId)).toList(),
+      AppRole.tournamentAdmin =>
+        allTeams.where((team) => auctionIds.contains(team.auctionId)).toList(),
       AppRole.teamManager =>
         allTeams.where((team) => user.teamIds.contains(team.id)).toList(),
       AppRole.publicViewer => <Team>[],
@@ -47,15 +58,6 @@ class DemoDashboardRepository implements DashboardRepository {
     final teamSummaries = accessibleTeams
         .map((team) => _teamSummary(team, allPlayers))
         .toList();
-    final accessibleAuctions = switch (user.role) {
-      AppRole.superAdmin => allAuctions,
-      AppRole.tournamentAdmin =>
-        allAuctions.where((item) => user.auctionIds.contains(item.id)).toList(),
-      AppRole.teamManager || AppRole.publicViewer =>
-        allAuctions
-            .where((item) => item.status == auction_status.AuctionStatus.live)
-            .toList(),
-    };
 
     final playerDescription = user.role == AppRole.teamManager
         ? 'Players assigned to your team in the local demo catalog.'
@@ -93,7 +95,15 @@ class DemoDashboardRepository implements DashboardRepository {
           )
           ? 'Live · bidding controls not implemented'
           : 'No live auction',
-      teamRegistrationProgress: 'Auction team registration is not implemented',
+      teamRegistrationProgress: switch (user.role) {
+        AppRole.superAdmin || AppRole.tournamentAdmin =>
+          '${accessibleTeams.length} teams registered across ${accessibleAuctions.length} accessible auctions.',
+        AppRole.teamManager =>
+          accessibleTeams.isEmpty
+              ? 'No assigned team registration is available.'
+              : 'Showing your assigned team only.',
+        AppRole.publicViewer => 'Team registration is not public.',
+      },
       playerRegistrationProgress:
           '${scopedPlayers.length} demo catalog entries · auction links unavailable',
       auctionConfigurationStatus: 'Not configured',

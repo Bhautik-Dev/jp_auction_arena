@@ -14,6 +14,10 @@ abstract final class RouteNames {
   static const tournamentDetail = '/app/tournaments/:tournamentId';
   static const tournamentEdit = '/app/tournaments/:tournamentId/edit';
   static const teams = '/app/teams';
+  static const auctionTeams = '/app/auctions/:auctionId/teams';
+  static const auctionTeamCreate = '/app/auctions/:auctionId/teams/create';
+  static const auctionTeamDetail = '/app/auctions/:auctionId/teams/:teamId';
+  static const auctionTeamEdit = '/app/auctions/:auctionId/teams/:teamId/edit';
   static const players = '/app/players';
   static const auctionSetup = '/app/auction/setup';
   static const liveAuction = '/app/auction/live';
@@ -33,4 +37,12 @@ abstract final class RouteNames {
   static String auctionEditPath(String id) => '${auctionDetailPath(id)}/edit';
   static String auctionSettingsPath(String id) =>
       '${auctionDetailPath(id)}/settings';
+  static String auctionTeamsPath(String auctionId) =>
+      '${auctionDetailPath(auctionId)}/teams';
+  static String auctionTeamCreatePath(String auctionId) =>
+      '${auctionTeamsPath(auctionId)}/create';
+  static String auctionTeamDetailPath(String auctionId, String teamId) =>
+      '${auctionTeamsPath(auctionId)}/${Uri.encodeComponent(teamId)}';
+  static String auctionTeamEditPath(String auctionId, String teamId) =>
+      '${auctionTeamDetailPath(auctionId, teamId)}/edit';
 }

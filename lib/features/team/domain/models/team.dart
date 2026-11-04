@@ -3,7 +3,8 @@ import 'package:jp_auction_arena/features/team/domain/models/team_status.dart';
 class Team {
   const Team({
     required this.id,
-    required this.tournamentId,
+    String? auctionId,
+    String? tournamentId,
     required this.name,
     required this.shortName,
     required this.primaryColorValue,
@@ -15,11 +16,17 @@ class Team {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.logoReference,
+    this.city = '',
+    this.description = '',
     this.hasAuctionActivity = false,
     this.hasPlayerAssignments = false,
-  });
+  }) : auctionId = auctionId ?? '',
+       tournamentId = tournamentId ?? '';
 
   final String id;
+  final String auctionId;
+  // Retained for compatibility with the earlier tournament demo records.
   final String tournamentId;
   final String name;
   final String shortName;
@@ -32,11 +39,15 @@ class Team {
   final TeamStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? logoReference;
+  final String city;
+  final String description;
   final bool hasAuctionActivity;
   final bool hasPlayerAssignments;
 
   Team copyWith({
     String? id,
+    String? auctionId,
     String? tournamentId,
     String? name,
     String? shortName,
@@ -49,10 +60,15 @@ class Team {
     TeamStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? logoReference,
+    bool clearLogoReference = false,
+    String? city,
+    String? description,
     bool? hasAuctionActivity,
     bool? hasPlayerAssignments,
   }) => Team(
     id: id ?? this.id,
+    auctionId: auctionId ?? this.auctionId,
     tournamentId: tournamentId ?? this.tournamentId,
     name: name ?? this.name,
     shortName: shortName ?? this.shortName,
@@ -65,6 +81,11 @@ class Team {
     status: status ?? this.status,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    logoReference: clearLogoReference
+        ? null
+        : logoReference ?? this.logoReference,
+    city: city ?? this.city,
+    description: description ?? this.description,
     hasAuctionActivity: hasAuctionActivity ?? this.hasAuctionActivity,
     hasPlayerAssignments: hasPlayerAssignments ?? this.hasPlayerAssignments,
   );

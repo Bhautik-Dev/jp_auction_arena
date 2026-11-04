@@ -18,3 +18,11 @@ class TeamCapacityExceededException extends TeamException {
 class TeamDeletionBlockedException extends TeamException {
   const TeamDeletionBlockedException(super.message);
 }
+
+class TeamAccessDeniedException extends TeamException {
+  const TeamAccessDeniedException(super.message);
+}
+
+class TeamAuctionLockedException extends TeamException {
+  const TeamAuctionLockedException(super.message);
+}

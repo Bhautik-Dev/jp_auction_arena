@@ -29,9 +29,14 @@ English is the interface language.
   in-memory repository state.
 - The dashboard is auction-first and shows repository-derived auction metrics;
   admins/operators have a prominent **CREATE NEW AUCTION** action.
-- Auction team/player counts are not yet registered. Existing team/player demo
-  screens/data are not linked to auction IDs and are not exposed as auction
-  details or public live data.
+- Point 6 adds auction-scoped team registration, search/status filters,
+  create/edit/details, archive/restore, CSV validation/import, and CSV export
+  through the clipboard. Auction details display registered team counts and
+  link to team management. Team purse and squad limits are inherited from the
+  auction configuration.
+- Legacy tournament demo teams and player fixtures remain for compatibility;
+  they are not treated as auction registrations. Player registration is not
+  implemented yet.
 - Data is in-memory and volatile. Demo seed data is synthetic. Authentication
   and route/role checks are client-side only.
 - No live bidding, transaction ledger, Supabase, PostgreSQL, Node.js API,
@@ -89,7 +94,7 @@ Flutter app
 │   ├── auth and role access
 │   ├── dashboard
 │   ├── auction (auction aggregate and lifecycle)
-│   ├── team (auction-scoped registrations; future)
+│   ├── team (auction-scoped registrations; Point 6 local implementation)
 │   ├── player (auction-scoped registrations; future)
 │   ├── auction_setup and auction_live (future)
 │   ├── team_portal and public_display (future)
@@ -121,7 +126,11 @@ layouts while preserving the same theme.
     /:auctionId
       /edit
       /settings
-  /teams                         (auction-scoped feature, future)
+      /teams
+        /create
+        /:teamId
+          /edit
+  /teams                         (auction selector and team list)
   /players                       (auction-scoped feature, future)
   /auction/setup                 (future)
   /auction/live                  (future)
@@ -154,7 +163,7 @@ remaining within the shared brand system.
 | Identity/access | Sessions, users, roles, auction/team assignments, permission policies | Auth repository; future trusted identity provider |
 | Auction management | Create/edit, lifecycle, details, settings, history, independent auction identity | Identity/access; auction repository |
 | Dashboard | Role-appropriate auction summaries and shortcuts | Identity/access; auction repository; scoped notifications |
-| Team management | Register teams, owners/managers, colors/logos, auction purse/squad allocation | Auction; identity/access |
+| Team management | Register teams, owners/managers, logo reference, contacts, and status; purse/squad values inherit auction settings | Auction; identity/access |
 | Player management | Profiles, auction registrations, category/base price/status, import/export | Auction; team where assignment applies |
 | Auction setup | Formats, base prices, increments, rules, purse/squad/category constraints, readiness | Auction, registered teams and players |
 | Live auction | Ordered session, authorized controls, bids, sold/unsold/unavailable outcomes | Auction setup; team/player registrations; transaction ledger |
@@ -207,11 +216,11 @@ common shell; they are not unrelated mini-apps.
 | 31 | Application Settings | Settings/support | User preferences; global settings for Super Admin |
 | 32 | Help and Support | Settings/support | All |
 
-Point 5 implements only Auction List, Create/Edit Auction, Auction Details,
-Auction Settings, and Auction History/Archives. Team/player registration,
-auction rules/increments, pre-check, live bidding, display, results, reporting,
-administration, and external services are future work unless explicitly
-identified otherwise in the roadmap.
+Points 5-6 implement Auction List, Create/Edit Auction, Auction Details,
+Auction Settings, Auction History/Archives, and auction-scoped Team
+Management. Player registration, auction rules/increments, pre-check, live
+bidding, display, results, reporting, administration, and external services
+remain future work unless explicitly identified otherwise in the roadmap.
 
 ## 7. User roles and permissions
 

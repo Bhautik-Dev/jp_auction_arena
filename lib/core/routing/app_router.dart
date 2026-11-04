@@ -20,6 +20,8 @@ import 'package:jp_auction_arena/features/player/presentation/screens/player_for
 import 'package:jp_auction_arena/features/player/presentation/screens/player_list_screen.dart';
 import 'package:jp_auction_arena/features/settings/presentation/screens/settings_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_list_screen.dart';
+import 'package:jp_auction_arena/features/team/presentation/screens/team_detail_screen.dart';
+import 'package:jp_auction_arena/features/team/presentation/screens/team_form_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/coming_soon_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/not_found_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/responsive_app_shell.dart';
@@ -140,6 +142,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => AuctionSettingsScreen(
                       auctionId: state.pathParameters['auctionId']!,
                     ),
+                  ),
+                  GoRoute(
+                    path: 'teams',
+                    name: 'auction-teams',
+                    builder: (context, state) => TeamListScreen(
+                      auctionId: state.pathParameters['auctionId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'create',
+                        name: 'auction-team-create',
+                        builder: (context, state) => TeamFormScreen(
+                          auctionId: state.pathParameters['auctionId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':teamId',
+                        name: 'auction-team-detail',
+                        builder: (context, state) => TeamDetailScreen(
+                          auctionId: state.pathParameters['auctionId']!,
+                          teamId: state.pathParameters['teamId']!,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: 'edit',
+                            name: 'auction-team-edit',
+                            builder: (context, state) => TeamFormScreen(
+                              auctionId: state.pathParameters['auctionId']!,
+                              teamId: state.pathParameters['teamId']!,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),

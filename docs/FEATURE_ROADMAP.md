@@ -9,14 +9,13 @@ purse configuration, rules, bid history, transactions, and results.
 
 The previous tournament-management implementation is retained in source and
 its legacy URL redirects to Auctions, but it is no longer the product's primary
-workflow. Do not extend it as a general tournament module. Existing demo team
-and player screens are not yet associated with auction IDs and are not linked
-from auction details.
+workflow. Do not extend it as a general tournament module. Legacy demo team
+and player records remain separate from auction registrations.
 
 Do not claim a future service is operational until implemented and tested.
 Points 1-4 establish the blueprint, Flutter foundation, demo authentication,
 roles, dashboard, and responsive navigation. Point 5 is auction creation and
-management. Stop after Point 5 and wait for approval before Point 6.
+management. Point 6 now establishes auction-scoped team registration.
 
 ## Point 1 — Product blueprint
 
@@ -35,15 +34,15 @@ management. Stop after Point 5 and wait for approval before Point 6.
 
 - Flutter, Riverpod, GoRouter, feature-based layers, shared components,
   responsive shell, and branded Material 3 theme are in place.
-- No extra dependencies or external services are introduced by Point 5.
+- No extra dependencies or external services were introduced by Points 5-6.
 
 ## CI failure remediation
 
 The supplied GitHub Actions run failed because baseline tests imported absent
 tournament/team/player models and repositories. Minimal in-memory contracts,
 models, and screens were added so those tests could compile. Those recovered
-team/player records remain demo foundations; they are not yet auction-scoped
-and must not be presented as complete auction registration.
+player records remain demo foundations. Legacy team fixtures remain for
+compatibility; new team registrations are auction-scoped.
 
 ## Point 3 — Authentication and roles
 
@@ -85,20 +84,42 @@ and must not be presented as complete auction registration.
   service. The repository independently enforces lifecycle and single-live
   invariants. Completed records are retained; no delete operation exists.
 - Storage is in-memory and volatile. Seed records are labelled demo data.
-  Auction team/player registration, bid rules, live bidding, transaction
-  history, cloud persistence, and server-side authorization are not implemented.
+  Player registration, bid rules, live bidding, transaction history, cloud
+  persistence, and server-side authorization are not implemented.
 
-## Proposed future sequence — approval required
+## Point 6 — Team management and registration
 
-| Point | Scope | Key exit criteria |
+**Status: implemented locally; backend persistence and file-based exchange remain
+future work.**
+
+- Added auction-linked team identity, logo reference, short name, owner/manager,
+  contacts, city, description, and Active/Inactive/Archived statuses.
+- Added auction-specific list/search/status filter, registration/edit/details,
+  archive/restore, and team CSV paste-import/clipboard-export.
+- Domain service enforces manage-team permissions, operator auction assignment,
+  auction availability, archived read-only behavior, and live-auction mutation
+  lock. Repository enforces auction capacity, same-auction uniqueness, and
+  auction isolation; bulk CSV validation occurs before writes.
+- Team purse and squad constraints are displayed from the parent auction and
+  are not duplicated on each team record.
+- Legacy tournament demo teams remain available for compatibility and the
+  demo team dashboard; they are excluded from auction registration lists.
+- Image upload, durable storage, Excel/file-based import/export, and
+  server-authoritative authorization are not implemented.
+
+## Remaining agreed points
+
+| Point | Scope | Current status |
 |---|---|---|
-| 6 — Auction team/player registration and settings | Auction-scoped team/player registration, purse allocations, player profiles, base prices, increments, squad/category rules, setup readiness | Every record scoped by auction ID; capacity and purse rules tested; import/export boundaries |
-| 7 — Trusted identity and persistence | Supabase Authentication/PostgreSQL and trusted authorization; Node.js API only where needed | Server-side role/auction isolation; durable migration and recovery design |
-| 8 — Live auction engine | Operator control room, bid/session state, player outcomes, append-only transactions and audit | Concurrency, single-live/session, purse consistency, reconnect and replay tests |
-| 9 — Auction displays, team view, results and reports | Projector/public read-only screens, assigned-team view, results and analytics | All views derived from the same authoritative auction transaction state |
-| 10 — Offline/LAN mode | SQLite cache and WebSocket local network mode | Single authority, durable event log, replay and cloud reconciliation |
-| 11 — Administration and operations | Notifications, audit, backup/restore, subscriptions/payments, white-label | Security, retention, entitlements, provider and recovery design |
-| 12 — Data exchange and hardening | CSV/Excel and future CricHeroes compatibility, accessibility and platform QA | Stable contracts and tested mappings; no compatibility claims before verification |
+| 7 | Player management and auction-scoped player registration | Not started |
+| 8 | Auction configuration and rule engine | Not started |
+| 9 | Team purse and squad management | Not started |
+| 10 | Auction preparation and player order | Not started |
+| 11-12 | Live auction control room and bidding engine | Not started |
+| 13-15 | Projector, team-owner mobile, and public live views | Not started |
+| 16-19 | Sold/unsold, results, reports, and auction history | Not started |
+| 20-23 | User administration, notifications, audit, and data exchange | Not started |
+| 24-29 | Offline/LAN, backend readiness, subscriptions, backup, branding, settings/support | Not started |
 
 ## Deferred capability coverage
 
@@ -107,11 +128,5 @@ increments, team purse and squad/category limits, player profiles/statistics,
 projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
 backup/recovery, white-label branding, subscriptions/payments, secure
 role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
-Realtime, CSV/Excel, and future CricHeroes compatibility are reserved. Only
-capabilities described as implemented under Points 1-5 are available now.
-
-## Approval gate
-
-Point 5 is complete. Stop and obtain explicit user approval before starting
-Point 6. Do not start team/player auction registration or live bidding without
-that approval.
+Realtime, Excel, and future CricHeroes compatibility are reserved. Only
+capabilities described as implemented under Points 1-6 are available now.

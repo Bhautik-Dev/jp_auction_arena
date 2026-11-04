@@ -57,14 +57,14 @@ abstract final class RouteAccessPolicy {
     if (_matches(path, RouteNames.dashboard)) {
       return AppPermission.viewDashboard;
     }
+    if (_matches(path, RouteNames.teams) || _isAuctionTeamPath(path)) {
+      return AppPermission.manageTeams;
+    }
     if (_matches(path, RouteNames.auctions)) {
       return AppPermission.manageAuctions;
     }
     if (_matches(path, RouteNames.tournaments)) {
       return AppPermission.manageTournaments;
-    }
-    if (_matches(path, RouteNames.teams)) {
-      return AppPermission.manageTeams;
     }
     if (_matches(path, RouteNames.players)) {
       return AppPermission.managePlayers;
@@ -96,11 +96,15 @@ abstract final class RouteAccessPolicy {
   static bool _isAuctionScoped(String path) =>
       path.startsWith(RouteNames.auctions) ||
       path.startsWith(RouteNames.teams) ||
+      _isAuctionTeamPath(path) ||
       path.startsWith(RouteNames.players) ||
       path.startsWith('/app/auction/') ||
       path.startsWith(RouteNames.results) ||
       path.startsWith(RouteNames.reports) ||
       path.startsWith(RouteNames.history);
+
+  static bool _isAuctionTeamPath(String path) =>
+      RegExp(r'^/app/auctions/[^/]+/teams(?:/|$)').hasMatch(path);
 
   static String? _auctionIdFrom(String path) {
     final match = RegExp(r'^/app/auctions/([^/]+)').firstMatch(path);

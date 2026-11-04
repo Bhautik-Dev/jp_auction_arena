@@ -36,9 +36,9 @@ flutter build web
   and shared state conventions.
 - `lib/shared/`: reusable components and responsive application shell.
 - `lib/features/`: feature-owned presentation, application, domain, and data
-  layers. Auction creation, pre-live configuration, status management, and
-  history use in-memory repositories. Team/player registration and live bidding
-  are not implemented or connected to auctions.
+  layers. Auction creation, team registration, status management, and history
+  use in-memory repositories. Player registration and live bidding are not
+  implemented.
 
 The legacy `/app/tournaments` URL redirects to Auctions; its source is retained
 for compatibility and is not the product's primary workflow.
@@ -63,13 +63,18 @@ real account credentials:
 | Team Owner / Team Manager | `team@demo.jp` | `DemoTeam!2026` |
 | Public Viewer | `viewer@demo.jp` | `DemoViewer!2026` |
 
-Auction records and demo authentication use in-memory local implementations;
-data is volatile and demo records are not real auctions. Live bidding,
-auction-specific team/player registrations, bid history, Supabase, PostgreSQL,
-Node.js services, payments, and realtime integrations are not connected.
+Auction and team records and demo authentication use in-memory local
+implementations; data is volatile and demo auction records are not real
+auctions. Team CSV import/export currently uses pasted text and the clipboard.
+Image upload, live bidding, player registration, bid history, Supabase,
+PostgreSQL, Node.js services, payments, and realtime integrations are not
+connected.
 Replace `AuthRepository` with a Supabase Authentication adapter only in a
 future approved phase.
 See [docs/APP_BLUEPRINT.md](docs/APP_BLUEPRINT.md),
 [docs/APP_NAVIGATION_FLOW.md](docs/APP_NAVIGATION_FLOW.md), and
-[docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md) for the agreed product
-direction and planned work.
+[docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md),
+[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md),
+[docs/TEST_REPORT.md](docs/TEST_REPORT.md), and
+[docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) for product direction,
+implementation status, validation, and limitations.

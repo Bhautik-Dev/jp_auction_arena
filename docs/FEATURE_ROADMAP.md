@@ -7,12 +7,12 @@
 - Deliver modules in dependency order, preserving a unified navigation and
   design system.
 - Do not describe planned services as operational until implemented and tested.
-- Point 1 is documentation and scope definition only. This file does not start
-  Point 2 or authorize implementation of the live auction.
+- Point 1 was documentation and scope definition only. Point 2 is complete;
+  Point 3 and later work require explicit approval.
 
 ## Point 1 — Complete app blueprint, requirements, and navigation flow
 
-**Status: documentation prepared; implementation intentionally not started.**
+**Status: completed.**
 
 - Define architecture, modules, all 32 requested screens, navigation, roles,
   permissions, logical data entities, invariants, and future integration
@@ -23,14 +23,31 @@
 - Do not add feature modules, implement live auction, or integrate Supabase,
   Node.js, authentication providers, realtime services, or payments in this
   point.
-- Wait for explicit approval before starting Point 2.
+
+## Point 2 — Project foundation and global app structure
+
+**Status: foundation implemented; feature modules intentionally not started.**
+
+- Added the app composition root, Material 3 brand themes, responsive shell,
+  Riverpod theme state, GoRouter destinations, shared widgets, and foundation
+  tests.
+- Dashboard and application settings are available. Planned tournament, team,
+  player, auction, results, reports, and history destinations are visibly
+  marked as coming soon and contain no feature business logic.
+- No external services or dependencies were added.
+- Tournament/team/player implementation remains a known gap from the inspected
+  baseline and is not restored or reimplemented in Point 2.
+- Focused foundation tests and the Web build pass. Repository-wide analysis and
+  the full test suite remain blocked by existing tests importing the absent
+  tournament/team/player feature source files.
 
 ## Baseline inspection and conflicts
 
-The manifest declares Flutter/Dart with Riverpod and GoRouter. The README
-describes a Material 3 theme, responsive navigation shell, dashboard
-placeholder, and in-memory tournament screens. Existing tests refer to the
-following earlier implementation behavior:
+The manifest declares Flutter/Dart with Riverpod and GoRouter. Before Point 2,
+the tracked `lib/` tree contained only `lib/main.dart`, which imported a missing
+`lib/app.dart`. The Point 2 work adds the foundation entry and shared app
+structure. Existing tests still refer to absent tournament/team/player
+implementations and describe intended earlier behavior:
 
 - Responsive compact and wide navigation, dark/light branded themes, dashboard
   navigation, and the tournament/team/player screens.
@@ -41,13 +58,11 @@ following earlier implementation behavior:
 - Player CRUD, filtering, positive base-price/name validation, optional contact
   and team assignment, and unknown-team assignment rejection.
 
-**Conflict found:** in the inspected worktree, `lib/` contains only
-`lib/main.dart`; it imports the missing `lib/app.dart`. The application,
-router, theme, tournament, team, and player source files referenced by the
-README and tests are absent from the tracked tree. The tests also import those
-missing files. Thus the repository's README and test suite describe intended
-or previously implemented functionality that is not present in the current
-tracked source snapshot. No source was restored or rewritten for Point 1.
+**Conflict found:** tournament, team, and player source files referenced by
+the existing test suite are absent from the tracked baseline. Their intended
+behavior is not claimed as working and has not been restored or reimplemented
+in Point 2. Foundation-specific tests were updated to verify only the current
+shell and implemented destinations.
 
 The manifest's current state management and navigation dependencies match the
 target direction. No checked-in evidence in the inspected source confirms
@@ -58,7 +73,6 @@ integration. These remain future work.
 
 | Phase | Scope | Prerequisites / exit criteria |
 |---|---|---|
-| Point 2 — Foundation and baseline recovery | Confirm the intended source baseline; restore or recreate only with approval; establish shared theme, responsive shell, route structure, Riverpod conventions, and passing app smoke tests | Resolve the missing-source conflict; preserve agreed product scope |
 | Point 3 — Tournament, team, and player foundation | Implement domain contracts, validation, in-memory/local repositories as appropriate, list/detail/forms, tournament lifecycle, team capacity, player registration, and import/export boundaries | Foundation; test core entity and lifecycle invariants |
 | Point 4 — Auction setup and pre-check | Support auction formats, configurable base prices, increments, rules, purses, squad/category limits, and blocking readiness checks | Tournament/team/player foundation; test constraints and one-active invariant |
 | Point 5 — Trusted identity and cloud persistence | Design and implement Supabase authentication/PostgreSQL access policies; add Node.js API only where trusted business logic requires it | Approved security/data design; role and tournament scoping tests |
@@ -99,4 +113,5 @@ approved future phase.
 
 ## Approval gate
 
-Stop after Point 1. Obtain explicit user approval before starting Point 2.
+Point 2 is complete. Stop here and obtain explicit user approval before
+starting Point 3.

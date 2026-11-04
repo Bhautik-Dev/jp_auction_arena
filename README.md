@@ -1,7 +1,8 @@
 # JP AUCTION ARENA
 
-Flutter application foundation for a responsive cricket auction management
-experience on web, Android, iOS, and Windows.
+Responsive Flutter application foundation for Web, Android, iOS, and Windows.
+The app uses Material 3, Riverpod, GoRouter, a shared JP AUCTION ARENA design
+system, and a responsive navigation shell.
 
 ## Requirements
 
@@ -24,8 +25,28 @@ run `flutter run -d <device-id>`.
 ```shell
 flutter analyze
 flutter test
+flutter build web
 ```
 
-The application currently provides its shared Material 3 design system,
-responsive navigation shell, dashboard placeholder, and the existing in-memory
-tournament screens. No backend or database is connected.
+## Project structure
+
+- `lib/app.dart`: root Flutter application composition.
+- `lib/core/`: configuration, routing, theme, responsive breakpoints, errors,
+  and shared state conventions.
+- `lib/shared/`: reusable components and responsive application shell.
+- `lib/features/`: feature-owned presentation, application, domain, and data
+  layers. Only the foundation dashboard and settings placeholder are currently
+  implemented; planned module destinations are marked as coming soon.
+
+Feature work should keep domain contracts independent of Flutter and data
+providers. Put feature-specific Riverpod providers/notifiers alongside their
+feature, expose repository contracts from the domain layer, and implement them
+in the data layer. Use `AsyncValue` with the shared async-state widgets for
+loading, error, and data rendering.
+
+The application currently uses local UI state only. There is no authentication,
+backend, database, auction engine, payment, or realtime service integration.
+See [docs/APP_BLUEPRINT.md](docs/APP_BLUEPRINT.md),
+[docs/APP_NAVIGATION_FLOW.md](docs/APP_NAVIGATION_FLOW.md), and
+[docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md) for the agreed product
+direction and planned work.

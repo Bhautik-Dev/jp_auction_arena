@@ -13,9 +13,5 @@ void main() {
     usePathUrlStrategy();
   }
 
-  runApp(
-    const ProviderScope(
-      child: JpAuctionArenaApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: JpAuctionArenaApp()));
 }

@@ -41,6 +41,13 @@ void main() {
     expect(updated.status, PlayerStatus.sold);
     expect(updated.assignedTeamId, 'team_001');
 
+    await expectLater(
+      repository.deletePlayer(created.id),
+      throwsA(isA<PlayerDeletionBlockedException>()),
+    );
+    await repository.updatePlayer(
+      updated.copyWith(status: PlayerStatus.available, clearAssignedTeam: true),
+    );
     expect(await repository.deletePlayer(created.id), isTrue);
     expect(await repository.getPlayerById(created.id), isNull);
   });

@@ -8,6 +8,10 @@ import 'package:jp_auction_arena/features/auth/domain/models/app_role.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/auth_user.dart';
 import 'package:jp_auction_arena/features/dashboard/application/dashboard_providers.dart';
 import 'package:jp_auction_arena/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:jp_auction_arena/features/player/domain/models/player.dart';
+import 'package:jp_auction_arena/features/player/domain/models/player_category.dart';
+import 'package:jp_auction_arena/features/player/domain/models/player_status.dart';
+import 'package:jp_auction_arena/features/player/presentation/providers/player_providers.dart';
 
 void main() {
   testWidgets('Super Admin sees auction metrics and create action', (
@@ -144,6 +148,53 @@ void main() {
     expect(publicSnapshot.teams, isEmpty);
     expect(teamSnapshot.role, AppRole.teamManager);
     expect(publicSnapshot.isDemoData, isTrue);
+  });
+
+  test('dashboard counts only auction-scoped player registrations', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final playerRepository = container.read(playerRepositoryProvider);
+    final now = DateTime(2026, 11, 4);
+    await playerRepository.createPlayer(
+      Player(
+        id: '',
+        auctionId: 'auction_001',
+        name: 'Auction Player',
+        category: PlayerCategory.batsman,
+        battingStyle: 'Right-hand bat',
+        bowlingStyle: '',
+        basePrice: 25000,
+        contactNumber: null,
+        status: PlayerStatus.available,
+        assignedTeamId: null,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    final repository = container.read(dashboardRepositoryProvider);
+    final admin = AuthUser(
+      id: 'admin',
+      email: 'admin@demo.jp',
+      displayName: 'Demo Admin',
+      role: AppRole.superAdmin,
+    );
+    final publicViewer = AuthUser(
+      id: 'viewer',
+      email: 'viewer@demo.jp',
+      displayName: 'Demo Viewer',
+      role: AppRole.publicViewer,
+    );
+
+    final adminSnapshot = await repository.loadForUser(admin);
+    final publicSnapshot = await repository.loadForUser(publicViewer);
+
+    expect(adminSnapshot.registeredPlayerCount, 1);
+    expect(adminSnapshot.playerRegistrationProgress, contains('1 player'));
+    expect(publicSnapshot.registeredPlayerCount, 0);
+    expect(
+      publicSnapshot.playerRegistrationProgress,
+      'Player registrations are not public.',
+    );
   });
 }
 

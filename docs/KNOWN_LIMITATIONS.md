@@ -10,10 +10,16 @@
   implemented.
 - Team CSV import requires pasted CSV text. Export copies CSV text to the
   clipboard. File downloads, file selection, Excel, and PDF are not included.
+- Player CSV import requires pasted CSV text. Export copies CSV text to the
+  clipboard. Player image fields are references only; no upload or storage is
+  implemented.
 - Team purse and squad limits are inherited and displayed from the parent
   auction. Team-level purse usage, player assignment, and squad tracking await
   later points.
-- Player auction registration, auction rules, live bidding, transaction and
-  audit ledgers, public/team live screens, and reports are not implemented.
+- Player registrations are auction-scoped but are volatile in-memory records.
+  Player team assignment and Sold/Unsold result operations are intentionally
+  not part of player management and await later auction phases.
+- Auction rules, live bidding, transaction and audit ledgers, public/team live
+  screens, and reports are not implemented.
 - Supabase, PostgreSQL, Node.js, Realtime, payments, push notifications,
   SQLite, and local-network synchronization are not connected.

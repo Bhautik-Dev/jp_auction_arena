@@ -15,7 +15,7 @@ and player records remain separate from auction registrations.
 Do not claim a future service is operational until implemented and tested.
 Points 1-4 establish the blueprint, Flutter foundation, demo authentication,
 roles, dashboard, and responsive navigation. Point 5 is auction creation and
-management. Point 6 now establishes auction-scoped team registration.
+management. Points 6-7 establish auction-scoped team and player registrations.
 
 ## Point 1 — Product blueprint
 
@@ -34,7 +34,7 @@ management. Point 6 now establishes auction-scoped team registration.
 
 - Flutter, Riverpod, GoRouter, feature-based layers, shared components,
   responsive shell, and branded Material 3 theme are in place.
-- No extra dependencies or external services were introduced by Points 5-6.
+- No extra dependencies or external services were introduced by Points 5-7.
 
 ## CI failure remediation
 
@@ -84,8 +84,8 @@ compatibility; new team registrations are auction-scoped.
   service. The repository independently enforces lifecycle and single-live
   invariants. Completed records are retained; no delete operation exists.
 - Storage is in-memory and volatile. Seed records are labelled demo data.
-  Player registration, bid rules, live bidding, transaction history, cloud
-  persistence, and server-side authorization are not implemented.
+  Bid rules, live bidding, transaction history, cloud persistence, and
+  server-side authorization are not implemented.
 
 ## Point 6 — Team management and registration
 
@@ -107,11 +107,33 @@ future work.**
 - Image upload, durable storage, Excel/file-based import/export, and
   server-authoritative authorization are not implemented.
 
+## Point 7 — Player management and auction-scoped registration
+
+**Status: implemented locally; durable storage, file-based exchange, and
+auction execution remain future work.**
+
+- Added auction ID and optional image reference to player registration while
+  retaining unscoped legacy fixtures for compatibility.
+- Added player list/search/category/status filters; create/edit forms; player
+  details and statistics; Available/Unavailable controls; and safe deletion
+  rules that retain Sold/Unsold results and team-assigned records.
+- Added domain-service role, assigned-auction, auction-existence, lifecycle,
+  and cross-auction team-assignment checks. Player registration and profile
+  changes are restricted to Draft/Ready auctions; auction outcomes cannot be
+  changed in this module.
+- Added atomic CSV paste-import and clipboard export. Repository writes are
+  serialized, names are unique within an auction, and every new registration
+  is scoped to one auction.
+- Added auction detail registration counts/links and dashboard counts derived
+  from accessible auction registrations. Team and public roles do not receive
+  the private player-management list.
+- Image upload, file downloads, Excel/PDF support, durable persistence,
+  Supabase, and server-authoritative authorization are not implemented.
+
 ## Remaining agreed points
 
 | Point | Scope | Current status |
 |---|---|---|
-| 7 | Player management and auction-scoped player registration | Not started |
 | 8 | Auction configuration and rule engine | Not started |
 | 9 | Team purse and squad management | Not started |
 | 10 | Auction preparation and player order | Not started |
@@ -129,4 +151,6 @@ projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
 backup/recovery, white-label branding, subscriptions/payments, secure
 role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
 Realtime, Excel, and future CricHeroes compatibility are reserved. Only
-capabilities described as implemented under Points 1-6 are available now.
+capabilities described under Points 1-7 are available locally as described
+above; deferred services remain unavailable until separately implemented and
+tested.

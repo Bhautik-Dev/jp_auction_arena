@@ -85,13 +85,13 @@ void main() {
 
     expect(find.text('Players').first, findsOneWidget);
     expect(find.text('Add Player'), findsOneWidget);
+    expect(find.text('No players registered'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Aarav Patel'));
+    await tester.tap(find.text('Add Player'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Player details'), findsOneWidget);
-    expect(find.text('Base price'), findsOneWidget);
+    expect(find.text('Player Registration'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

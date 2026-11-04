@@ -4,6 +4,7 @@ import 'package:jp_auction_arena/features/player/domain/models/player_status.dar
 
 abstract interface class PlayerRepository {
   Future<List<Player>> getPlayers({
+    String? auctionId,
     String? query,
     PlayerCategory? category,
     PlayerStatus? status,
@@ -14,6 +15,8 @@ abstract interface class PlayerRepository {
   Future<Player> createPlayer(Player player);
 
   Future<Player> updatePlayer(Player player);
+
+  Future<List<Player>> importPlayers(List<Player> players);
 
   Future<bool> deletePlayer(String id);
 }

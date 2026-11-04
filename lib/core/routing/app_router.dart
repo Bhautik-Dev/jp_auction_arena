@@ -177,6 +177,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       ),
                     ],
                   ),
+                  GoRoute(
+                    path: 'players',
+                    name: 'auction-players',
+                    builder: (context, state) => PlayerListScreen(
+                      auctionId: state.pathParameters['auctionId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'create',
+                        name: 'auction-player-create',
+                        builder: (context, state) => PlayerFormScreen(
+                          auctionId: state.pathParameters['auctionId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':playerId',
+                        name: 'auction-player-detail',
+                        builder: (context, state) => PlayerDetailScreen(
+                          auctionId: state.pathParameters['auctionId']!,
+                          playerId: state.pathParameters['playerId']!,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: 'edit',
+                            name: 'auction-player-edit',
+                            builder: (context, state) => PlayerFormScreen(
+                              auctionId: state.pathParameters['auctionId']!,
+                              playerId: state.pathParameters['playerId']!,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -190,20 +224,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RouteNames.players,
             name: 'players',
             builder: (context, state) => const PlayerListScreen(),
-            routes: [
-              GoRoute(
-                path: 'create',
-                name: 'player-create',
-                builder: (context, state) => const PlayerFormScreen(),
-              ),
-              GoRoute(
-                path: ':playerId',
-                name: 'player-detail',
-                builder: (context, state) => PlayerDetailScreen(
-                  playerId: state.pathParameters['playerId']!,
-                ),
-              ),
-            ],
           ),
           GoRoute(
             path: RouteNames.auctionSetup,

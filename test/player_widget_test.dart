@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/theme/app_theme.dart';
+import 'package:jp_auction_arena/features/auction/data/repositories/in_memory_auction_repository.dart';
+import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
+import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
+import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
+import 'package:jp_auction_arena/features/auth/data/repositories/demo_auth_repository.dart';
 import 'package:jp_auction_arena/features/player/data/repositories/in_memory_player_repository.dart';
 import 'package:jp_auction_arena/features/player/domain/models/player_category.dart';
 import 'package:jp_auction_arena/features/player/presentation/providers/player_providers.dart';
@@ -13,7 +18,7 @@ import 'package:jp_auction_arena/features/team/presentation/providers/team_provi
 import 'package:jp_auction_arena/features/tournament/data/repositories/in_memory_tournament_repository.dart';
 
 void main() {
-  testWidgets('player list displays player information and filters', (
+  testWidgets('auction player list displays and filters registrations', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1280, 900);
@@ -21,29 +26,18 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final tournamentRepository = InMemoryTournamentRepository(
-      simulatedDelay: Duration.zero,
-    );
-    final teamRepository = InMemoryTeamRepository(
-      tournamentRepository: tournamentRepository,
-      initialTeams: demoTeams,
-      simulatedDelay: Duration.zero,
-    );
-    final playerRepository = InMemoryPlayerRepository(
-      teamRepository: teamRepository,
-      initialPlayers: demoPlayers,
-      simulatedDelay: Duration.zero,
-    );
-
+    final fixture = await _fixture(withPlayers: true);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          teamRepositoryProvider.overrideWithValue(teamRepository),
-          playerRepositoryProvider.overrideWithValue(playerRepository),
+          authRepositoryProvider.overrideWithValue(fixture.auth),
+          auctionRepositoryProvider.overrideWithValue(fixture.auctions),
+          teamRepositoryProvider.overrideWithValue(fixture.teams),
+          playerRepositoryProvider.overrideWithValue(fixture.players),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
-          home: const PlayerListScreen(),
+          home: const PlayerListScreen(auctionId: 'auction_one'),
         ),
       ),
     );
@@ -51,7 +45,7 @@ void main() {
 
     expect(find.text('Players'), findsOneWidget);
     expect(find.text('Aarav Patel'), findsOneWidget);
-    expect(find.text('Batsman'), findsOneWidget);
+    expect(find.textContaining('Batsman'), findsOneWidget);
     expect(find.text('Available'), findsWidgets);
     expect(find.text('Gujarat Premier Auction Arena 2026'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -63,35 +57,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('player form validates and creates a player', (tester) async {
-    tester.view.physicalSize = const Size(900, 1000);
+  testWidgets('player form validates and registers in the selected auction', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 1100);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final tournaments = InMemoryTournamentRepository(
-      simulatedDelay: Duration.zero,
-    );
-    final teams = InMemoryTeamRepository(
-      tournamentRepository: tournaments,
-      initialTeams: demoTeams,
-      simulatedDelay: Duration.zero,
-    );
-    final players = InMemoryPlayerRepository(
-      teamRepository: teams,
-      initialPlayers: const [],
-      simulatedDelay: Duration.zero,
-    );
+    final fixture = await _fixture();
     final router = GoRouter(
-      initialLocation: '/players',
+      initialLocation: '/app/auctions/auction_one/players',
       routes: [
         GoRoute(
-          path: '/players',
-          builder: (context, state) => const PlayerListScreen(),
+          path: '/app/auctions/:auctionId/players',
+          builder: (context, state) =>
+              PlayerListScreen(auctionId: state.pathParameters['auctionId']!),
           routes: [
             GoRoute(
               path: 'create',
-              builder: (context, state) => const PlayerFormScreen(),
+              builder: (context, state) => PlayerFormScreen(
+                auctionId: state.pathParameters['auctionId']!,
+              ),
             ),
           ],
         ),
@@ -102,8 +89,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          teamRepositoryProvider.overrideWithValue(teams),
-          playerRepositoryProvider.overrideWithValue(players),
+          authRepositoryProvider.overrideWithValue(fixture.auth),
+          auctionRepositoryProvider.overrideWithValue(fixture.auctions),
+          teamRepositoryProvider.overrideWithValue(fixture.teams),
+          playerRepositoryProvider.overrideWithValue(fixture.players),
         ],
         child: MaterialApp.router(
           theme: AppTheme.darkTheme,
@@ -121,24 +110,93 @@ void main() {
     expect(find.text('Choose a category'), findsOneWidget);
     expect(find.text('Enter a valid base price'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'New Player');
-    await tester.tap(find.byType(DropdownButtonFormField<PlayerCategory>));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Player name'),
+      'New Player',
+    );
+    final categoryField = find.byType(DropdownButtonFormField<PlayerCategory>);
+    final categoryWidget = tester
+        .widget<DropdownButtonFormField<PlayerCategory>>(categoryField);
+    categoryWidget.onChanged!(PlayerCategory.allRounder);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('All-rounder').last);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).at(1), 'Right-hand bat');
-    await tester.enterText(find.byType(TextFormField).at(2), 'Right-arm spin');
-    await tester.enterText(find.byType(TextFormField).at(3), '25000');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Batting style'),
+      'Right-hand bat',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Bowling style'),
+      'Right-arm spin',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Base price'),
+      '25000',
+    );
     await tester.ensureVisible(find.text('Add player'));
     await tester.tap(find.text('Add player'));
     await tester.pumpAndSettle();
 
     expect(find.text('New Player'), findsWidgets);
-    expect(find.text('All-rounder'), findsOneWidget);
+    expect(find.textContaining('All-rounder'), findsOneWidget);
     expect(
-      (await players.getPlayers(query: 'New Player')).single.name,
+      (await fixture.players.getPlayers(
+        auctionId: 'auction_one',
+        query: 'New Player',
+      )).single.name,
       'New Player',
     );
     expect(tester.takeException(), isNull);
   });
+}
+
+Future<_Fixture> _fixture({bool withPlayers = false}) async {
+  final auction = demoAuctions.first.copyWith(
+    id: 'auction_one',
+    status: AuctionStatus.draft,
+  );
+  final auctions = InMemoryAuctionRepository(initialAuctions: [auction]);
+  final tournaments = InMemoryTournamentRepository(
+    simulatedDelay: Duration.zero,
+  );
+  final teams = InMemoryTeamRepository(
+    auctionRepository: auctions,
+    tournamentRepository: tournaments,
+    simulatedDelay: Duration.zero,
+  );
+  final players = InMemoryPlayerRepository(
+    auctionRepository: auctions,
+    teamRepository: teams,
+    initialPlayers: withPlayers
+        ? [
+            for (final player in demoPlayers)
+              player.copyWith(auctionId: 'auction_one'),
+          ]
+        : const [],
+    simulatedDelay: Duration.zero,
+  );
+  final auth = DemoAuthRepository();
+  await auth.signIn(
+    email: 'admin@demo.jp',
+    password: 'DemoAdmin!2026',
+    rememberMe: false,
+  );
+  return _Fixture(
+    auctions: auctions,
+    teams: teams,
+    players: players,
+    auth: auth,
+  );
+}
+
+class _Fixture {
+  const _Fixture({
+    required this.auctions,
+    required this.teams,
+    required this.players,
+    required this.auth,
+  });
+
+  final InMemoryAuctionRepository auctions;
+  final InMemoryTeamRepository teams;
+  final InMemoryPlayerRepository players;
+  final DemoAuthRepository auth;
 }

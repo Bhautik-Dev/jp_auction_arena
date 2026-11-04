@@ -27,6 +27,9 @@ English is the interface language.
 - Point 5 implements auction list/search/status filtering/date sorting,
   create/edit, details, settings, history/archive, lifecycle validation, and
   in-memory repository state.
+- Point 7 implements auction-scoped player registration, profile details,
+  search/category/status filters, pre-live edits, availability, CSV text
+  import/export, role checks, and safe retention of auction outcomes.
 - The dashboard is auction-first and shows repository-derived auction metrics;
   admins/operators have a prominent **CREATE NEW AUCTION** action.
 - Point 6 adds auction-scoped team registration, search/status filters,
@@ -34,9 +37,8 @@ English is the interface language.
   through the clipboard. Auction details display registered team counts and
   link to team management. Team purse and squad limits are inherited from the
   auction configuration.
-- Legacy tournament demo teams and player fixtures remain for compatibility;
-  they are not treated as auction registrations. Player registration is not
-  implemented yet.
+- Legacy tournament demo teams and unscoped player fixtures remain for
+  compatibility; they are not treated as auction registrations.
 - Data is in-memory and volatile. Demo seed data is synthetic. Authentication
   and route/role checks are client-side only.
 - No live bidding, transaction ledger, Supabase, PostgreSQL, Node.js API,
@@ -131,7 +133,11 @@ layouts while preserving the same theme.
         /:teamId
           /edit
   /teams                         (auction selector and team list)
-  /players                       (auction-scoped feature, future)
+  /players                       (auction selector and scoped player list)
+  /auctions/:auctionId/players
+    /create
+    /:playerId
+      /edit
   /auction/setup                 (future)
   /auction/live                  (future)
   /results                       (future)
@@ -164,7 +170,7 @@ remaining within the shared brand system.
 | Auction management | Create/edit, lifecycle, details, settings, history, independent auction identity | Identity/access; auction repository |
 | Dashboard | Role-appropriate auction summaries and shortcuts | Identity/access; auction repository; scoped notifications |
 | Team management | Register teams, owners/managers, logo reference, contacts, and status; purse/squad values inherit auction settings | Auction; identity/access |
-| Player management | Profiles, auction registrations, category/base price/status, import/export | Auction; team where assignment applies |
+| Player management | Auction-owned profiles and registrations, category/base price/status, stats, import/export | Auction; team where assignment applies |
 | Auction setup | Formats, base prices, increments, rules, purse/squad/category constraints, readiness | Auction, registered teams and players |
 | Live auction | Ordered session, authorized controls, bids, sold/unsold/unavailable outcomes | Auction setup; team/player registrations; transaction ledger |
 | Team portal | Assigned-team purse, roster, progress, and results; read-only | Auction, team, live auction/results |
@@ -216,11 +222,12 @@ common shell; they are not unrelated mini-apps.
 | 31 | Application Settings | Settings/support | User preferences; global settings for Super Admin |
 | 32 | Help and Support | Settings/support | All |
 
-Points 5-6 implement Auction List, Create/Edit Auction, Auction Details,
-Auction Settings, Auction History/Archives, and auction-scoped Team
-Management. Player registration, auction rules/increments, pre-check, live
-bidding, display, results, reporting, administration, and external services
-remain future work unless explicitly identified otherwise in the roadmap.
+Points 5-7 implement Auction List, Create/Edit Auction, Auction Details,
+Auction Settings, Auction History/Archives, auction-scoped Team Management,
+and auction-scoped Player Management. Auction rules/increments, pre-check,
+live bidding, display, results, reporting, administration, and external
+services remain future work unless explicitly identified otherwise in the
+roadmap.
 
 ## 7. User roles and permissions
 
@@ -234,7 +241,7 @@ assignment checks on the client/service layer only.
 | View/manage auctions | All | Assigned auction IDs | Approved assigned/public view only | Published public view only |
 | Edit auction settings | All before Live | Assigned, before Live | No | No |
 | Activate, pause, complete, archive/restore | All | Assigned auction | No | No |
-| Manage auction teams and player registrations | All, when feature exists | Assigned auction | Assigned team view only | Published data only |
+| Manage auction teams and player registrations | All | Assigned auction | No direct registration management | No |
 | Configure purse, squad, base prices, rules | All, when feature exists | Assigned auction | View only applicable team limits | No |
 | Operate live bidding | All with audit | Assigned/authorized operator | No | No |
 | Place/control bids | Admin action path only; auditable | Authorized operator on behalf of auction | No | No |
@@ -250,7 +257,9 @@ bid.
 ## 8. Data model and relationships
 
 This is the logical target model, not a committed SQL schema. Auction identity
-is the root isolation boundary.
+is the root isolation boundary. The local Point 7 model keeps player profile
+fields on an auction-owned registration; reusable global player profiles are
+not implemented. Legacy unscoped demo players remain outside auction lists.
 
 ```mermaid
 erDiagram

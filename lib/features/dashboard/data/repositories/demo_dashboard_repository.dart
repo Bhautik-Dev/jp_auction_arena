@@ -49,19 +49,28 @@ class DemoDashboardRepository implements DashboardRepository {
       AppRole.publicViewer => <Team>[],
     };
 
-    final scopedPlayers = user.role == AppRole.teamManager
-        ? allPlayers
-              .where((player) => user.teamIds.contains(player.assignedTeamId))
-              .toList()
-        : allPlayers;
+    final scopedPlayers = switch (user.role) {
+      AppRole.superAdmin || AppRole.tournamentAdmin =>
+        allPlayers
+            .where((player) => auctionIds.contains(player.auctionId))
+            .toList(),
+      AppRole.teamManager =>
+        allPlayers
+            .where((player) => user.teamIds.contains(player.assignedTeamId))
+            .toList(),
+      AppRole.publicViewer => <Player>[],
+    };
 
     final teamSummaries = accessibleTeams
         .map((team) => _teamSummary(team, allPlayers))
         .toList();
 
-    final playerDescription = user.role == AppRole.teamManager
-        ? 'Players assigned to your team in the local demo catalog.'
-        : 'Player catalog entries are not linked to auctions yet.';
+    final playerDescription = switch (user.role) {
+      AppRole.superAdmin || AppRole.tournamentAdmin =>
+        'Auction-scoped player registrations in the local demo repository.',
+      AppRole.teamManager => 'Players assigned to your team in the local demo.',
+      AppRole.publicViewer => 'Player registrations are not public.',
+    };
 
     return DashboardSnapshot(
       role: user.role,
@@ -104,8 +113,14 @@ class DemoDashboardRepository implements DashboardRepository {
               : 'Showing your assigned team only.',
         AppRole.publicViewer => 'Team registration is not public.',
       },
-      playerRegistrationProgress:
-          '${scopedPlayers.length} demo catalog entries · auction links unavailable',
+      playerRegistrationProgress: switch (user.role) {
+        AppRole.superAdmin || AppRole.tournamentAdmin =>
+          '${scopedPlayers.length} '
+              '${scopedPlayers.length == 1 ? 'player' : 'players'} registered across accessible auctions.',
+        AppRole.teamManager =>
+          '${scopedPlayers.length} player profiles assigned to your team.',
+        AppRole.publicViewer => 'Player registrations are not public.',
+      },
       auctionConfigurationStatus: 'Not configured',
       recentActivity: _activityFor(user.role),
       notifications: _notificationsFor(user.role),

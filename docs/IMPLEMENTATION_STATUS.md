@@ -14,11 +14,15 @@ claim production readiness or completion of the full product scope.
 - **Point 6:** auction-scoped team registration, editing, search/status
   filtering, details, archive/restore, CSV text import/export, role and
   operator-assignment checks, auction capacity and duplicate checks.
+- **Point 7:** auction-scoped player registration, profile/statistics,
+  search/category/status filters, pre-live edits, availability, CSV text
+  import/export, route/service access checks, auction isolation, and safe
+  retention of sold/unsold registrations.
 
 ## Remaining scope
 
-Points 7-29 remain incomplete: auction-scoped player registration; auction
-rules and preparation; purse/squad tracking; live auction and bidding; projector,
+Points 8-29 remain incomplete: auction rules and preparation; purse/squad
+tracking; live auction and bidding; projector,
 team-owner and public live views; sold/unsold administration; results and
 analytics; user administration; notifications; audit and transaction ledger;
 file-based CSV/Excel/PDF exchange; offline/LAN mode; cloud backend; payments;
@@ -26,7 +30,7 @@ backup/restore; white-label; and support/settings expansion.
 
 ## Persistence and security
 
-Current auction/team repositories are local in-memory implementations. Data
-does not survive app restarts. Demo authentication and role checks are not
-production security; trusted server-side authorization and database policies
-are required before release.
+Current auction/team/player repositories are local in-memory implementations.
+Data does not survive app restarts. Demo authentication and role checks are
+not production security; trusted server-side authorization and database
+policies are required before release.

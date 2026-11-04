@@ -26,6 +26,23 @@ abstract final class RouteAccessPolicy {
           user.teamIds.isNotEmpty;
     }
 
+    if (_isAuctionPlayerPath(path) || _matches(path, RouteNames.players)) {
+      if (!RolePermissions.allows(user.role, AppPermission.managePlayers)) {
+        return false;
+      }
+      if (user.role == AppRole.tournamentAdmin) {
+        final auctionId = _auctionIdFrom(path);
+        return auctionId == null
+            ? user.auctionIds.isNotEmpty
+            : RolePermissions.canAccessAuction(
+                user.role,
+                user.auctionIds,
+                auctionId,
+              );
+      }
+      return true;
+    }
+
     if (path.startsWith('/live/')) {
       return RolePermissions.allows(user.role, AppPermission.viewPublicLive);
     }
@@ -66,7 +83,7 @@ abstract final class RouteAccessPolicy {
     if (_matches(path, RouteNames.tournaments)) {
       return AppPermission.manageTournaments;
     }
-    if (_matches(path, RouteNames.players)) {
+    if (_matches(path, RouteNames.players) || _isAuctionPlayerPath(path)) {
       return AppPermission.managePlayers;
     }
     if (_matches(path, RouteNames.auctionSetup)) {
@@ -98,6 +115,7 @@ abstract final class RouteAccessPolicy {
       path.startsWith(RouteNames.teams) ||
       _isAuctionTeamPath(path) ||
       path.startsWith(RouteNames.players) ||
+      _isAuctionPlayerPath(path) ||
       path.startsWith('/app/auction/') ||
       path.startsWith(RouteNames.results) ||
       path.startsWith(RouteNames.reports) ||
@@ -105,6 +123,9 @@ abstract final class RouteAccessPolicy {
 
   static bool _isAuctionTeamPath(String path) =>
       RegExp(r'^/app/auctions/[^/]+/teams(?:/|$)').hasMatch(path);
+
+  static bool _isAuctionPlayerPath(String path) =>
+      RegExp(r'^/app/auctions/[^/]+/players(?:/|$)').hasMatch(path);
 
   static String? _auctionIdFrom(String path) {
     final match = RegExp(r'^/app/auctions/([^/]+)').firstMatch(path);

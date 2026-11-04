@@ -36,9 +36,8 @@ flutter build web
   and shared state conventions.
 - `lib/shared/`: reusable components and responsive application shell.
 - `lib/features/`: feature-owned presentation, application, domain, and data
-  layers. Auction creation, team registration, status management, and history
-  use in-memory repositories. Player registration and live bidding are not
-  implemented.
+  layers. Auction creation, team/player registration, status management, and
+  history use in-memory repositories. Live bidding is not implemented.
 
 The legacy `/app/tournaments` URL redirects to Auctions; its source is retained
 for compatibility and is not the product's primary workflow.
@@ -63,12 +62,11 @@ real account credentials:
 | Team Owner / Team Manager | `team@demo.jp` | `DemoTeam!2026` |
 | Public Viewer | `viewer@demo.jp` | `DemoViewer!2026` |
 
-Auction and team records and demo authentication use in-memory local
+Auction, team, and player records and demo authentication use in-memory local
 implementations; data is volatile and demo auction records are not real
-auctions. Team CSV import/export currently uses pasted text and the clipboard.
-Image upload, live bidding, player registration, bid history, Supabase,
-PostgreSQL, Node.js services, payments, and realtime integrations are not
-connected.
+auctions. Team and player CSV import/export currently use pasted text and the
+clipboard. Image upload, live bidding, bid history, Supabase, PostgreSQL,
+Node.js services, payments, and realtime integrations are not connected.
 Replace `AuthRepository` with a Supabase Authentication adapter only in a
 future approved phase.
 See [docs/APP_BLUEPRINT.md](docs/APP_BLUEPRINT.md),

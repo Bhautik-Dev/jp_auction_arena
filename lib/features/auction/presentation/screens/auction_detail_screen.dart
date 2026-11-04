@@ -14,6 +14,7 @@ import 'package:jp_auction_arena/features/auth/domain/models/app_permission.dart
 import 'package:jp_auction_arena/features/auth/domain/models/role_permissions.dart';
 import 'package:jp_auction_arena/features/dashboard/application/dashboard_providers.dart';
 import 'package:jp_auction_arena/features/team/presentation/providers/team_providers.dart';
+import 'package:jp_auction_arena/features/player/presentation/providers/player_providers.dart';
 import 'package:jp_auction_arena/shared/widgets/app_states.dart';
 
 class AuctionDetailScreen extends ConsumerWidget {
@@ -48,6 +49,17 @@ class _AuctionDetailContent extends ConsumerWidget {
     final canManageTeams =
         session != null &&
         RolePermissions.allows(session.user.role, AppPermission.manageTeams) &&
+        RolePermissions.canAccessAuction(
+          session.user.role,
+          session.user.auctionIds,
+          auction.id,
+        );
+    final canManagePlayers =
+        session != null &&
+        RolePermissions.allows(
+          session.user.role,
+          AppPermission.managePlayers,
+        ) &&
         RolePermissions.canAccessAuction(
           session.user.role,
           session.user.auctionIds,
@@ -102,14 +114,9 @@ class _AuctionDetailContent extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         _AuctionTeamSummary(auctionId: auction.id, maxTeams: auction.maxTeams),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.sports_cricket_outlined),
-            title: Text('Players: Not registered'),
-            subtitle: Text(
-              'Auction-specific player registration is not implemented yet.',
-            ),
-          ),
+        _AuctionPlayerSummary(
+          auctionId: auction.id,
+          canManagePlayers: canManagePlayers,
         ),
         const SizedBox(height: 16),
         Text(
@@ -164,6 +171,13 @@ class _AuctionDetailContent extends ConsumerWidget {
                 icon: const Icon(Icons.groups_outlined),
                 label: const Text('Manage Teams'),
               ),
+            if (canManagePlayers)
+              OutlinedButton.icon(
+                onPressed: () =>
+                    context.go(RouteNames.auctionPlayersPath(auction.id)),
+                icon: const Icon(Icons.sports_cricket_outlined),
+                label: const Text('Manage Players'),
+              ),
             ..._availableStatusActions(auction.status).map(
               (action) => FilledButton.tonal(
                 onPressed: () => _changeStatus(context, ref, action),
@@ -174,7 +188,7 @@ class _AuctionDetailContent extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         const Text(
-          'Player Management, auction rules, and live bidding will be connected in later phases.',
+          'Auction rules and live bidding are planned for later phases.',
         ),
       ],
     );
@@ -284,6 +298,67 @@ class _AuctionTeamSummary extends ConsumerWidget {
           ),
         ),
       );
+}
+
+class _AuctionPlayerSummary extends ConsumerWidget {
+  const _AuctionPlayerSummary({
+    required this.auctionId,
+    required this.canManagePlayers,
+  });
+
+  final String auctionId;
+  final bool canManagePlayers;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!canManagePlayers) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.sports_cricket_outlined),
+          title: Text('Player registrations are private'),
+        ),
+      );
+    }
+    return ref
+        .watch(
+          playersForAuctionProvider((
+            auctionId: auctionId,
+            query: '',
+            category: null,
+            status: null,
+          )),
+        )
+        .when(
+          loading: () => const Card(
+            child: ListTile(
+              leading: Icon(Icons.sports_cricket_outlined),
+              title: Text('Loading player registrations...'),
+            ),
+          ),
+          error: (error, stackTrace) => AppErrorState(
+            error: error,
+            onRetry: () => ref.invalidate(
+              playersForAuctionProvider((
+                auctionId: auctionId,
+                query: '',
+                category: null,
+                status: null,
+              )),
+            ),
+          ),
+          data: (players) => Card(
+            child: ListTile(
+              leading: const Icon(Icons.sports_cricket_outlined),
+              title: Text('Players: ${players.length} registered'),
+              subtitle: const Text(
+                'Player profiles belong to this auction only.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go(RouteNames.auctionPlayersPath(auctionId)),
+            ),
+          ),
+        );
+  }
 }
 
 class _DetailRow extends StatelessWidget {

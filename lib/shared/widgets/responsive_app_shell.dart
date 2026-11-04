@@ -191,7 +191,10 @@ class ResponsiveAppShell extends ConsumerWidget {
           (destination) =>
               path == destination.path ||
               (destination.path == RouteNames.players &&
-                  path.startsWith('${RouteNames.players}/')),
+                  (path.startsWith('${RouteNames.players}/') ||
+                      RegExp(
+                        r'^/app/auctions/[^/]+/players(?:/|$)',
+                      ).hasMatch(path))),
         )
         .clamp(0, destinations.length - 1)
         .toInt();
@@ -301,22 +304,21 @@ class _DesktopSidebar extends StatelessWidget {
                     ),
                   ),
                 ),
-                destinations:
-                    [...destinations, ...ResponsiveAppShell._planned]
-                        .map(
-                          (destination) => NavigationRailDestination(
-                            icon: Icon(destination.icon),
-                            label: Text(
-                              destination.enabled
-                                  ? destination.label
-                                  : '${destination.label} - Soon',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            disabled: !destination.enabled,
-                          ),
-                        )
-                        .toList(),
+                destinations: [...destinations, ...ResponsiveAppShell._planned]
+                    .map(
+                      (destination) => NavigationRailDestination(
+                        icon: Icon(destination.icon),
+                        label: Text(
+                          destination.enabled
+                              ? destination.label
+                              : '${destination.label} - Soon',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        disabled: !destination.enabled,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ),

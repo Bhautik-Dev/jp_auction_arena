@@ -4,7 +4,8 @@ The application is auction-first: an Auction is the primary workflow and owns
 all future team/player registrations and auction transactions. The previous
 tournament-management URL redirects to Auctions; do not extend it as a general
 tournament product. Points 3-6 provide local demo authentication, role-aware
-navigation, auction management, and auction-scoped team registration.
+navigation, auction management, auction-scoped team registration, and auction-scoped player
+registration.
 
 ## 1. Entry and access flow
 
@@ -49,7 +50,11 @@ flowchart LR
     TL --> TD[Team Details]
     TD --> TA[Archive / Restore]
     TL --> TI[CSV Import / Export]
-    V -. future .-> PM[Auction Player Management]
+    V --> PM[Auction Player Management]
+    PM --> PL[Player List / Search / Filters]
+    PL --> PR[Register / Edit Player]
+    PL --> PD[Player Profile]
+    PL --> PI[CSV Import / Export]
     V -. future .-> CFG[Auction Rules and Pre-check]
     CFG -. future .-> LIVE[Live Bidding Control Room]
     LIVE -. future .-> DISP[Projector / Team / Public Views]
@@ -65,8 +70,7 @@ flowchart LR
    Completed, and Archived auction configuration is locked.
 4. **Auction Details:** event identity, date/time, format, status, configured
    team and squad limits, purse, progress, and lifecycle actions. Registered
-   team count now comes from the auction-scoped team repository; player count
-   remains unregistered until Point 7.
+   team and player counts come from their auction-scoped repositories.
 5. **Auction Settings:** configuration summary and edit entry point. Bid
    increments/rules are not yet implemented.
 6. **Auction History / Archives:** Completed and Archived auctions; records are
@@ -90,6 +94,23 @@ Auction Details links to teams only for roles with team-management permission.
 The general Teams destination lets an authorized user select an accessible
 auction. Operators are limited to assigned auction IDs. Team Managers and
 Public Viewers cannot access management routes.
+
+### Implemented Point 7 player screens
+
+1. **Auction Player List:** auction-scoped search, category/status filters,
+   player count, pre-live add action, and CSV paste-import/clipboard-export.
+2. **Register / Edit Player:** name, image reference, age, category, batting
+   and bowling styles, base price, optional contact, and cricket statistics.
+3. **Player Details:** profile and statistics, pre-live edit, and
+   Available/Unavailable changes. Sold/Unsold records are protected from
+   player-management edits and deletion.
+
+The general Players destination selects from auctions available to the signed
+in user. The auction detail route links directly to the corresponding player
+list. Registration, editing, availability changes, and imports are limited to
+Draft/Ready auctions and authorized admins/operators. Each registration
+belongs to exactly one auction; a team assignment must belong to that same
+auction. CSV exchange currently uses pasted text and the clipboard.
 
 ## 3. Auction lifecycle and invariants
 
@@ -117,8 +138,8 @@ stateDiagram-v2
   existing bid/transaction history. Live bidding and transaction history are
   not implemented in Point 5.
 - Separate auctions have separate IDs and repository records. Team/player
-  registration, bid history, rules, and results are future auction-scoped
-  entities; no cross-auction registration is implemented yet.
+  registrations are auction-scoped; bid history, rules, and results remain
+  future auction-scoped entities.
 
 ## 4. Role-aware navigation
 
@@ -136,16 +157,14 @@ associated with an auction.
 
 ## 5. Future auction-connected flow
 
-These are reserved future routes, not working links or features in Point 6:
+These are reserved future routes, not working links or features in Point 7:
 
-1. Auction Details → auction-scoped Player Registration, Profiles, and
-   Import/Export.
-2. Auction Settings → base-price policy, bid increments, rules, team purses,
+1. Auction Settings → base-price policy, bid increments, rules, team purses,
    squad/category limits, and blocking Ready checks.
-3. Ready auction → authorized Live Auction Control Room.
-4. Live Auction → separate read-only projector, assigned team, and public
+2. Ready auction → authorized Live Auction Control Room.
+3. Live Auction → separate read-only projector, assigned team, and public
    displays; authorized operator commands only.
-5. Auction transactions → sold/unsold player management, immutable results,
+4. Auction transactions → sold/unsold player management, immutable results,
    reports, archives, audit events, and recovery.
 
 ## 6. Route and platform behavior

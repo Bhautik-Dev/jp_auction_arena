@@ -18,6 +18,12 @@ abstract final class RouteNames {
   static const auctionTeamCreate = '/app/auctions/:auctionId/teams/create';
   static const auctionTeamDetail = '/app/auctions/:auctionId/teams/:teamId';
   static const auctionTeamEdit = '/app/auctions/:auctionId/teams/:teamId/edit';
+  static const auctionPlayers = '/app/auctions/:auctionId/players';
+  static const auctionPlayerCreate = '/app/auctions/:auctionId/players/create';
+  static const auctionPlayerDetail =
+      '/app/auctions/:auctionId/players/:playerId';
+  static const auctionPlayerEdit =
+      '/app/auctions/:auctionId/players/:playerId/edit';
   static const players = '/app/players';
   static const auctionSetup = '/app/auction/setup';
   static const liveAuction = '/app/auction/live';
@@ -45,4 +51,12 @@ abstract final class RouteNames {
       '${auctionTeamsPath(auctionId)}/${Uri.encodeComponent(teamId)}';
   static String auctionTeamEditPath(String auctionId, String teamId) =>
       '${auctionTeamDetailPath(auctionId, teamId)}/edit';
+  static String auctionPlayersPath(String auctionId) =>
+      '${auctionDetailPath(auctionId)}/players';
+  static String auctionPlayerCreatePath(String auctionId) =>
+      '${auctionPlayersPath(auctionId)}/create';
+  static String auctionPlayerDetailPath(String auctionId, String playerId) =>
+      '${auctionPlayersPath(auctionId)}/${Uri.encodeComponent(playerId)}';
+  static String auctionPlayerEditPath(String auctionId, String playerId) =>
+      '${auctionPlayerDetailPath(auctionId, playerId)}/edit';
 }

@@ -14,6 +14,8 @@ class Player {
     required this.assignedTeamId,
     required this.createdAt,
     required this.updatedAt,
+    this.auctionId = '',
+    this.imageReference,
     this.age,
     this.matchesPlayed = 0,
     this.runsScored = 0,
@@ -21,7 +23,9 @@ class Player {
   });
 
   final String id;
+  final String auctionId;
   final String name;
+  final String? imageReference;
   final PlayerCategory category;
   final String battingStyle;
   final String bowlingStyle;
@@ -38,7 +42,9 @@ class Player {
 
   Player copyWith({
     String? id,
+    String? auctionId,
     String? name,
+    String? imageReference,
     PlayerCategory? category,
     String? battingStyle,
     String? bowlingStyle,
@@ -54,9 +60,14 @@ class Player {
     int? wicketsTaken,
     bool clearContactNumber = false,
     bool clearAssignedTeam = false,
+    bool clearImageReference = false,
   }) => Player(
     id: id ?? this.id,
+    auctionId: auctionId ?? this.auctionId,
     name: name ?? this.name,
+    imageReference: clearImageReference
+        ? null
+        : imageReference ?? this.imageReference,
     category: category ?? this.category,
     battingStyle: battingStyle ?? this.battingStyle,
     bowlingStyle: bowlingStyle ?? this.bowlingStyle,

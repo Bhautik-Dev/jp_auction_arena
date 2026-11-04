@@ -246,47 +246,53 @@ class _AuctionFormState extends ConsumerState<_AuctionForm> {
     ),
   );
 
-  Widget _datePicker(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    title: const Text('Auction Date'),
-    subtitle: Text(MaterialLocalizations.of(context).formatFullDate(_date)),
-    trailing: const Icon(Icons.calendar_today_outlined),
-    onTap: () async {
-      final today = DateTime.now();
-      final value = await showDatePicker(
-        context: context,
-        initialDate: _date.isBefore(today) ? today : _date,
-        firstDate: DateTime(today.year, today.month, today.day),
-        lastDate: DateTime(today.year + 20),
-      );
-      if (value != null) {
-        setState(() => _date = value);
-      }
-    },
+  Widget _datePicker(BuildContext context) => Material(
+    color: Theme.of(context).colorScheme.surface,
+    child: ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: const Text('Auction Date'),
+      subtitle: Text(MaterialLocalizations.of(context).formatFullDate(_date)),
+      trailing: const Icon(Icons.calendar_today_outlined),
+      onTap: () async {
+        final today = DateTime.now();
+        final value = await showDatePicker(
+          context: context,
+          initialDate: _date.isBefore(today) ? today : _date,
+          firstDate: DateTime(today.year, today.month, today.day),
+          lastDate: DateTime(today.year + 20),
+        );
+        if (value != null) {
+          setState(() => _date = value);
+        }
+      },
+    ),
   );
 
-  Widget _timePicker(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    title: const Text('Auction Start Time'),
-    subtitle: Text(
-      TimeOfDay(
-        hour: _startTimeMinutes ~/ 60,
-        minute: _startTimeMinutes % 60,
-      ).format(context),
-    ),
-    trailing: const Icon(Icons.schedule_outlined),
-    onTap: () async {
-      final value = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay(
+  Widget _timePicker(BuildContext context) => Material(
+    color: Theme.of(context).colorScheme.surface,
+    child: ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: const Text('Auction Start Time'),
+      subtitle: Text(
+        TimeOfDay(
           hour: _startTimeMinutes ~/ 60,
           minute: _startTimeMinutes % 60,
-        ),
-      );
-      if (value != null) {
-        setState(() => _startTimeMinutes = value.hour * 60 + value.minute);
-      }
-    },
+        ).format(context),
+      ),
+      trailing: const Icon(Icons.schedule_outlined),
+      onTap: () async {
+        final value = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay(
+            hour: _startTimeMinutes ~/ 60,
+            minute: _startTimeMinutes % 60,
+          ),
+        );
+        if (value != null) {
+          setState(() => _startTimeMinutes = value.hour * 60 + value.minute);
+        }
+      },
+    ),
   );
 
   Future<void> _submit() async {

@@ -38,6 +38,7 @@ void main() {
     router.go(RouteNames.auctionCreate);
     await tester.pumpAndSettle();
     expect(find.byType(AuctionFormScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
     await _tap(tester, 'Create Auction');
     await tester.pumpAndSettle();

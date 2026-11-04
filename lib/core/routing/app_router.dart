@@ -17,6 +17,9 @@ import 'package:jp_auction_arena/features/player/presentation/screens/player_lis
 import 'package:jp_auction_arena/features/settings/presentation/screens/settings_screen.dart';
 import 'package:jp_auction_arena/features/team/presentation/screens/team_list_screen.dart';
 import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_list_screen.dart';
+import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_detail_screen.dart';
+import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_form_screen.dart';
+import 'package:jp_auction_arena/features/tournament/presentation/screens/tournament_status_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/coming_soon_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/not_found_screen.dart';
 import 'package:jp_auction_arena/shared/widgets/responsive_app_shell.dart';
@@ -106,6 +109,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RouteNames.tournaments,
             name: 'tournaments',
             builder: (context, state) => const TournamentListScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: 'tournament-create',
+                builder: (context, state) => const TournamentFormScreen(),
+              ),
+              GoRoute(
+                path: ':tournamentId',
+                name: 'tournament-detail',
+                builder: (context, state) => TournamentDetailScreen(
+                  tournamentId: state.pathParameters['tournamentId']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    name: 'tournament-edit',
+                    builder: (context, state) => TournamentFormScreen(
+                      tournamentId: state.pathParameters['tournamentId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'status',
+                    name: 'tournament-status',
+                    builder: (context, state) => TournamentStatusScreen(
+                      tournamentId: state.pathParameters['tournamentId']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: RouteNames.teams,
@@ -158,8 +191,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RouteNames.history,
             name: 'history',
-            builder: (context, state) =>
-                const ComingSoonScreen(title: 'Tournament History'),
+            builder: (context, state) => const TournamentHistoryScreen(),
           ),
           GoRoute(
             path: RouteNames.settings,

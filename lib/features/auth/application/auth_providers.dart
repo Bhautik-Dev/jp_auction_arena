@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:jp_auction_arena/features/auth/domain/models/app_role.dart';
 import 'package:jp_auction_arena/features/auth/data/repositories/demo_auth_repository.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/auth_user.dart';
 import 'package:jp_auction_arena/features/auth/domain/repositories/auth_repository.dart';
@@ -44,4 +45,22 @@ class AuthSessionController extends AsyncNotifier<UserSession?> {
 
   Future<void> requestPasswordReset(String email) =>
       _repository.requestPasswordReset(email);
+
+  void assignTournament(String tournamentId) {
+    final session = state.whenOrNull(data: (value) => value);
+    if (session == null ||
+        (session.user.role != AppRole.superAdmin &&
+            session.user.role != AppRole.tournamentAdmin)) {
+      return;
+    }
+    state = AsyncData(
+      UserSession(
+        user: session.user.copyWith(
+          tournamentIds: {...session.user.tournamentIds, tournamentId},
+        ),
+        rememberMe: session.rememberMe,
+        signedInAt: session.signedInAt,
+      ),
+    );
+  }
 }

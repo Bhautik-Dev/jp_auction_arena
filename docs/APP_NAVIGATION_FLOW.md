@@ -1,8 +1,9 @@
 # JP AUCTION ARENA — Navigation Flow
 
-This is the target navigation map for the approved product scope. Point 3
-implements the login, session, role landing, and client-side route-guard
-foundation; other destinations are conceptual until their feature phases.
+This is the target navigation map for the approved product scope. Points 3-5
+implement local demo login, role-aware route guards, the dashboard, and
+tournament management; other destinations remain conceptual until their
+feature phases.
 The shared app shell and role-aware access rules apply to signed-in modules; a
 navigation destination never grants permission by itself.
 
@@ -43,9 +44,11 @@ flowchart LR
     D --> S[Application Settings]
     D --> H[Help and Support]
 
-    T --> CE[Create / Edit Tournament]
-    T --> TD[Tournament Details]
-    T --> TH[Tournament History / Archives]
+    T --> TL[Tournament List]
+    TL --> CE[Create / Edit Tournament]
+    TL --> TD[Tournament Details]
+    TL --> TH[Tournament History / Archives]
+    TD --> SM[Tournament Status Management]
     TD --> TM[Team Management]
     TD --> PM[Player Management]
     TD --> AC[Auction Configuration]
@@ -76,19 +79,27 @@ flowchart LR
 ```
 
 The diagram presents relationships, not the permission to enter every
-destination. For example, a Team Owner's Team Mobile View is restricted to the
-assigned team and is read-only for auction activity. Projector and public views
-cannot navigate into control functions.
+destination. Implemented tournament routes are list/search/filter, create/edit,
+details, lifecycle status management, and completed/archive history. Creation,
+editing, activation, completion, archive/restore, and deletion are subject to
+role/assignment and lifecycle rules; archived tournaments are read-only until
+an authorized restore. Only one tournament may be active. A Team Owner's Team
+Mobile View is restricted to the assigned team and is read-only for auction
+activity. Projector and public views cannot navigate into control functions.
+Team and player destinations shown above are planned, not implemented.
 
 ## 3. Tournament lifecycle sequence
 
-1. **Dashboard → Tournament Management.** View tournament list, status, and
-   archive entry points.
-2. **Create / Edit Tournament.** Enter event identity, season, dates, venue,
-   and team capacity. Save as a draft.
-3. **Tournament Details.** Review and manage the selected tournament. Activate
-   only if no other tournament is active. Completed tournaments can be
-   archived without deleting their history.
+1. **Dashboard → Tournament Management → Tournament List.** Search by name,
+   filter by status, sort by date, and open tournament details or history.
+2. **Create / Edit Tournament.** Enter identity/description, location,
+   tournament and registration dates, format, team capacity, squad limits,
+   organizer/contact, and notes. New tournaments start as Draft or Upcoming;
+   logo/image is currently a placeholder/reference.
+3. **Tournament Details → Status Management.** Authorized Super Admins and
+   assigned Tournament Admins manage the lifecycle. Activation is rejected if
+   another tournament is active. Completion and archive preserve the record;
+   archived records are read-only until restored. In-memory data is volatile.
 4. **Team Management → Team Registration → Team Details.** Register teams,
    owners/managers, and tournament-specific configuration.
 5. **Player Management → Player Registration → Player Details.** Register
@@ -109,6 +120,10 @@ cannot navigate into control functions.
     players and review final squads and immutable transaction history.
 11. **Tournament Reports and Statistics → Tournament History / Archives.**
     Produce and retain tournament summaries and exports.
+
+Steps 4-11 are planned future flows. Current tournament management does not
+implement team/player workflows, auction setup/operations, reports, or durable
+storage.
 
 ## 4. Live auction navigation and state flow
 

@@ -55,6 +55,7 @@ class ResponsiveAppShell extends ConsumerWidget {
       RouteAccessPolicy.publicLive,
       true,
     ),
+    _Destination(AppStrings.history, Icons.history, RouteNames.history, true),
     _Destination(
       AppStrings.settings,
       Icons.settings_outlined,
@@ -90,7 +91,6 @@ class ResponsiveAppShell extends ConsumerWidget {
       RouteNames.reports,
       false,
     ),
-    _Destination(AppStrings.history, Icons.history, RouteNames.history, false),
   ];
 
   @override

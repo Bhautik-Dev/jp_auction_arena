@@ -5,6 +5,9 @@ abstract final class RouteNames {
   static const unauthorized = '/unauthorized';
   static const dashboard = '/app/dashboard';
   static const tournaments = '/app/tournaments';
+  static const tournamentCreate = '/app/tournaments/create';
+  static const tournamentDetail = '/app/tournaments/:tournamentId';
+  static const tournamentEdit = '/app/tournaments/:tournamentId/edit';
   static const teams = '/app/teams';
   static const players = '/app/players';
   static const auctionSetup = '/app/auction/setup';
@@ -15,4 +18,9 @@ abstract final class RouteNames {
   static const settings = '/app/settings';
   static const teamPortal = '/app/team';
   static const publicLive = '/live/:eventId';
+
+  static String tournamentDetailPath(String id) =>
+      '/app/tournaments/${Uri.encodeComponent(id)}';
+  static String tournamentEditPath(String id) =>
+      '${tournamentDetailPath(id)}/edit';
 }

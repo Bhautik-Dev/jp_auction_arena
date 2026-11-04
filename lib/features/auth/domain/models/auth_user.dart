@@ -16,6 +16,19 @@ class AuthUser {
   final AppRole role;
   final Set<String> tournamentIds;
   final Set<String> teamIds;
+
+  AuthUser copyWith({
+    String? displayName,
+    Set<String>? tournamentIds,
+    Set<String>? teamIds,
+  }) => AuthUser(
+    id: id,
+    email: email,
+    displayName: displayName ?? this.displayName,
+    role: role,
+    tournamentIds: tournamentIds ?? this.tournamentIds,
+    teamIds: teamIds ?? this.teamIds,
+  );
 }
 
 class UserSession {

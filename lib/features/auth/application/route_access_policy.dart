@@ -35,6 +35,9 @@ abstract final class RouteAccessPolicy {
     }
 
     if (user.role == AppRole.tournamentAdmin && _isTournamentScoped(path)) {
+      if (path == RouteNames.tournamentCreate) {
+        return user.tournamentIds.isNotEmpty;
+      }
       final tournamentId = _tournamentIdFrom(path);
       if (tournamentId != null) {
         return RolePermissions.canAccessTournament(
@@ -97,6 +100,7 @@ abstract final class RouteAccessPolicy {
 
   static String? _tournamentIdFrom(String path) {
     final match = RegExp(r'^/app/tournaments/([^/]+)').firstMatch(path);
+    if (match?.group(1) == 'create') return null;
     return match?.group(1);
   }
 }

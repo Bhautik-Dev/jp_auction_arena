@@ -32,6 +32,28 @@ authentication, or backend-enforced authorization. See
 [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) for phase status and limitations.
 The Point 4 dashboard reads through a repository boundary and uses role-scoped
 synthetic demo data; its summaries do not represent live tournament activity.
+Point 5 adds tournament management with repository-derived tournament counts,
+in-memory persistence, and client-side role/assignment checks. It does not add
+team/player workflows, auction operations, durable storage, or trusted
+server-side authorization.
+
+### Point 5 tournament management scope
+
+The implemented tournament flow includes list/search/status filtering/date
+sorting, create/edit, details, status management, and completed/archive history.
+The tournament record covers name, description, image reference, location,
+event and registration dates, format, team capacity, squad limits, status,
+organizer, contact, and notes. Image upload is not implemented.
+
+The domain management service validates required fields, date order and squad
+limits, authorizes role/assignment-scoped actions, and restricts lifecycle
+transitions. The repository independently prevents a second active tournament,
+edits to archived tournaments, and unsafe deletion of protected records.
+Completed and archived records remain available in the in-memory repository;
+data is not durable across app restarts. Auction transaction history is not
+implemented, so the existing transaction-presence marker is only a future
+deletion-safety boundary. Client-side checks are not a production security
+boundary.
 
 ## 3. Product principles and critical invariants
 

@@ -14,6 +14,17 @@ class Tournament {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.description = '',
+    this.logoReference,
+    this.registrationStartDate,
+    this.registrationClosingDate,
+    this.format = 'Limited overs',
+    this.minSquadSize = 11,
+    this.maxSquadSize = 15,
+    this.organizerName = '',
+    this.contactDetails = '',
+    this.additionalNotes = '',
+    this.hasAuctionTransactions = false,
   });
 
   final String id;
@@ -28,6 +39,19 @@ class Tournament {
   final TournamentStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String description;
+  final String? logoReference;
+  final DateTime? registrationStartDate;
+  final DateTime? registrationClosingDate;
+  final String format;
+  final int minSquadSize;
+  final int maxSquadSize;
+  final String organizerName;
+  final String contactDetails;
+  final String additionalNotes;
+  final bool hasAuctionTransactions;
+
+  int get numberOfParticipatingTeams => maxTeams;
 
   int get durationInDays => endDate.difference(startDate).inDays + 1;
 
@@ -44,6 +68,18 @@ class Tournament {
     TournamentStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? description,
+    String? logoReference,
+    bool clearLogoReference = false,
+    DateTime? registrationStartDate,
+    DateTime? registrationClosingDate,
+    String? format,
+    int? minSquadSize,
+    int? maxSquadSize,
+    String? organizerName,
+    String? contactDetails,
+    String? additionalNotes,
+    bool? hasAuctionTransactions,
   }) => Tournament(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -57,6 +93,21 @@ class Tournament {
     status: status ?? this.status,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    description: description ?? this.description,
+    logoReference: clearLogoReference
+        ? null
+        : logoReference ?? this.logoReference,
+    registrationStartDate: registrationStartDate ?? this.registrationStartDate,
+    registrationClosingDate:
+        registrationClosingDate ?? this.registrationClosingDate,
+    format: format ?? this.format,
+    minSquadSize: minSquadSize ?? this.minSquadSize,
+    maxSquadSize: maxSquadSize ?? this.maxSquadSize,
+    organizerName: organizerName ?? this.organizerName,
+    contactDetails: contactDetails ?? this.contactDetails,
+    additionalNotes: additionalNotes ?? this.additionalNotes,
+    hasAuctionTransactions:
+        hasAuctionTransactions ?? this.hasAuctionTransactions,
   );
 
   Map<String, Object> toMap() => {
@@ -72,6 +123,17 @@ class Tournament {
     'status': status.name,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
+    'description': description,
+    'logoReference': logoReference ?? '',
+    'registrationStartDate': registrationStartDate?.toIso8601String() ?? '',
+    'registrationClosingDate': registrationClosingDate?.toIso8601String() ?? '',
+    'format': format,
+    'minSquadSize': minSquadSize,
+    'maxSquadSize': maxSquadSize,
+    'organizerName': organizerName,
+    'contactDetails': contactDetails,
+    'additionalNotes': additionalNotes,
+    'hasAuctionTransactions': hasAuctionTransactions,
   };
 
   factory Tournament.fromMap(Map<String, Object?> map) => Tournament(
@@ -87,5 +149,24 @@ class Tournament {
     status: TournamentStatus.values.byName(map['status']! as String),
     createdAt: DateTime.parse(map['createdAt']! as String),
     updatedAt: DateTime.parse(map['updatedAt']! as String),
+    description: map['description'] as String? ?? '',
+    logoReference: (map['logoReference'] as String?)?.isEmpty ?? true
+        ? null
+        : map['logoReference'] as String?,
+    registrationStartDate:
+        (map['registrationStartDate'] as String?)?.isEmpty ?? true
+        ? null
+        : DateTime.parse(map['registrationStartDate']! as String),
+    registrationClosingDate:
+        (map['registrationClosingDate'] as String?)?.isEmpty ?? true
+        ? null
+        : DateTime.parse(map['registrationClosingDate']! as String),
+    format: map['format'] as String? ?? 'Limited overs',
+    minSquadSize: (map['minSquadSize'] as num?)?.toInt() ?? 11,
+    maxSquadSize: (map['maxSquadSize'] as num?)?.toInt() ?? 15,
+    organizerName: map['organizerName'] as String? ?? '',
+    contactDetails: map['contactDetails'] as String? ?? '',
+    additionalNotes: map['additionalNotes'] as String? ?? '',
+    hasAuctionTransactions: map['hasAuctionTransactions'] as bool? ?? false,
   );
 }

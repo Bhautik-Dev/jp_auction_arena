@@ -18,7 +18,9 @@ void main() {
     });
 
     test('should filter tournaments by status', () async {
-      final activeList = await repository.getTournaments(status: TournamentStatus.active);
+      final activeList = await repository.getTournaments(
+        status: TournamentStatus.active,
+      );
       for (final t in activeList) {
         expect(t.status, TournamentStatus.active);
       }
@@ -71,8 +73,23 @@ void main() {
     });
 
     test('should delete tournament', () async {
-      final list = await repository.getTournaments();
-      final targetId = list.first.id;
+      final target = await repository.createTournament(
+        Tournament(
+          id: '',
+          name: 'Temporary Draft Tournament',
+          shortName: 'TDT',
+          seasonYear: '2026',
+          startDate: DateTime(2026, 8, 1),
+          endDate: DateTime(2026, 8, 5),
+          city: 'Mumbai',
+          venue: '',
+          maxTeams: 8,
+          status: TournamentStatus.draft,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final targetId = target.id;
 
       final success = await repository.deleteTournament(targetId);
       expect(success, isTrue);

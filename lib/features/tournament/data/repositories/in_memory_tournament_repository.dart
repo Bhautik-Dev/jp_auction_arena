@@ -1,6 +1,8 @@
 import 'package:jp_auction_arena/features/tournament/domain/models/tournament.dart';
 import 'package:jp_auction_arena/features/tournament/domain/models/tournament_status.dart';
+import 'package:jp_auction_arena/features/tournament/domain/errors/tournament_exceptions.dart';
 import 'package:jp_auction_arena/features/tournament/domain/repositories/tournament_repository.dart';
+import 'package:jp_auction_arena/features/tournament/domain/services/tournament_management_service.dart';
 
 class InMemoryTournamentRepository implements TournamentRepository {
   InMemoryTournamentRepository({
@@ -44,6 +46,15 @@ class InMemoryTournamentRepository implements TournamentRepository {
   @override
   Future<Tournament> createTournament(Tournament tournament) async {
     await _wait();
+    if (tournament.status != TournamentStatus.draft &&
+        tournament.status != TournamentStatus.upcoming) {
+      throw const TournamentTransitionException(
+        'New tournaments must start as Draft or Upcoming.',
+      );
+    }
+    if (tournament.name.trim().isEmpty) {
+      throw const TournamentValidationException('Tournament name is required.');
+    }
     if (tournament.status == TournamentStatus.active &&
         _tournaments.any((item) => item.status == TournamentStatus.active)) {
       throw StateError('Only one tournament can be active at a time.');
@@ -60,6 +71,22 @@ class InMemoryTournamentRepository implements TournamentRepository {
     await _wait();
     final index = _tournaments.indexWhere((item) => item.id == tournament.id);
     if (index < 0) throw StateError('Tournament ${tournament.id} not found.');
+    final existing = _tournaments[index];
+    if (existing.status == TournamentStatus.archived) {
+      throw const TournamentTransitionException(
+        'Archived tournaments are read-only. Restore before editing.',
+      );
+    }
+    if (existing.status != tournament.status &&
+        !TournamentManagementService.canTransition(
+          existing.status,
+          tournament.status,
+        )) {
+      throw TournamentTransitionException(
+        'Cannot change status from ${existing.status.label} to '
+        '${tournament.status.label}.',
+      );
+    }
     if (tournament.status == TournamentStatus.active &&
         _tournaments.any(
           (item) =>
@@ -77,11 +104,24 @@ class InMemoryTournamentRepository implements TournamentRepository {
     String id,
     TournamentStatus status,
   ) async {
-    final tournament = await getTournamentById(id);
-    if (tournament == null) throw StateError('Tournament $id not found.');
-    return updateTournament(
-      tournament.copyWith(status: status, updatedAt: DateTime.now()),
-    );
+    await _wait();
+    final index = _tournaments.indexWhere((item) => item.id == id);
+    if (index < 0) throw StateError('Tournament $id not found.');
+    final current = _tournaments[index];
+    if (!TournamentManagementService.canTransition(current.status, status)) {
+      throw TournamentTransitionException(
+        'Cannot change status from ${current.status.label} to ${status.label}.',
+      );
+    }
+    if (status == TournamentStatus.active &&
+        _tournaments.any(
+          (item) => item.id != id && item.status == TournamentStatus.active,
+        )) {
+      throw StateError('Only one tournament can be active at a time.');
+    }
+    final updated = current.copyWith(status: status, updatedAt: DateTime.now());
+    _tournaments[index] = updated;
+    return updated;
   }
 
   @override
@@ -89,6 +129,19 @@ class InMemoryTournamentRepository implements TournamentRepository {
     await _wait();
     final index = _tournaments.indexWhere((item) => item.id == id);
     if (index < 0) return false;
+    final tournament = _tournaments[index];
+    if (tournament.hasAuctionTransactions) {
+      throw const TournamentArchiveRequiredException(
+        'Tournament transactions must be preserved through archival.',
+      );
+    }
+    if (tournament.status == TournamentStatus.active ||
+        tournament.status == TournamentStatus.completed ||
+        tournament.status == TournamentStatus.archived) {
+      throw const TournamentArchiveRequiredException(
+        'Active, completed, and archived tournaments cannot be deleted.',
+      );
+    }
     _tournaments.removeAt(index);
     return true;
   }
@@ -112,6 +165,11 @@ final demoTournaments = <Tournament>[
     venue: 'Narendra Modi Stadium',
     maxTeams: 8,
     status: TournamentStatus.active,
+    registrationStartDate: DateTime(2026, 9, 1),
+    registrationClosingDate: DateTime(2026, 11, 20),
+    format: 'T20',
+    organizerName: 'JP AUCTION ARENA Demo',
+    contactDetails: 'demo@jp-auction-arena.invalid',
     createdAt: DateTime(2026, 1, 1),
     updatedAt: DateTime(2026, 1, 1),
   ),
@@ -125,7 +183,12 @@ final demoTournaments = <Tournament>[
     city: 'Vadodara',
     venue: 'Kotambi Stadium',
     maxTeams: 10,
-    status: TournamentStatus.draft,
+    status: TournamentStatus.upcoming,
+    registrationStartDate: DateTime(2026, 6, 1),
+    registrationClosingDate: DateTime(2026, 7, 25),
+    format: 'T20',
+    organizerName: 'Western Cricket League Demo',
+    contactDetails: 'wcl@jp-auction-arena.invalid',
     createdAt: DateTime(2026, 2, 1),
     updatedAt: DateTime(2026, 2, 1),
   ),
@@ -140,6 +203,11 @@ final demoTournaments = <Tournament>[
     venue: 'Adani Sportsline',
     maxTeams: 8,
     status: TournamentStatus.completed,
+    registrationStartDate: DateTime(2025, 7, 1),
+    registrationClosingDate: DateTime(2025, 10, 25),
+    format: 'T20',
+    organizerName: 'Ahmedabad T20 Cup Demo',
+    contactDetails: 'atc@jp-auction-arena.invalid',
     createdAt: DateTime(2025, 4, 1),
     updatedAt: DateTime(2025, 11, 12),
   ),

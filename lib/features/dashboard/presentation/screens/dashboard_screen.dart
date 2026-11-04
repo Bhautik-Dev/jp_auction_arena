@@ -535,6 +535,12 @@ class _QuickActions extends StatelessWidget {
           Icons.settings_outlined,
           RouteNames.settings,
         ),
+        _QuickAction(
+          'Tournament history',
+          'Completed and archived records',
+          Icons.history,
+          RouteNames.history,
+        ),
       ],
       AppRole.tournamentAdmin => const [
         _QuickAction(
@@ -554,6 +560,12 @@ class _QuickActions extends StatelessWidget {
           'Review player records',
           Icons.sports_cricket_outlined,
           RouteNames.players,
+        ),
+        _QuickAction(
+          'Tournament history',
+          'Completed and archived assigned records',
+          Icons.history,
+          RouteNames.history,
         ),
       ],
       AppRole.teamManager => const [

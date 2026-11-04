@@ -155,7 +155,11 @@ void main() {
       find.widgetWithText(TextFormField, 'Bowling style'),
       'Right-arm spin',
     );
-    await tester.ensureVisible(find.text('Add player'));
+    await tester.dragUntilVisible(
+      find.text('Add player'),
+      find.byType(ListView),
+      const Offset(0, -400),
+    );
     await tester.tap(find.text('Add player'));
     await tester.pumpAndSettle();
 

@@ -35,6 +35,7 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
   final _runsController = TextEditingController(text: '0');
   final _wicketsController = TextEditingController(text: '0');
   PlayerCategory? _category;
+  bool _isOverseas = false;
   String? _loadedPlayerId;
   String? _rulesLoadedAuctionId;
   String? _suggestedBasePrice;
@@ -177,6 +178,12 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
               },
               validator: (value) => value == null ? 'Choose a category' : null,
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Overseas player'),
+              value: _isOverseas,
+              onChanged: (value) => setState(() => _isOverseas = value),
+            ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
               label: 'Batting style',
@@ -269,6 +276,7 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
     _runsController.text = player.runsScored.toString();
     _wicketsController.text = player.wicketsTaken.toString();
     _category = player.category;
+    _isOverseas = player.isOverseas;
   }
 
   void _applyBasePriceSuggestion(PlayerCategory? category) {
@@ -312,6 +320,8 @@ class _PlayerFormScreenState extends ConsumerState<PlayerFormScreen> {
         matchesPlayed: int.parse(_matchesController.text.trim()),
         runsScored: int.parse(_runsController.text.trim()),
         wicketsTaken: int.parse(_wicketsController.text.trim()),
+        isOverseas: _isOverseas,
+        purchasePrice: existing?.purchasePrice,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );

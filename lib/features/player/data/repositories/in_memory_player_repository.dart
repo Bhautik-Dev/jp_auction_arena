@@ -136,6 +136,14 @@ class InMemoryPlayerRepository implements PlayerRepository {
         'Player statistics cannot be negative.',
       );
     }
+    if (player.purchasePrice != null &&
+        (player.purchasePrice! <= 0 ||
+            player.status != PlayerStatus.sold ||
+            player.assignedTeamId == null)) {
+      throw const PlayerValidationException(
+        'Purchase price must be positive and linked to a sold player assignment.',
+      );
+    }
     if (player.auctionId.isNotEmpty) {
       final auctions = auctionRepository;
       if (auctions == null ||

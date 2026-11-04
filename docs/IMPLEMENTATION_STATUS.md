@@ -27,13 +27,20 @@ claim production readiness or completion of the full product scope.
   Domain services validate purse, squad, base prices, configured limits, timer
   and increment rules; rule access is role/auction scoped and writes are locked
   after Live.
+- **Point 9:** auction-scoped team purse and squad summaries; spent and
+  remaining purse calculation from recorded sold-player prices; timestamped,
+  reasoned, append-only initial-purse adjustments with an atomic balance floor;
+  category, overseas, wicketkeeper, squad-size, and future-purchase validation;
+  assigned-team-only manager views and admin/operator team details; responsive
+  purse/squad panels; and overseas-player classification in player forms and
+  optional CSV import/export.
 
-Point 8 verification: `flutter analyze` passed; `flutter test` passed (96 tests);
-`flutter build web --release` passed; `git diff --check` passed.
+Point 9 verification: `flutter analyze` passed; `flutter test` passed (108
+tests); `flutter build web --release` passed; `git diff --check` passed.
 
 ## Remaining scope
 
-Points 9-29 remain incomplete: purse/squad tracking; preparation; live auction
+Points 10-29 remain incomplete: auction preparation; live auction
 and bidding; projector,
 team-owner and public live views; sold/unsold administration; results and
 analytics; user administration; notifications; audit and transaction ledger;
@@ -43,12 +50,17 @@ backup/restore; white-label; and support/settings expansion.
 ## Persistence and security
 
 Current auction/team/player repositories are local in-memory implementations.
-Data does not survive app restarts. Demo authentication and role checks are
-not production security; trusted server-side authorization and database
-policies are required before release.
+Purse accounts and adjustment history are also local in-memory data. None of
+these records survive app restarts. Demo authentication and role checks are not
+production security; trusted server-side authorization and database policies
+are required before release.
 
 Auction rule sets are also in-memory. Bid increment selection/next-bid
 calculation is implemented as domain logic, but no live bidding workflow
 consumes it. Timer, ordering, category/overseas/wicketkeeper limits, and
-unsold-player re-entry are settings only; there is no live execution or squad
-assignment enforcement for those rules yet.
+unsold-player re-entry are configuration only; reusable domain validation
+checks prospective squad additions, but Point 9 deliberately does not create
+player assignments, purchases, purse deductions, or auction transactions.
+Existing sold-and-assigned player records with a positive purchase price are
+used to calculate spend; missing/invalid prices are surfaced as warnings and
+never fabricated.

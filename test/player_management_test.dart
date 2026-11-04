@@ -113,6 +113,32 @@ void main() {
     );
   });
 
+  test(
+    'imports and exports overseas classification as an optional CSV field',
+    () async {
+      final imported = await service.importCsv(
+        _admin,
+        'auction_one',
+        'player_name,category,base_price,is_overseas\r\n'
+            '"Overseas Star",batsman,25000,true',
+      );
+
+      expect(imported.single.isOverseas, isTrue);
+      final exported = await service.exportCsv(_admin, 'auction_one');
+      expect(exported, contains('is_overseas'));
+      expect(exported, contains('"true"'));
+    },
+  );
+
+  test('player management cannot edit a purchase price', () async {
+    final player = await service.create(_admin, _player('Price Protected'));
+
+    await expectLater(
+      service.update(_admin, player.copyWith(purchasePrice: 1000)),
+      throwsA(isA<PlayerValidationException>()),
+    );
+  });
+
   test('restricts player management by role and auction assignment', () async {
     final operator = _user(AppRole.tournamentAdmin, {'auction_one'});
     final unassignedOperator = _user(AppRole.tournamentAdmin, {'auction_two'});

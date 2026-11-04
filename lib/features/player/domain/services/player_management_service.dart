@@ -83,9 +83,10 @@ class PlayerManagementService {
       );
     }
     if (player.status != existing.status ||
-        player.assignedTeamId != existing.assignedTeamId) {
+        player.assignedTeamId != existing.assignedTeamId ||
+        player.purchasePrice != existing.purchasePrice) {
       throw const PlayerValidationException(
-        'Player status and team assignment are managed by auction results.',
+        'Player status, team assignment, and purchase price are managed by auction results.',
       );
     }
     return _playerRepository.updatePlayer(player);
@@ -173,6 +174,14 @@ class PlayerManagementService {
       final basePrice = int.tryParse(value('base_price'));
       final ageText = value('age');
       final age = ageText.isEmpty ? null : int.tryParse(ageText);
+      final overseasText = value('is_overseas').toLowerCase();
+      final isOverseas = switch (overseasText) {
+        '' || 'false' || 'no' || '0' => false,
+        'true' || 'yes' || '1' => true,
+        _ => throw const PlayerValidationException(
+          'CSV contains an invalid is_overseas value.',
+        ),
+      };
       int optionalNonNegative(String header) {
         final text = value(header);
         if (text.isEmpty) return 0;
@@ -213,6 +222,7 @@ class PlayerManagementService {
           matchesPlayed: optionalNonNegative('matches_played'),
           runsScored: optionalNonNegative('runs_scored'),
           wicketsTaken: optionalNonNegative('wickets_taken'),
+          isOverseas: isOverseas,
           createdAt: now,
           updatedAt: now,
         ),
@@ -261,6 +271,7 @@ class PlayerManagementService {
         'matches_played',
         'runs_scored',
         'wickets_taken',
+        'is_overseas',
         'status',
       ],
       for (final player in players)
@@ -276,6 +287,7 @@ class PlayerManagementService {
           '${player.matchesPlayed}',
           '${player.runsScored}',
           '${player.wicketsTaken}',
+          '${player.isOverseas}',
           player.status.name,
         ],
     ];

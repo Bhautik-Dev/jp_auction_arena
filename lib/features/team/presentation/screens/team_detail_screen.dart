@@ -12,6 +12,8 @@ import 'package:jp_auction_arena/features/team/domain/errors/team_exceptions.dar
 import 'package:jp_auction_arena/features/team/domain/models/team.dart';
 import 'package:jp_auction_arena/features/team/domain/models/team_status.dart';
 import 'package:jp_auction_arena/features/team/presentation/providers/team_providers.dart';
+import 'package:jp_auction_arena/features/team/presentation/providers/team_purse_squad_providers.dart';
+import 'package:jp_auction_arena/features/team/presentation/widgets/team_purse_squad_panel.dart';
 import 'package:jp_auction_arena/shared/widgets/app_states.dart';
 
 class TeamDetailScreen extends ConsumerWidget {
@@ -178,6 +180,32 @@ class _TeamDetail extends ConsumerWidget {
         const Text(
           'Team registration is currently in local in-memory storage. Purse and squad limits are inherited from auction configuration; player purchases are not implemented yet.',
         ),
+        const SizedBox(height: AppSpacing.lg),
+        Text('Purse & squad', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        ref
+            .watch(
+              teamPurseSquadProvider((auctionId: auctionId, teamId: team.id)),
+            )
+            .when(
+              loading: () => const AppLoadingIndicator(
+                label: 'Loading purse and squad...',
+              ),
+              error: (error, stackTrace) => AppErrorState(
+                error: error,
+                onRetry: () => ref.invalidate(
+                  teamPurseSquadProvider((
+                    auctionId: auctionId,
+                    teamId: team.id,
+                  )),
+                ),
+              ),
+              data: (snapshot) => TeamPurseSquadPanel(
+                snapshot: snapshot,
+                canAdjustPurse: canEditAuction,
+                showTeamHeader: false,
+              ),
+            ),
       ],
     );
   }

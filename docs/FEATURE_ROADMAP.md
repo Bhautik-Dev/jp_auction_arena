@@ -16,7 +16,9 @@ Do not claim a future service is operational until implemented and tested.
 Points 1-4 establish the blueprint, Flutter foundation, demo authentication,
 roles, dashboard, and responsive navigation. Point 5 is auction creation and
 management. Points 6-7 establish auction-scoped team and player registrations.
-Point 8 adds per-auction bid increment rules and their settings editor.
+Point 8 adds per-auction bid increment rules and their settings editor. Point 9
+adds read-only purse/squad tracking and reusable validation; it does not
+implement bidding or create sold-player transactions.
 
 ## Point 1 — Product blueprint
 
@@ -134,7 +136,7 @@ auction execution remain future work.**
 ## Point 8 — Auction configuration and rule engine
 
 **Status: configuration and domain validation implemented locally; live
-execution and purse/squad tracking remain future work.**
+execution remains future work.**
 
 - Added per-auction fixed and tiered bid increments. Tiers support optional
   inclusive maximums, reject invalid/overlapping ranges, and calculate the
@@ -154,19 +156,51 @@ execution and purse/squad tracking remain future work.**
 - Super Admin and assigned Tournament Admin / Auction Operator access is
   enforced in the rule service. Rule writes are limited to Draft and Ready
   auctions. Rules are isolated by auction ID and stored in memory.
-- Timer execution, player sequencing, category/overseas/wicketkeeper squad
-  enforcement, re-auction rounds, purse deductions, live bidding,
-  transactions, and durable persistence are not implemented. The player model
-  currently has no overseas-player attribute.
+- Timer execution, player sequencing, actual purchase assignment, purse
+  deductions, live bidding, transactions, and durable persistence are not
+  implemented.
 - Verification on this checkout: `flutter analyze` passed; `flutter test`
-  passed (96 tests); `flutter build web --release` passed; `git diff --check`
+  passed (108 tests); `flutter build web --release` passed; `git diff --check`
+  passed.
+
+## Point 9 — Team purse and squad management
+
+**Status: implemented locally; player purchases and durable persistence remain
+future work.**
+
+- Added auction/team-keyed purse accounts. The default initial purse is loaded
+  from that auction's purse setting; spent totals derive only from sold players
+  assigned to that team with a positive recorded purchase price. Remaining
+  purse is initial purse plus append-only adjustments minus recorded spend.
+- Added admin/operator adjustments with required reason, actor, and timestamp.
+  Repository-serialized writes enforce that the adjusted purse cannot fall
+  below recorded spend. Adjustments are read-only after an auction becomes
+  Live.
+- Added team purse/squad summaries with category counts, remaining slots,
+  minimum/maximum and configured category/overseas/wicketkeeper warnings,
+  player profiles, prices, and incomplete-price warnings. Missing or invalid
+  prices are not fabricated.
+- Added reusable domain purchase validation for auction/team scope, unique
+  player registration, available/unassigned status, positive price, remaining
+  purse, max squad size, and configured category/overseas/wicketkeeper limits.
+  This validator records no purchase and does not change player status,
+  assignments, or purse balances.
+- Added a responsive read-only Team Manager portal restricted to assigned
+  auction teams, plus admin/operator purse and squad details in team detail.
+  Overseas classification can be maintained on eligible player profiles and
+  imported/exported as an optional `is_overseas` CSV column.
+- Purchases, purse deductions, transaction history, team-owned account
+  assignment workflows, persistent storage, public purse visibility, and
+  server-authoritative authorization remain out of scope.
+- Verification on this checkout: `flutter analyze` passed; `flutter test`
+  passed (108 tests); `flutter build web --release` passed; `git diff --check`
   passed.
 
 ## Remaining agreed points
 
 | Point | Scope | Current status |
 |---|---|---|
-| 9 | Team purse and squad management | Not started |
+| 9 | Team purse and squad management | Implemented locally; no purchase transactions |
 | 10 | Auction preparation and player order | Not started |
 | 11-12 | Live auction control room and bidding engine | Not started |
 | 13-15 | Projector, team-owner mobile, and public live views | Not started |
@@ -182,6 +216,6 @@ projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
 backup/recovery, white-label branding, subscriptions/payments, secure
 role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
 Realtime, Excel, and future CricHeroes compatibility are reserved. Only
-capabilities described under Points 1-8 are available locally as described
+capabilities described under Points 1-9 are available locally as described
 above; deferred services remain unavailable until separately implemented and
 tested.

@@ -20,6 +20,8 @@ class Player {
     this.matchesPlayed = 0,
     this.runsScored = 0,
     this.wicketsTaken = 0,
+    this.isOverseas = false,
+    this.purchasePrice,
   });
 
   final String id;
@@ -39,6 +41,8 @@ class Player {
   final int matchesPlayed;
   final int runsScored;
   final int wicketsTaken;
+  final bool isOverseas;
+  final int? purchasePrice;
 
   Player copyWith({
     String? id,
@@ -58,6 +62,8 @@ class Player {
     int? matchesPlayed,
     int? runsScored,
     int? wicketsTaken,
+    bool? isOverseas,
+    int? purchasePrice,
     bool clearContactNumber = false,
     bool clearAssignedTeam = false,
     bool clearImageReference = false,
@@ -85,5 +91,7 @@ class Player {
     matchesPlayed: matchesPlayed ?? this.matchesPlayed,
     runsScored: runsScored ?? this.runsScored,
     wicketsTaken: wicketsTaken ?? this.wicketsTaken,
+    isOverseas: isOverseas ?? this.isOverseas,
+    purchasePrice: purchasePrice ?? this.purchasePrice,
   );
 }

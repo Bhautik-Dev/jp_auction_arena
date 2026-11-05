@@ -2,7 +2,8 @@ enum AuctionStatus {
   draft,
   live,
   paused,
-  completed;
+  completed,
+  archived;
 
   String get displayName {
     switch (this) {
@@ -14,6 +15,8 @@ enum AuctionStatus {
         return 'Paused';
       case AuctionStatus.completed:
         return 'Completed';
+      case AuctionStatus.archived:
+        return 'Archived';
     }
   }
 

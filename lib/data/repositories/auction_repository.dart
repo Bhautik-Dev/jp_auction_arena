@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 import 'hive_service.dart';
+import 'team_repository.dart';
 
 abstract class AuctionRepository {
   List<Auction> getAll();
@@ -80,3 +81,35 @@ final activeAuctionProvider = Provider<Auction?>((ref) {
     return auctions.isNotEmpty ? auctions.first : null;
   }
 });
+
+/// Duplicates an auction along with its teams (clearing bids/spent amounts).
+Future<Auction> duplicateAuction({
+  required Auction sourceAuction,
+  required AuctionRepository auctionRepo,
+  required TeamRepository teamRepo,
+}) async {
+  final newAuctionId = 'auc_${DateTime.now().millisecondsSinceEpoch}';
+  final duplicatedAuction = sourceAuction.copyWith(
+    id: newAuctionId,
+    name: '${sourceAuction.name} (Copy)',
+    status: AuctionStatus.draft,
+    createdAt: DateTime.now(),
+  );
+
+  await auctionRepo.save(duplicatedAuction);
+
+  // Copy teams for this auction without bids / spent purse
+  final existingTeams = teamRepo.getByAuctionId(sourceAuction.id);
+  for (final oldTeam in existingTeams) {
+    final newTeamId = 'team_${DateTime.now().microsecondsSinceEpoch}_${oldTeam.id.hashCode.abs() % 10000}';
+    final duplicatedTeam = oldTeam.copyWith(
+      id: newTeamId,
+      auctionId: newAuctionId,
+      purseSpent: 0.0,
+      playerIds: [],
+    );
+    await teamRepo.save(duplicatedTeam);
+  }
+
+  return duplicatedAuction;
+}

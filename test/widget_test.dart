@@ -145,4 +145,36 @@ void main() {
       expect(find.text('Total: 125 items'), findsOneWidget);
     });
   });
+
+  group('Auction Status and Duplication Logic', () {
+    test('AuctionStatus includes draft, live, paused, completed, and archived', () {
+      expect(AuctionStatus.values.length, 5);
+      expect(AuctionStatus.archived.displayName, 'Archived');
+      expect(AuctionStatus.fromString('archived'), AuctionStatus.archived);
+      expect(AuctionStatus.fromString('completed'), AuctionStatus.completed);
+    });
+
+    test('Auction copyWith creates correct copy with new status or name', () {
+      final original = Auction(
+        id: 'orig_1',
+        name: 'Winter League',
+        venue: 'Eden Gardens',
+        startDateTime: DateTime(2026, 12, 1),
+        status: AuctionStatus.draft,
+        numberOfTeams: 8,
+      );
+
+      final copy = original.copyWith(
+        id: 'copy_1',
+        name: 'Winter League (Copy)',
+        status: AuctionStatus.archived,
+      );
+
+      expect(copy.id, 'copy_1');
+      expect(copy.name, 'Winter League (Copy)');
+      expect(copy.venue, 'Eden Gardens');
+      expect(copy.status, AuctionStatus.archived);
+      expect(copy.numberOfTeams, 8);
+    });
+  });
 }

@@ -129,9 +129,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RouteNames.createAuctionPath,
             name: RouteNames.createAuction,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: CreateAuctionScreen(),
-            ),
+            pageBuilder: (context, state) {
+              final editId = state.uri.queryParameters['editId'];
+              return NoTransitionPage(
+                child: CreateAuctionScreen(editAuctionId: editId),
+              );
+            },
           ),
           GoRoute(
             path: RouteNames.teamsPath,

@@ -9,7 +9,12 @@ import '../../data/repositories/repositories.dart';
 import '../../shared/widgets/feature_placeholder_screen.dart';
 
 class CreateAuctionScreen extends ConsumerStatefulWidget {
-  const CreateAuctionScreen({super.key});
+  final String? editAuctionId;
+
+  const CreateAuctionScreen({
+    super.key,
+    this.editAuctionId,
+  });
 
   @override
   ConsumerState<CreateAuctionScreen> createState() => _CreateAuctionScreenState();
@@ -17,19 +22,64 @@ class CreateAuctionScreen extends ConsumerStatefulWidget {
 
 class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Premier T20 Cup 2026');
-  final _venueController = TextEditingController(text: 'JP Sports Ground');
-  final _descController = TextEditingController(text: 'Official seasonal cricket auction');
-  final _purseController = TextEditingController(text: '1000000');
-  final _basePriceController = TextEditingController(text: '10000');
-  final _bidIncrementController = TextEditingController(text: '2000');
-  final _teamsController = TextEditingController(text: '8');
-  final _minSquadController = TextEditingController(text: '11');
-  final _maxSquadController = TextEditingController(text: '15');
-  final _countdownController = TextEditingController(text: '30');
+  late final TextEditingController _nameController;
+  late final TextEditingController _venueController;
+  late final TextEditingController _descController;
+  late final TextEditingController _purseController;
+  late final TextEditingController _basePriceController;
+  late final TextEditingController _bidIncrementController;
+  late final TextEditingController _teamsController;
+  late final TextEditingController _minSquadController;
+  late final TextEditingController _maxSquadController;
+  late final TextEditingController _countdownController;
 
   AuctionMode _mode = AuctionMode.manual;
+  AuctionStatus _status = AuctionStatus.draft;
   bool _isSaving = false;
+  Auction? _existingAuction;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'Premier T20 Cup 2026');
+    _venueController = TextEditingController(text: 'JP Sports Ground');
+    _descController = TextEditingController(text: 'Official seasonal cricket auction');
+    _purseController = TextEditingController(text: '1000000');
+    _basePriceController = TextEditingController(text: '10000');
+    _bidIncrementController = TextEditingController(text: '2000');
+    _teamsController = TextEditingController(text: '8');
+    _minSquadController = TextEditingController(text: '11');
+    _maxSquadController = TextEditingController(text: '15');
+    _countdownController = TextEditingController(text: '30');
+
+    if (widget.editAuctionId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadExistingAuction();
+      });
+    }
+  }
+
+  void _loadExistingAuction() {
+    final repo = ref.read(auctionRepositoryProvider);
+    final a = repo.getById(widget.editAuctionId!);
+    if (a != null) {
+      setState(() {
+        _existingAuction = a;
+        _nameController.text = a.name;
+        _venueController.text = a.venue;
+        _descController.text = a.description;
+        _purseController.text = a.teamPurse.toStringAsFixed(0);
+        _basePriceController.text = a.basePriceDefault.toStringAsFixed(0);
+        _bidIncrementController.text = a.bidIncrement.toStringAsFixed(0);
+        _teamsController.text = a.numberOfTeams.toString();
+        _minSquadController.text = a.minSquad.toString();
+        _maxSquadController.text = a.maxSquad.toString();
+        _countdownController.text = a.countdownSeconds.toString();
+        _mode = a.mode;
+        _status = a.status;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -50,15 +100,18 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
-    final id = 'auc_${DateTime.now().millisecondsSinceEpoch}';
+    final isEditing = _existingAuction != null;
+    final id = isEditing
+        ? _existingAuction!.id
+        : 'auc_${DateTime.now().millisecondsSinceEpoch}';
 
     final auction = Auction(
       id: id,
       name: _nameController.text.trim(),
       venue: _venueController.text.trim(),
       description: _descController.text.trim(),
-      startDateTime: DateTime.now(),
-      status: AuctionStatus.draft,
+      startDateTime: _existingAuction?.startDateTime ?? DateTime.now(),
+      status: _status,
       teamPurse: double.tryParse(_purseController.text.trim()) ?? 1000000,
       basePriceDefault: double.tryParse(_basePriceController.text.trim()) ?? 10000,
       bidIncrement: double.tryParse(_bidIncrementController.text.trim()) ?? 2000,
@@ -67,7 +120,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
       maxSquad: int.tryParse(_maxSquadController.text.trim()) ?? 15,
       countdownSeconds: int.tryParse(_countdownController.text.trim()) ?? 30,
       mode: _mode,
-      createdAt: DateTime.now(),
+      createdAt: _existingAuction?.createdAt ?? DateTime.now(),
     );
 
     await ref.read(auctionRepositoryProvider).save(auction);
@@ -76,7 +129,11 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Auction "${auction.name}" created successfully!'),
+          content: Text(
+            isEditing
+                ? 'Auction "${auction.name}" updated successfully!'
+                : 'Auction "${auction.name}" created successfully!',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -86,10 +143,14 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = _existingAuction != null;
+
     return FeaturePlaceholderScreen(
-      title: 'Create New Tournament',
-      description: 'Define tournament rules, squad sizes, and purse limits',
-      icon: Icons.add_circle_outline_rounded,
+      title: isEditing ? 'Edit Auction Settings' : 'Create New Tournament',
+      description: isEditing
+          ? 'Modify tournament rules, squad sizes, and purse limits for "${_existingAuction!.name}"'
+          : 'Define tournament rules, squad sizes, and purse limits',
+      icon: isEditing ? Icons.tune_rounded : Icons.add_circle_outline_rounded,
       children: [
         Form(
           key: _formKey,
@@ -98,13 +159,35 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Tournament Configuration',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isEditing ? 'Tournament Settings' : 'Tournament Configuration',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (isEditing)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primaryBlue),
+                        ),
+                        child: Text(
+                          'ID: ${_existingAuction!.id}',
+                          style: const TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -274,8 +357,8 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                     GradientButton(
                       onPressed: _isSaving ? null : _handleSave,
                       isLoading: _isSaving,
-                      icon: Icons.check_circle_outline_rounded,
-                      label: 'Save & Activate Tournament',
+                      icon: isEditing ? Icons.save_rounded : Icons.check_circle_outline_rounded,
+                      label: isEditing ? 'Save Changes' : 'Save & Activate Tournament',
                     ),
                   ],
                 ),

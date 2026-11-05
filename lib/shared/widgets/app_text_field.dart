@@ -1,46 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:jp_auction_arena/core/constants/app_dimensions.dart';
 
 class AppTextField extends StatelessWidget {
   const AppTextField({
-    required this.label,
+    super.key,
     this.controller,
-    this.hint,
-    this.validator,
+    this.initialValue,
+    this.label,
+    this.hintText,
+    this.errorText,
+    this.obscureText = false,
     this.keyboardType,
     this.prefixIcon,
     this.suffixIcon,
-    this.obscureText = false,
-    this.maxLines = 1,
+    this.validator,
     this.onChanged,
-    super.key,
+    this.onSubmitted,
+    this.maxLines = 1,
+    this.enabled = true,
+    this.readOnly = false,
   });
 
-  final String label;
-  final String? hint;
   final TextEditingController? controller;
-  final FormFieldValidator<String>? validator;
-  final TextInputType? keyboardType;
-  final IconData? prefixIcon;
-  final Widget? suffixIcon;
+  final String? initialValue;
+  final String? label;
+  final String? hintText;
+  final String? errorText;
   final bool obscureText;
-  final int maxLines;
+  final TextInputType? keyboardType;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final int maxLines;
+  final bool enabled;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      maxLines: obscureText ? 1 : maxLines,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
-        suffixIcon: suffixIcon,
-      ),
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (label != null) ...[
+          Text(
+            label!,
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppDimensions.spaceXs),
+        ],
+        TextFormField(
+          controller: controller,
+          initialValue: initialValue,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: onChanged,
+          onFieldSubmitted: onSubmitted,
+          maxLines: maxLines,
+          enabled: enabled,
+          readOnly: readOnly,
+          decoration: InputDecoration(
+            hintText: hintText,
+            errorText: errorText,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
     );
   }
 }

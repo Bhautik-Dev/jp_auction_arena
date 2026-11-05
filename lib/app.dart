@@ -16,7 +16,7 @@ class JpAuctionArenaApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: AppConfig.appName,
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: AppConfig.isDebugBannerEnabled,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,

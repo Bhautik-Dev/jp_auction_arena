@@ -1,19 +1,42 @@
-abstract class AppFailure implements Exception {
-  const AppFailure(this.message);
+abstract class AppFailure {
+  const AppFailure({required this.message, this.code});
 
   final String message;
+  final String? code;
 
   @override
-  String toString() => message;
+  String toString() => '$runtimeType(message: $message, code: $code)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppFailure &&
+          runtimeType == other.runtimeType &&
+          message == other.message &&
+          code == other.code;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, message, code);
 }
 
-class UnexpectedFailure extends AppFailure {
-  const UnexpectedFailure() : super('Something went wrong. Please try again.');
+class ServerFailure extends AppFailure {
+  const ServerFailure({required super.message, super.code});
 }
 
-String userFacingError(Object error) {
-  if (error is AppFailure) {
-    return error.message;
-  }
-  return const UnexpectedFailure().message;
+class NetworkFailure extends AppFailure {
+  const NetworkFailure({
+    super.message = 'Network connection unavailable.',
+    super.code,
+  });
+}
+
+class ValidationFailure extends AppFailure {
+  const ValidationFailure({required super.message, super.code});
+}
+
+class GeneralFailure extends AppFailure {
+  const GeneralFailure({
+    super.message = 'An unexpected failure occurred.',
+    super.code,
+  });
 }

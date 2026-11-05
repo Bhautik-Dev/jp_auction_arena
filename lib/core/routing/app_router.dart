@@ -15,6 +15,7 @@ import 'package:jp_auction_arena/features/auction/presentation/screens/auction_d
 import 'package:jp_auction_arena/features/auction/presentation/screens/auction_form_screen.dart';
 import 'package:jp_auction_arena/features/auction/presentation/screens/auction_list_screen.dart';
 import 'package:jp_auction_arena/features/auction/presentation/screens/auction_settings_screen.dart';
+import 'package:jp_auction_arena/features/auction/presentation/screens/auction_preparation_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_detail_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_form_screen.dart';
 import 'package:jp_auction_arena/features/player/presentation/screens/player_list_screen.dart';
@@ -140,6 +141,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'settings',
                     name: 'auction-settings',
                     builder: (context, state) => AuctionSettingsScreen(
+                      auctionId: state.pathParameters['auctionId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'preparation',
+                    name: 'auction-preparation',
+                    builder: (context, state) => AuctionPreparationScreen(
                       auctionId: state.pathParameters['auctionId']!,
                     ),
                   ),

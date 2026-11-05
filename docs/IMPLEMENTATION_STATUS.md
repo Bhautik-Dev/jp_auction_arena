@@ -34,13 +34,24 @@ claim production readiness or completion of the full product scope.
   assigned-team-only manager views and admin/operator team details; responsive
   purse/squad panels; and overseas-player classification in player forms and
   optional CSV import/export.
+- **Point 10:** auction-scoped player preparation and queue; eligibility
+  review, category/status/base-price/eligibility filters, queue add/remove,
+  manual drag and move controls, explicit random and category ordering, and a
+  readiness checklist. Domain services enforce auction isolation, operator
+  assignment, role permissions, queue integrity, and readiness before Draft →
+  Ready or Ready → Live transitions. Critical queue changes are locked after
+  the auction starts.
 
 Point 9 verification: `flutter analyze` passed; `flutter test` passed (108
 tests); `flutter build web --release` passed; `git diff --check` passed.
 
+Point 10 verification: `flutter analyze` passed; `flutter test` passed (119
+tests); `flutter build web --release` passed. The preparation widget test
+covers narrow-screen rendering and adding an eligible registered player.
+
 ## Remaining scope
 
-Points 10-29 remain incomplete: auction preparation; live auction
+Points 11-29 remain incomplete: live auction
 and bidding; projector,
 team-owner and public live views; sold/unsold administration; results and
 analytics; user administration; notifications; audit and transaction ledger;
@@ -64,3 +75,11 @@ player assignments, purchases, purse deductions, or auction transactions.
 Existing sold-and-assigned player records with a positive purchase price are
 used to calculate spend; missing/invalid prices are surfaced as warnings and
 never fabricated.
+
+Auction preparation queues are also in-memory and volatile. Queue contents
+are scoped by auction ID and queue mutations are serialized within the local
+repository, but they do not synchronize across devices or survive app
+restarts. The readiness checklist validates configured rules, at least two
+active teams, and a non-empty queue of eligible registered players; profile
+review warnings are non-blocking. Preparation does not start bidding or create
+purchase transactions.

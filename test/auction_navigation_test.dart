@@ -11,9 +11,7 @@ import 'package:jp_auction_arena/features/auth/data/repositories/demo_auth_repos
 import 'package:jp_auction_arena/features/dashboard/presentation/screens/dashboard_screen.dart';
 
 void main() {
-  testWidgets('Super Admin creates an auction and manages its lifecycle', (
-    tester,
-  ) async {
+  testWidgets('Super Admin cannot ready an unprepared auction', (tester) async {
     tester.view.physicalSize = const Size(1280, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -55,13 +53,8 @@ void main() {
     await tester.pumpAndSettle();
     await _tap(tester, 'Confirm');
     await tester.pumpAndSettle();
-    expect(find.text('Ready'), findsOneWidget);
-
-    await _tap(tester, 'Activate Auction');
-    await tester.pumpAndSettle();
-    await _tap(tester, 'Confirm');
-    await tester.pumpAndSettle();
-    expect(find.text('Live'), findsOneWidget);
+    expect(find.text('Draft'), findsOneWidget);
+    expect(find.text('Auction Preparation'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

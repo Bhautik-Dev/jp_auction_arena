@@ -9,6 +9,7 @@ abstract final class RouteNames {
   static const auctionDetail = '/app/auctions/:auctionId';
   static const auctionEdit = '/app/auctions/:auctionId/edit';
   static const auctionSettings = '/app/auctions/:auctionId/settings';
+  static const auctionPreparation = '/app/auctions/:auctionId/preparation';
   static const tournaments = '/app/tournaments';
   static const tournamentCreate = '/app/tournaments/create';
   static const tournamentDetail = '/app/tournaments/:tournamentId';
@@ -43,6 +44,8 @@ abstract final class RouteNames {
   static String auctionEditPath(String id) => '${auctionDetailPath(id)}/edit';
   static String auctionSettingsPath(String id) =>
       '${auctionDetailPath(id)}/settings';
+  static String auctionPreparationPath(String id) =>
+      '${auctionDetailPath(id)}/preparation';
   static String auctionTeamsPath(String auctionId) =>
       '${auctionDetailPath(auctionId)}/teams';
   static String auctionTeamCreatePath(String auctionId) =>

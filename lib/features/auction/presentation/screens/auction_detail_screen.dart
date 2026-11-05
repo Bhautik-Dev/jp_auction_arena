@@ -9,6 +9,7 @@ import 'package:jp_auction_arena/features/auction/domain/models/bid_increment_mo
 import 'package:jp_auction_arena/features/auction/domain/models/auction_status.dart';
 import 'package:jp_auction_arena/features/auction/domain/models/cricket_format.dart';
 import 'package:jp_auction_arena/features/auction/presentation/providers/auction_providers.dart';
+import 'package:jp_auction_arena/features/auction/presentation/providers/auction_preparation_providers.dart';
 import 'package:jp_auction_arena/features/auction/presentation/widgets/auction_widgets.dart';
 import 'package:jp_auction_arena/features/auth/application/auth_providers.dart';
 import 'package:jp_auction_arena/features/auth/domain/models/app_permission.dart';
@@ -60,6 +61,17 @@ class _AuctionDetailContent extends ConsumerWidget {
         RolePermissions.allows(
           session.user.role,
           AppPermission.managePlayers,
+        ) &&
+        RolePermissions.canAccessAuction(
+          session.user.role,
+          session.user.auctionIds,
+          auction.id,
+        );
+    final canManageAuction =
+        session != null &&
+        RolePermissions.allows(
+          session.user.role,
+          AppPermission.manageAuctions,
         ) &&
         RolePermissions.canAccessAuction(
           session.user.role,
@@ -166,6 +178,15 @@ class _AuctionDetailContent extends ConsumerWidget {
               icon: const Icon(Icons.tune),
               label: const Text('Auction Settings'),
             ),
+            if (canManageAuction &&
+                auction.status != AuctionStatus.completed &&
+                auction.status != AuctionStatus.archived)
+              OutlinedButton.icon(
+                onPressed: () =>
+                    context.go(RouteNames.auctionPreparationPath(auction.id)),
+                icon: const Icon(Icons.playlist_add_check),
+                label: const Text('Auction Preparation'),
+              ),
             if (canManageTeams)
               OutlinedButton.icon(
                 onPressed: () =>
@@ -253,12 +274,24 @@ class _AuctionDetailContent extends ConsumerWidget {
     );
     if (shouldProceed != true) return;
     try {
-      await ref
-          .read(auctionManagementServiceProvider)
-          .changeStatus(actor, auction.id, nextStatus);
+      if (nextStatus == AuctionStatus.ready) {
+        await ref
+            .read(auctionPreparationServiceProvider)
+            .markReady(actor, auction.id);
+      } else {
+        if (nextStatus == AuctionStatus.live) {
+          await ref
+              .read(auctionPreparationServiceProvider)
+              .requireReady(actor, auction.id);
+        }
+        await ref
+            .read(auctionManagementServiceProvider)
+            .changeStatus(actor, auction.id, nextStatus);
+      }
       ref.invalidate(auctionsProvider);
       ref.invalidate(auctionHistoryProvider);
       ref.invalidate(auctionByIdProvider(auction.id));
+      ref.invalidate(auctionPreparationProvider(auction.id));
       ref.invalidate(dashboardSnapshotProvider);
     } on AuctionException catch (error) {
       if (context.mounted) {

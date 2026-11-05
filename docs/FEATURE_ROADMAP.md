@@ -18,7 +18,8 @@ roles, dashboard, and responsive navigation. Point 5 is auction creation and
 management. Points 6-7 establish auction-scoped team and player registrations.
 Point 8 adds per-auction bid increment rules and their settings editor. Point 9
 adds read-only purse/squad tracking and reusable validation; it does not
-implement bidding or create sold-player transactions.
+implement bidding or create sold-player transactions. Point 10 adds an
+auction-scoped preparation queue and readiness gate; it does not start bidding.
 
 ## Point 1 — Product blueprint
 
@@ -196,12 +197,39 @@ future work.**
   passed (108 tests); `flutter build web --release` passed; `git diff --check`
   passed.
 
+## Point 10 — Auction preparation and player order
+
+**Status: implemented locally; live bidding and durable queue persistence remain
+future work.**
+
+- Added an auction-scoped queue with explicit player inclusion, eligibility
+  validation, duplicate prevention, stale-entry reporting, serialized queue
+  updates, and per-auction isolation. Only players registered to the selected
+  auction are listed; available players are never queued automatically.
+- Added review filters for category, registration status, base-price range,
+  and eligibility, plus profile-review warnings and navigation to existing
+  player details.
+- Added manual move-up/down and drag-and-drop ordering, category ordering, and
+  explicit random ordering, constrained by each auction's configured order
+  mode. Queue mutations are restricted to Draft/Ready auctions.
+- Added a readiness checklist for valid auction/rule configuration, at least
+  two active teams, and a non-empty eligible queue. Incomplete available
+  player profiles are reported as non-blocking warnings. Draft → Ready and
+  Ready → Live transitions recheck the readiness criteria.
+- Admin/operator and assigned-auction permissions are enforced in the domain
+  service; team managers and public viewers cannot prepare or mutate queues.
+- Queue data is in-memory only and does not survive restart or synchronize
+  between clients. Readiness is a precondition only: live bidding, purchase
+  transactions, and purse deductions are not implemented.
+- Verification on this checkout: `flutter analyze` passed; `flutter test`
+  passed (119 tests); `flutter build web --release` passed.
+
 ## Remaining agreed points
 
 | Point | Scope | Current status |
 |---|---|---|
 | 9 | Team purse and squad management | Implemented locally; no purchase transactions |
-| 10 | Auction preparation and player order | Not started |
+| 10 | Auction preparation and player order | Implemented locally; queue is volatile |
 | 11-12 | Live auction control room and bidding engine | Not started |
 | 13-15 | Projector, team-owner mobile, and public live views | Not started |
 | 16-19 | Sold/unsold, results, reports, and auction history | Not started |
@@ -216,6 +244,6 @@ projector mode, mobile team dashboard, offline/LAN operation, analytics, audit,
 backup/recovery, white-label branding, subscriptions/payments, secure
 role-based access, Supabase/PostgreSQL, Node.js business logic, Supabase
 Realtime, Excel, and future CricHeroes compatibility are reserved. Only
-capabilities described under Points 1-9 are available locally as described
+capabilities described under Points 1-10 are available locally as described
 above; deferred services remain unavailable until separately implemented and
 tested.

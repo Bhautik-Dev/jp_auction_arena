@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/jp_auction_arena-1/windows"
+    "cmake.sourceDirectory": "D:/jp_auction_arena-1/windows",
+    "CodeGPT.apiKey": "CodeGPT Plus Beta"
 }

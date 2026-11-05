@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routing/route_names.dart';
 import '../../core/widgets/gradient_button.dart';
+import '../../data/models/enums.dart';
+import '../../data/repositories/auth_provider.dart';
 import 'nav_items.dart';
 
-class AppSidebar extends StatelessWidget {
+class AppSidebar extends ConsumerWidget {
   final String currentPath;
 
   const AppSidebar({
@@ -13,7 +17,12 @@ class AppSidebar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userRole = authState.currentRole;
+    final primaryItems = getFilteredPrimaryNavItems(userRole);
+    final secondaryItems = getFilteredSecondaryNavItems(userRole);
+
     return Container(
       width: 260,
       decoration: const BoxDecoration(
@@ -29,7 +38,7 @@ class AppSidebar extends StatelessWidget {
         children: [
           // App Logo & Brand header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
             child: Row(
               children: [
                 Container(
@@ -86,23 +95,97 @@ class AppSidebar extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // Action button
+          // User Profile & Role badge pill
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: GradientButton(
-              onPressed: () => context.go('/live'),
-              icon: Icons.play_arrow_rounded,
-              label: 'Live Hammer Desk',
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.accentPink.withValues(alpha: 0.2),
+                    child: Text(
+                      authState.settings.profileName.isNotEmpty
+                          ? authState.settings.profileName[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        color: AppColors.accentPink,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authState.settings.profileName.isNotEmpty
+                              ? authState.settings.profileName
+                              : 'JP Arena User',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Role: ${userRole.displayName.toUpperCase()}',
+                          style: TextStyle(
+                            color: userRole == UserRole.admin
+                                ? AppColors.gold
+                                : (userRole == UserRole.operator
+                                    ? AppColors.primaryBlue
+                                    : AppColors.success),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Logout icon
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.textMuted),
+                    tooltip: 'Logout',
+                    onPressed: () {
+                      ref.read(authProvider.notifier).logout();
+                      context.go(RouteNames.loginPath);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
+
+          // Live Arena Action Button (if allowed)
+          if (userRole.canRunLiveAuction)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: GradientButton(
+                onPressed: () => context.go(RouteNames.livePath),
+                icon: Icons.play_arrow_rounded,
+                label: 'Live Hammer Desk',
+              ),
+            ),
 
           // Scrollable Nav List
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               children: [
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Text(
                     'MAIN MENU',
                     style: TextStyle(
@@ -113,21 +196,23 @@ class AppSidebar extends StatelessWidget {
                     ),
                   ),
                 ),
-                ...primaryNavItems.map((item) => _buildNavItem(context, item)),
-                const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Text(
-                    'TOURNAMENT TOOLS',
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                ...primaryItems.map((item) => _buildNavItem(context, item)),
+                if (secondaryItems.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Text(
+                      'TOURNAMENT TOOLS',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
-                ),
-                ...secondaryNavItems.map((item) => _buildNavItem(context, item)),
+                  ...secondaryItems.map((item) => _buildNavItem(context, item)),
+                ],
               ],
             ),
           ),

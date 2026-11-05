@@ -20,6 +20,7 @@ class HiveBoxes {
     if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(PlayerAdapter());
     if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(BidAdapter());
     if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(AppSettingsAdapter());
+    if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(UserRoleAdapter());
 
     // Open boxes
     await Hive.openBox<Auction>(auctions);

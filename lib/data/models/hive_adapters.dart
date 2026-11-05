@@ -323,20 +323,22 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return AppSettings(
-      profileName: fields[0] as String? ?? 'JP Arena Admin',
-      orgName: fields[1] as String? ?? 'JP Cricket Association',
-      phone: fields[2] as String? ?? '+91 98765 43210',
-      pin: fields[3] as String? ?? '1234',
+      profileName: fields[0] as String? ?? '',
+      orgName: fields[1] as String? ?? '',
+      phone: fields[2] as String? ?? '',
+      pin: fields[3] as String? ?? '',
       language: fields[4] as String? ?? 'en',
       soundOn: fields[5] as bool? ?? true,
       voiceOn: fields[6] as bool? ?? true,
+      isSetupComplete: fields[7] as bool? ?? false,
+      role: fields[8] as UserRole? ?? UserRole.admin,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.profileName)
       ..writeByte(1)
@@ -350,6 +352,30 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(5)
       ..write(obj.soundOn)
       ..writeByte(6)
-      ..write(obj.voiceOn);
+      ..write(obj.voiceOn)
+      ..writeByte(7)
+      ..write(obj.isSetupComplete)
+      ..writeByte(8)
+      ..write(obj.role);
+  }
+}
+
+
+class UserRoleAdapter extends TypeAdapter<UserRole> {
+  @override
+  final int typeId = 8;
+
+  @override
+  UserRole read(BinaryReader reader) {
+    final index = reader.readByte();
+    if (index >= 0 && index < UserRole.values.length) {
+      return UserRole.values[index];
+    }
+    return UserRole.admin;
+  }
+
+  @override
+  void write(BinaryWriter writer, UserRole obj) {
+    writer.writeByte(obj.index);
   }
 }

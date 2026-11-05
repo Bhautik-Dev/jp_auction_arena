@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'enums.dart';
 
 class AppSettings extends HiveObject {
   String profileName;
@@ -8,15 +9,19 @@ class AppSettings extends HiveObject {
   String language;
   bool soundOn;
   bool voiceOn;
+  bool isSetupComplete;
+  UserRole role;
 
   AppSettings({
-    this.profileName = 'JP Arena Admin',
-    this.orgName = 'JP Cricket Association',
-    this.phone = '+91 98765 43210',
-    this.pin = '1234',
+    this.profileName = '',
+    this.orgName = '',
+    this.phone = '',
+    this.pin = '',
     this.language = 'en',
     this.soundOn = true,
     this.voiceOn = true,
+    this.isSetupComplete = false,
+    this.role = UserRole.admin,
   });
 
   AppSettings copyWith({
@@ -27,6 +32,8 @@ class AppSettings extends HiveObject {
     String? language,
     bool? soundOn,
     bool? voiceOn,
+    bool? isSetupComplete,
+    UserRole? role,
   }) {
     return AppSettings(
       profileName: profileName ?? this.profileName,
@@ -36,6 +43,8 @@ class AppSettings extends HiveObject {
       language: language ?? this.language,
       soundOn: soundOn ?? this.soundOn,
       voiceOn: voiceOn ?? this.voiceOn,
+      isSetupComplete: isSetupComplete ?? this.isSetupComplete,
+      role: role ?? this.role,
     );
   }
 
@@ -48,18 +57,22 @@ class AppSettings extends HiveObject {
       'language': language,
       'soundOn': soundOn,
       'voiceOn': voiceOn,
+      'isSetupComplete': isSetupComplete,
+      'role': role.name,
     };
   }
 
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
-      profileName: map['profileName'] as String? ?? 'JP Arena Admin',
-      orgName: map['orgName'] as String? ?? 'JP Cricket Association',
-      phone: map['phone'] as String? ?? '+91 98765 43210',
-      pin: map['pin'] as String? ?? '1234',
+      profileName: map['profileName'] as String? ?? '',
+      orgName: map['orgName'] as String? ?? '',
+      phone: map['phone'] as String? ?? '',
+      pin: map['pin'] as String? ?? '',
       language: map['language'] as String? ?? 'en',
       soundOn: map['soundOn'] as bool? ?? true,
       voiceOn: map['voiceOn'] as bool? ?? true,
+      isSetupComplete: map['isSetupComplete'] as bool? ?? false,
+      role: UserRole.fromString(map['role'] as String?),
     );
   }
 }

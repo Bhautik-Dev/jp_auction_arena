@@ -75,3 +75,43 @@ enum PlayerStatus {
     );
   }
 }
+
+
+enum UserRole {
+  admin,
+  operator,
+  viewer;
+
+  String get displayName {
+    switch (this) {
+      case UserRole.admin:
+        return 'Admin';
+      case UserRole.operator:
+        return 'Operator';
+      case UserRole.viewer:
+        return 'Viewer';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case UserRole.admin:
+        return 'Full access: manage auctions, teams, players, settings, and live desk.';
+      case UserRole.operator:
+        return 'Live operator: conduct live hammer auction and place bids.';
+      case UserRole.viewer:
+        return 'Read-only: view auction results, projector stage, and public stats.';
+    }
+  }
+
+  bool get canManageEverything => this == UserRole.admin;
+  bool get canRunLiveAuction => this == UserRole.admin || this == UserRole.operator;
+  bool get isReadOnly => this == UserRole.viewer;
+
+  static UserRole fromString(String? value) {
+    return UserRole.values.firstWhere(
+      (e) => e.name.toLowerCase() == value?.toLowerCase(),
+      orElse: () => UserRole.admin,
+    );
+  }
+}

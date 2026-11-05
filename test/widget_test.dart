@@ -74,7 +74,7 @@ void main() {
   });
 
   group('Hive Adapters Verification', () {
-    test('adapter typeIds are distinct and ordered 0 to 7', () {
+    test('adapter typeIds are distinct and ordered 0 to 8', () {
       expect(AuctionStatusAdapter().typeId, 0);
       expect(AuctionModeAdapter().typeId, 1);
       expect(PlayerStatusAdapter().typeId, 2);
@@ -83,14 +83,40 @@ void main() {
       expect(PlayerAdapter().typeId, 5);
       expect(BidAdapter().typeId, 6);
       expect(AppSettingsAdapter().typeId, 7);
+      expect(UserRoleAdapter().typeId, 8);
     });
 
     test('AppSettings defaults', () {
       final settings = AppSettings();
-      expect(settings.profileName, 'JP Arena Admin');
-      expect(settings.pin, '1234');
+      expect(settings.profileName, '');
+      expect(settings.pin, '');
       expect(settings.soundOn, isTrue);
       expect(settings.voiceOn, isTrue);
+      expect(settings.role, UserRole.admin);
+      expect(settings.isSetupComplete, isFalse);
+    });
+  });
+
+  group('UserRole Permissions', () {
+    test('Admin permissions', () {
+      const role = UserRole.admin;
+      expect(role.canManageEverything, isTrue);
+      expect(role.canRunLiveAuction, isTrue);
+      expect(role.isReadOnly, isFalse);
+    });
+
+    test('Operator permissions', () {
+      const role = UserRole.operator;
+      expect(role.canManageEverything, isFalse);
+      expect(role.canRunLiveAuction, isTrue);
+      expect(role.isReadOnly, isFalse);
+    });
+
+    test('Viewer permissions', () {
+      const role = UserRole.viewer;
+      expect(role.canManageEverything, isFalse);
+      expect(role.canRunLiveAuction, isFalse);
+      expect(role.isReadOnly, isTrue);
     });
   });
 }

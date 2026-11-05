@@ -91,13 +91,18 @@ class AuctionAdapter extends TypeAdapter<Auction> {
       countdownSeconds: fields[14] as int? ?? 30,
       mode: fields[15] as AuctionMode? ?? AuctionMode.manual,
       createdAt: fields[16] != null ? DateTime.fromMillisecondsSinceEpoch(fields[16] as int) : DateTime.now(),
+      contactPhone: fields[17] as String? ?? '',
+      contactEmail: fields[18] as String? ?? '',
+      categoryBasePrices: (fields[19] as Map?)?.cast<String, double>() ?? {},
+      reservePurseRule: fields[20] as bool? ?? true,
+      smartBidSlabs: fields[21] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, Auction obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -131,7 +136,17 @@ class AuctionAdapter extends TypeAdapter<Auction> {
       ..writeByte(15)
       ..write(obj.mode)
       ..writeByte(16)
-      ..write(obj.createdAt.millisecondsSinceEpoch);
+      ..write(obj.createdAt.millisecondsSinceEpoch)
+      ..writeByte(17)
+      ..write(obj.contactPhone)
+      ..writeByte(18)
+      ..write(obj.contactEmail)
+      ..writeByte(19)
+      ..write(obj.categoryBasePrices)
+      ..writeByte(20)
+      ..write(obj.reservePurseRule)
+      ..writeByte(21)
+      ..write(obj.smartBidSlabs);
   }
 }
 

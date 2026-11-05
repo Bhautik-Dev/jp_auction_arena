@@ -20,6 +20,13 @@ class Auction extends HiveObject {
   AuctionMode mode;
   DateTime createdAt;
 
+  // New Wizard Fields
+  String contactPhone;
+  String contactEmail;
+  Map<String, double> categoryBasePrices;
+  bool reservePurseRule;
+  bool smartBidSlabs;
+
   Auction({
     required this.id,
     required this.name,
@@ -38,7 +45,13 @@ class Auction extends HiveObject {
     this.countdownSeconds = 30,
     this.mode = AuctionMode.manual,
     DateTime? createdAt,
+    this.contactPhone = '',
+    this.contactEmail = '',
+    Map<String, double>? categoryBasePrices,
+    this.reservePurseRule = true,
+    this.smartBidSlabs = false,
   })  : categories = categories ?? const ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'],
+        categoryBasePrices = categoryBasePrices ?? {},
         createdAt = createdAt ?? DateTime.now();
 
   Auction copyWith({
@@ -59,6 +72,11 @@ class Auction extends HiveObject {
     int? countdownSeconds,
     AuctionMode? mode,
     DateTime? createdAt,
+    String? contactPhone,
+    String? contactEmail,
+    Map<String, double>? categoryBasePrices,
+    bool? reservePurseRule,
+    bool? smartBidSlabs,
   }) {
     return Auction(
       id: id ?? this.id,
@@ -78,6 +96,11 @@ class Auction extends HiveObject {
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       mode: mode ?? this.mode,
       createdAt: createdAt ?? this.createdAt,
+      contactPhone: contactPhone ?? this.contactPhone,
+      contactEmail: contactEmail ?? this.contactEmail,
+      categoryBasePrices: categoryBasePrices ?? Map<String, double>.from(this.categoryBasePrices),
+      reservePurseRule: reservePurseRule ?? this.reservePurseRule,
+      smartBidSlabs: smartBidSlabs ?? this.smartBidSlabs,
     );
   }
 
@@ -100,6 +123,11 @@ class Auction extends HiveObject {
       'countdownSeconds': countdownSeconds,
       'mode': mode.name,
       'createdAt': createdAt.toIso8601String(),
+      'contactPhone': contactPhone,
+      'contactEmail': contactEmail,
+      'categoryBasePrices': categoryBasePrices,
+      'reservePurseRule': reservePurseRule,
+      'smartBidSlabs': smartBidSlabs,
     };
   }
 
@@ -127,6 +155,14 @@ class Auction extends HiveObject {
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'] as String)
           : DateTime.now(),
+      contactPhone: map['contactPhone'] as String? ?? '',
+      contactEmail: map['contactEmail'] as String? ?? '',
+      categoryBasePrices: (map['categoryBasePrices'] as Map?)?.map(
+            (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+          ) ??
+          {},
+      reservePurseRule: map['reservePurseRule'] as bool? ?? true,
+      smartBidSlabs: map['smartBidSlabs'] as bool? ?? false,
     );
   }
 }

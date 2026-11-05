@@ -177,4 +177,37 @@ void main() {
       expect(copy.numberOfTeams, 8);
     });
   });
+
+  group('Auction Wizard Extended Fields', () {
+    test('Auction model supports reservePurseRule, smartBidSlabs, and categoryBasePrices', () {
+      final auction = Auction(
+        id: 'auc_wizard_1',
+        name: 'Super Cup',
+        startDateTime: DateTime(2026, 12, 10),
+        contactPhone: '9876543210',
+        contactEmail: 'admin@cricket.org',
+        reservePurseRule: true,
+        smartBidSlabs: true,
+        categoryBasePrices: {
+          'Batsman': 15000,
+          'Bowler': 12000,
+          'Icon Player': 50000,
+        },
+      );
+
+      expect(auction.contactPhone, '9876543210');
+      expect(auction.contactEmail, 'admin@cricket.org');
+      expect(auction.reservePurseRule, isTrue);
+      expect(auction.smartBidSlabs, isTrue);
+      expect(auction.categoryBasePrices['Icon Player'], 50000);
+
+      final map = auction.toMap();
+      final restored = Auction.fromMap(map);
+      expect(restored.contactPhone, '9876543210');
+      expect(restored.contactEmail, 'admin@cricket.org');
+      expect(restored.reservePurseRule, isTrue);
+      expect(restored.smartBidSlabs, isTrue);
+      expect(restored.categoryBasePrices['Icon Player'], 50000);
+    });
+  });
 }

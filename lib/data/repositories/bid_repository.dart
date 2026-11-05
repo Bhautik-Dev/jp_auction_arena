@@ -85,3 +85,9 @@ final currentAuctionBidsProvider = StreamProvider<List<Bid>>((ref) async* {
   yield repo.getByAuctionId(activeAuction.id);
   yield* repo.watchByAuction(activeAuction.id);
 });
+
+final allBidsListProvider = StreamProvider<List<Bid>>((ref) async* {
+  final repo = ref.watch(bidRepositoryProvider);
+  yield repo.getAll();
+  yield* repo.watchByAuction('');
+});

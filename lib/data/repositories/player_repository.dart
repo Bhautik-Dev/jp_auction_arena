@@ -83,3 +83,9 @@ final currentAuctionPlayersProvider = StreamProvider<List<Player>>((ref) async* 
   yield repo.getByAuctionId(activeAuction.id);
   yield* repo.watchByAuction(activeAuction.id);
 });
+
+final allPlayersListProvider = StreamProvider<List<Player>>((ref) async* {
+  final repo = ref.watch(playerRepositoryProvider);
+  yield repo.getAll();
+  yield* repo.watchByAuction('');
+});

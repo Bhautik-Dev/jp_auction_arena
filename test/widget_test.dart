@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jp_auction_arena/core/utils/currency_formatter.dart';
+import 'package:jp_auction_arena/core/widgets/count_up_text.dart';
 import 'package:jp_auction_arena/data/models/models.dart';
 
 void main() {
@@ -117,6 +119,30 @@ void main() {
       expect(role.canManageEverything, isFalse);
       expect(role.canRunLiveAuction, isFalse);
       expect(role.isReadOnly, isTrue);
+    });
+  });
+
+  group('CountUpText and ShimmerLoading Tests', () {
+    testWidgets('CountUpText renders number with prefix and suffix', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: CountUpText(
+              value: 125,
+              prefix: 'Total: ',
+              suffix: ' items',
+            ),
+          ),
+        ),
+      );
+
+      // Initial pump
+      await tester.pump();
+      expect(find.byType(CountUpText), findsOneWidget);
+
+      // Settle animation
+      await tester.pumpAndSettle();
+      expect(find.text('Total: 125 items'), findsOneWidget);
     });
   });
 }

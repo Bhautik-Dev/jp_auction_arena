@@ -1,117 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:jp_auction_arena/core/constants/app_colors.dart';
-import 'package:jp_auction_arena/core/constants/app_dimensions.dart';
-import 'package:jp_auction_arena/core/theme/app_typography.dart';
+import '../constants/app_colors.dart';
+import 'app_typography.dart';
 
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme {
-    final textTheme = AppTypography.createTextTheme(
-      AppColors.textPrimaryLight,
-      AppColors.textSecondaryLight,
-    );
-
-    final colorScheme = const ColorScheme.light(
-      primary: AppColors.primary,
-      onPrimary: Colors.white,
-      primaryContainer: AppColors.primaryLight,
-      secondary: AppColors.accent,
-      onSecondary: Colors.black,
-      surface: AppColors.surfaceLight,
-      onSurface: AppColors.textPrimaryLight,
-      error: AppColors.error,
-      onError: Colors.white,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.backgroundLight,
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surfaceLight,
-        foregroundColor: AppColors.textPrimaryLight,
-        elevation: 0,
-        centerTitle: false,
-        scrolledUnderElevation: 1,
-        titleTextStyle: textTheme.titleLarge,
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.surfaceLight,
-        elevation: AppDimensions.cardElevation,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          side: const BorderSide(color: AppColors.borderLight, width: AppDimensions.cardBorderWidth),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightMd),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          ),
-          textStyle: textTheme.labelLarge,
-          elevation: 0,
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightMd),
-          side: const BorderSide(color: AppColors.borderLight),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          ),
-          textStyle: textTheme.labelLarge,
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surfaceElevatedLight,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.spaceMd, vertical: AppDimensions.spaceSm),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.borderLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.borderLight),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-      ),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.borderLight,
-        thickness: 1,
-        space: 1,
-      ),
-    );
-  }
+  static const double cardRadius = 18.0;
+  static const double buttonRadius = 16.0;
 
   static ThemeData get darkTheme {
     final textTheme = AppTypography.createTextTheme(
-      AppColors.textPrimaryDark,
-      AppColors.textSecondaryDark,
+      AppColors.textPrimary,
+      AppColors.textSecondary,
     );
 
     final colorScheme = const ColorScheme.dark(
-      primary: AppColors.primaryLight,
+      primary: AppColors.primaryBlue,
       onPrimary: Colors.white,
-      primaryContainer: AppColors.primary,
-      secondary: AppColors.accent,
-      onSecondary: Colors.black,
-      surface: AppColors.surfaceDark,
-      onSurface: AppColors.textPrimaryDark,
+      primaryContainer: Color(0xFF1E3A8A),
+      secondary: AppColors.secondaryPurple,
+      onSecondary: Colors.white,
+      tertiary: AppColors.accentPink,
+      surface: AppColors.card,
+      onSurface: AppColors.textPrimary,
       error: AppColors.error,
       onError: Colors.white,
     );
@@ -120,31 +31,41 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.backgroundDark,
+      scaffoldBackgroundColor: AppColors.background,
+      canvasColor: AppColors.background,
       textTheme: textTheme,
+      fontFamily: 'Poppins',
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surfaceDark,
-        foregroundColor: AppColors.textPrimaryDark,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         titleTextStyle: textTheme.titleLarge,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surfaceDark,
-        elevation: AppDimensions.cardElevation,
+        color: AppColors.card,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          side: const BorderSide(color: AppColors.borderDark, width: AppDimensions.cardBorderWidth),
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: const BorderSide(color: AppColors.cardBorder, width: 1.2),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: const BorderSide(color: AppColors.cardBorder, width: 1.2),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryLight,
+          backgroundColor: AppColors.primaryBlue,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightMd),
+          minimumSize: const Size(double.infinity, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            borderRadius: BorderRadius.circular(buttonRadius),
           ),
           textStyle: textTheme.labelLarge,
           elevation: 0,
@@ -152,41 +73,54 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimaryDark,
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightMd),
-          side: const BorderSide(color: AppColors.borderDark),
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size(double.infinity, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          side: const BorderSide(color: AppColors.cardBorder, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            borderRadius: BorderRadius.circular(buttonRadius),
           ),
           textStyle: textTheme.labelLarge,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceElevatedDark,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.spaceMd, vertical: AppDimensions.spaceSm),
+        fillColor: AppColors.surfaceLight.withValues(alpha: 0.5),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.cardBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.cardBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+          borderRadius: BorderRadius.circular(buttonRadius),
           borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: AppColors.borderDark,
+        color: AppColors.cardBorder,
         thickness: 1,
         space: 1,
       ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.card,
+        selectedItemColor: AppColors.accentPink,
+        unselectedItemColor: AppColors.textSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
     );
   }
+
+  // Provide lightTheme pointing to same dark theme aesthetic (JP Auction Arena is dark-themed by design)
+  static ThemeData get lightTheme => darkTheme;
 }

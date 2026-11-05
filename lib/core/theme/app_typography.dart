@@ -1,87 +1,96 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTypography {
   AppTypography._();
 
-  static const String fontFamily = 'Roboto';
+  static const String fontFamily = 'Poppins';
 
-  static TextTheme createTextTheme(Color primaryTextColor, Color secondaryTextColor) {
+  static TextStyle _fontStyle({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+    double? letterSpacing,
+  }) {
+    return GoogleFonts.poppins(
+      textStyle: TextStyle(
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+      ),
+    );
+  }
+
+  static TextTheme createTextTheme([
+    Color primaryColor = const Color(0xFFF8FAFC),
+    Color secondaryColor = const Color(0xFF94A3B8),
+  ]) {
     return TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 40,
+      displayLarge: _fontStyle(
+        fontSize: 36,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      displayMedium: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 32,
+      displayMedium: _fontStyle(
+        fontSize: 28,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      displaySmall: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 24,
+      displaySmall: _fontStyle(
+        fontSize: 22,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.25,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      headlineMedium: TextStyle(
-        fontFamily: fontFamily,
+      headlineMedium: _fontStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      headlineSmall: TextStyle(
-        fontFamily: fontFamily,
+      headlineSmall: _fontStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      titleLarge: TextStyle(
-        fontFamily: fontFamily,
+      titleLarge: _fontStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      titleMedium: TextStyle(
-        fontFamily: fontFamily,
+      titleMedium: _fontStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      bodyLarge: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 16,
+      bodyLarge: _fontStyle(
+        fontSize: 15,
         fontWeight: FontWeight.w400,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      bodyMedium: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 14,
+      bodyMedium: _fontStyle(
+        fontSize: 13,
         fontWeight: FontWeight.w400,
-        color: secondaryTextColor,
+        color: secondaryColor,
       ),
-      bodySmall: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 12,
+      bodySmall: _fontStyle(
+        fontSize: 11,
         fontWeight: FontWeight.w400,
-        color: secondaryTextColor,
+        color: secondaryColor,
       ),
-      labelLarge: TextStyle(
-        fontFamily: fontFamily,
+      labelLarge: _fontStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: primaryTextColor,
+        color: primaryColor,
       ),
-      labelSmall: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 11,
+      labelSmall: _fontStyle(
+        fontSize: 10,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,
-        color: secondaryTextColor,
+        color: secondaryColor,
       ),
     );
   }

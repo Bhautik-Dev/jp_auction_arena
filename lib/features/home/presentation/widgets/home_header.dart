@@ -16,10 +16,10 @@ class HomeHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.spaceXl),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+        color: isDark ? AppColors.surfaceLight : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          color: AppColors.cardBorder,
         ),
       ),
       child: Column(
@@ -70,7 +70,7 @@ class HomeHeader extends StatelessWidget {
           Text(
             AppConfig.appName,
             style: theme.textTheme.displayMedium?.copyWith(
-              color: isDark ? AppColors.accentLight : AppColors.primary,
+              color: isDark ? AppColors.accentPink : AppColors.primaryBlue,
               letterSpacing: -0.5,
             ),
           ),

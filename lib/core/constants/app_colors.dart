@@ -3,40 +3,63 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary Palette
-  static const Color primary = Color(0xFF1E3A8A); // Royal Navy
-  static const Color primaryLight = Color(0xFF3B82F6);
-  static const Color primaryDark = Color(0xFF0F172A);
+  // Core Requested Theme Colors
+  static const Color background = Color(0xFF0B1026); // Dark navy background
+  static const Color backgroundLight = Color(0xFF0B1026); // Default dark theme
+  static const Color backgroundDark = Color(0xFF0B1026);
 
-  // Accent & Secondary
-  static const Color accent = Color(0xFFF59E0B); // Gold / Amber
-  static const Color accentLight = Color(0xFFFBBF24);
-  static const Color accentDark = Color(0xFFD97706);
+  static const Color card = Color(0xFF141B3A); // Card color with glass effect
+  static const Color cardBorder = Color(0x338B5CF6); // Soft purple-tinted border
+  static const Color cardBorderHover = Color(0x668B5CF6);
 
-  // Neutral - Dark Mode Backgrounds & Surfaces
-  static const Color backgroundDark = Color(0xFF0B0F19);
-  static const Color surfaceDark = Color(0xFF111827);
-  static const Color surfaceElevatedDark = Color(0xFF1F2937);
-  static const Color borderDark = Color(0xFF374151);
+  // Gradient & Accent Colors
+  static const Color primaryBlue = Color(0xFF3B82F6); // Primary blue
+  static const Color secondaryPurple = Color(0xFF8B5CF6); // Secondary purple
+  static const Color accentPink = Color(0xFFEC4899); // Accent pink
 
-  // Neutral - Light Mode Backgrounds & Surfaces
-  static const Color backgroundLight = Color(0xFFF8FAFC);
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color surfaceElevatedLight = Color(0xFFF1F5F9);
-  static const Color borderLight = Color(0xFFE2E8F0);
+  // Gradients
+  static const LinearGradient buttonGradient = LinearGradient(
+    colors: [primaryBlue, secondaryPurple, accentPink],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [primaryBlue, secondaryPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGradient = LinearGradient(
+    colors: [
+      Color(0xEE141B3A),
+      Color(0xCC18224B),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Surfaces & Overlays
+  static const Color surface = Color(0xFF141B3A);
+  static const Color surfaceLight = Color(0xFF1E2852);
+  static const Color surfaceHighlight = Color(0xFF243063);
+  static const Color overlayGlass = Color(0x1AFFFFFF);
 
   // Text Colors
-  static const Color textPrimaryLight = Color(0xFF0F172A);
-  static const Color textSecondaryLight = Color(0xFF475569);
-  static const Color textMutedLight = Color(0xFF94A3B8);
+  static const Color textPrimary = Color(0xFFF8FAFC);
+  static const Color textSecondary = Color(0xFF94A3B8);
+  static const Color textMuted = Color(0xFF64748B);
 
-  static const Color textPrimaryDark = Color(0xFFF8FAFC);
-  static const Color textSecondaryDark = Color(0xFF94A3B8);
-  static const Color textMutedDark = Color(0xFF64748B);
-
-  // Status & Semantic Colors
+  // Semantic Status
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF06B6D4);
+  static const Color gold = Color(0xFFFFD700);
+
+  // Status badges
+  static const Color statusLive = Color(0xFFEF4444);
+  static const Color statusSold = Color(0xFF10B981);
+  static const Color statusUnsold = Color(0xFF64748B);
+  static const Color statusAvailable = Color(0xFF3B82F6);
 }

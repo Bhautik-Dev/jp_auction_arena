@@ -40,6 +40,7 @@ void main() {
   Directory? tempDir;
 
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
     tempDir = await Directory.systemTemp.createTemp('hive_settings_test_');
     Hive.init(tempDir!.path);
 
@@ -70,7 +71,10 @@ void main() {
   testWidgets('SettingsScreen renders all sections, options and handles save', (tester) async {
     final fakeRepo = FakeSettingsRepository();
 
-    await tester.binding.setSurfaceSize(const Size(1280, 1200));
+    tester.view.physicalSize = const Size(1280, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -128,7 +132,11 @@ void main() {
 
   testWidgets('Backup action generates backup and opens dialog', (tester) async {
     final fakeRepo = FakeSettingsRepository();
-    await tester.binding.setSurfaceSize(const Size(1280, 1200));
+
+    tester.view.physicalSize = const Size(1280, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -161,7 +169,11 @@ void main() {
 
   testWidgets('Clear all data opens double confirmation dialogs', (tester) async {
     final fakeRepo = FakeSettingsRepository();
-    await tester.binding.setSurfaceSize(const Size(1280, 1200));
+
+    tester.view.physicalSize = const Size(1280, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       ProviderScope(

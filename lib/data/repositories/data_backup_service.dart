@@ -1,18 +1,23 @@
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 import 'hive_service.dart';
 
-class DataBackupService {
-  DataBackupService._();
+abstract class DataBackupService {
+  Future<String> createBackupJson();
+  Future<Map<String, int>> restoreFromJson(String jsonString);
+  Future<void> clearAllData();
+}
 
-  /// Exports all data across all boxes to a single JSON string.
-  static Future<String> createBackupJson() async {
-    final auctionsBox = Hive.box<Auction>(HiveBoxes.auctions);
-    final teamsBox = Hive.box<Team>(HiveBoxes.teams);
-    final playersBox = Hive.box<Player>(HiveBoxes.players);
-    final bidsBox = Hive.box<Bid>(HiveBoxes.bids);
-    final settingsBox = Hive.box<AppSettings>(HiveBoxes.settings);
+class HiveDataBackupService implements DataBackupService {
+  @override
+  Future<String> createBackupJson() async {
+    final auctionsBox = Hive.isBoxOpen(HiveBoxes.auctions) ? Hive.box<Auction>(HiveBoxes.auctions) : await Hive.openBox<Auction>(HiveBoxes.auctions);
+    final teamsBox = Hive.isBoxOpen(HiveBoxes.teams) ? Hive.box<Team>(HiveBoxes.teams) : await Hive.openBox<Team>(HiveBoxes.teams);
+    final playersBox = Hive.isBoxOpen(HiveBoxes.players) ? Hive.box<Player>(HiveBoxes.players) : await Hive.openBox<Player>(HiveBoxes.players);
+    final bidsBox = Hive.isBoxOpen(HiveBoxes.bids) ? Hive.box<Bid>(HiveBoxes.bids) : await Hive.openBox<Bid>(HiveBoxes.bids);
+    final settingsBox = Hive.isBoxOpen(HiveBoxes.settings) ? Hive.box<AppSettings>(HiveBoxes.settings) : await Hive.openBox<AppSettings>(HiveBoxes.settings);
 
     final currentSettings = settingsBox.get('app_settings');
 
@@ -29,18 +34,18 @@ class DataBackupService {
     return const JsonEncoder.withIndent('  ').convert(backupMap);
   }
 
-  /// Restores all data from a JSON string.
-  static Future<Map<String, int>> restoreFromJson(String jsonString) async {
+  @override
+  Future<Map<String, int>> restoreFromJson(String jsonString) async {
     final dynamic decoded = jsonDecode(jsonString);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('Invalid backup file structure: expected JSON object');
     }
 
-    final auctionsBox = Hive.box<Auction>(HiveBoxes.auctions);
-    final teamsBox = Hive.box<Team>(HiveBoxes.teams);
-    final playersBox = Hive.box<Player>(HiveBoxes.players);
-    final bidsBox = Hive.box<Bid>(HiveBoxes.bids);
-    final settingsBox = Hive.box<AppSettings>(HiveBoxes.settings);
+    final auctionsBox = Hive.isBoxOpen(HiveBoxes.auctions) ? Hive.box<Auction>(HiveBoxes.auctions) : await Hive.openBox<Auction>(HiveBoxes.auctions);
+    final teamsBox = Hive.isBoxOpen(HiveBoxes.teams) ? Hive.box<Team>(HiveBoxes.teams) : await Hive.openBox<Team>(HiveBoxes.teams);
+    final playersBox = Hive.isBoxOpen(HiveBoxes.players) ? Hive.box<Player>(HiveBoxes.players) : await Hive.openBox<Player>(HiveBoxes.players);
+    final bidsBox = Hive.isBoxOpen(HiveBoxes.bids) ? Hive.box<Bid>(HiveBoxes.bids) : await Hive.openBox<Bid>(HiveBoxes.bids);
+    final settingsBox = Hive.isBoxOpen(HiveBoxes.settings) ? Hive.box<AppSettings>(HiveBoxes.settings) : await Hive.openBox<AppSettings>(HiveBoxes.settings);
 
     int auctionsCount = 0;
     int teamsCount = 0;
@@ -106,11 +111,20 @@ class DataBackupService {
     };
   }
 
-  /// Clears all auction, team, player, and bid data from the database.
-  static Future<void> clearAllData() async {
-    await Hive.box<Auction>(HiveBoxes.auctions).clear();
-    await Hive.box<Team>(HiveBoxes.teams).clear();
-    await Hive.box<Player>(HiveBoxes.players).clear();
-    await Hive.box<Bid>(HiveBoxes.bids).clear();
+  @override
+  Future<void> clearAllData() async {
+    final auctionsBox = Hive.isBoxOpen(HiveBoxes.auctions) ? Hive.box<Auction>(HiveBoxes.auctions) : await Hive.openBox<Auction>(HiveBoxes.auctions);
+    final teamsBox = Hive.isBoxOpen(HiveBoxes.teams) ? Hive.box<Team>(HiveBoxes.teams) : await Hive.openBox<Team>(HiveBoxes.teams);
+    final playersBox = Hive.isBoxOpen(HiveBoxes.players) ? Hive.box<Player>(HiveBoxes.players) : await Hive.openBox<Player>(HiveBoxes.players);
+    final bidsBox = Hive.isBoxOpen(HiveBoxes.bids) ? Hive.box<Bid>(HiveBoxes.bids) : await Hive.openBox<Bid>(HiveBoxes.bids);
+
+    await auctionsBox.clear();
+    await teamsBox.clear();
+    await playersBox.clear();
+    await bidsBox.clear();
   }
 }
+
+final dataBackupServiceProvider = Provider<DataBackupService>((ref) {
+  return HiveDataBackupService();
+});

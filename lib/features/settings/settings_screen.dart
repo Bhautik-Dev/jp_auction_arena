@@ -173,7 +173,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ==========================================
   Future<void> _handleDownloadBackup() async {
     try {
-      final jsonContent = await DataBackupService.createBackupJson();
+      final jsonContent = await ref.read(dataBackupServiceProvider).createBackupJson();
       // On web/desktop/mobile, copy to clipboard without hanging tests
       Clipboard.setData(ClipboardData(text: jsonContent)).catchError((_) {});
 
@@ -308,7 +308,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (result == true && controller.text.trim().isNotEmpty) {
       try {
-        final counts = await DataBackupService.restoreFromJson(controller.text.trim());
+        final counts = await ref.read(dataBackupServiceProvider).restoreFromJson(controller.text.trim());
         ref.invalidate(auctionsListProvider);
         ref.invalidate(currentAuctionPlayersProvider);
         ref.invalidate(currentAuctionTeamsProvider);
@@ -416,7 +416,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (secondConfirm == true) {
-      await DataBackupService.clearAllData();
+      await ref.read(dataBackupServiceProvider).clearAllData();
       ref.invalidate(auctionsListProvider);
       ref.invalidate(currentAuctionPlayersProvider);
       ref.invalidate(currentAuctionTeamsProvider);

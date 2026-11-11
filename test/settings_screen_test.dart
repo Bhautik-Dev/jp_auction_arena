@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jp_auction_arena/data/models/models.dart';
 import 'package:jp_auction_arena/data/repositories/repositories.dart';
 import 'package:jp_auction_arena/features/settings/settings_screen.dart';
@@ -36,40 +34,26 @@ class FakeSettingsRepository implements SettingsRepository {
   Stream<AppSettings> watchSettings() => Stream.value(_settings);
 }
 
+class FakeDataBackupService implements DataBackupService {
+  @override
+  Future<String> createBackupJson() async => '{"version":"1.0","auctions":[],"teams":[],"players":[],"bids":[]}';
+
+  @override
+  Future<Map<String, int>> restoreFromJson(String jsonString) async => {
+    'auctions': 1,
+    'teams': 2,
+    'players': 10,
+    'bids': 5,
+  };
+
+  @override
+  Future<void> clearAllData() async {}
+}
+
 void main() {
-  Directory? tempDir;
-
-  setUpAll(() async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    tempDir = await Directory.systemTemp.createTemp('hive_settings_test_');
-    Hive.init(tempDir!.path);
-
-    if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(AuctionStatusAdapter());
-    if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(AuctionModeAdapter());
-    if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(PlayerStatusAdapter());
-    if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(AuctionAdapter());
-    if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(TeamAdapter());
-    if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(PlayerAdapter());
-    if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(BidAdapter());
-    if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(AppSettingsAdapter());
-    if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(UserRoleAdapter());
-
-    await Hive.openBox<Auction>(HiveBoxes.auctions);
-    await Hive.openBox<Team>(HiveBoxes.teams);
-    await Hive.openBox<Player>(HiveBoxes.players);
-    await Hive.openBox<Bid>(HiveBoxes.bids);
-    await Hive.openBox<AppSettings>(HiveBoxes.settings);
-  });
-
-  tearDownAll(() async {
-    await Hive.close();
-    try {
-      await tempDir?.delete(recursive: true);
-    } catch (_) {}
-  });
-
   testWidgets('SettingsScreen renders all sections, options and handles save', (tester) async {
-    final fakeRepo = FakeSettingsRepository();
+    final fakeSettings = FakeSettingsRepository();
+    final fakeBackup = FakeDataBackupService();
 
     tester.view.physicalSize = const Size(1280, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -79,7 +63,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          settingsRepositoryProvider.overrideWithValue(fakeRepo),
+          settingsRepositoryProvider.overrideWithValue(fakeSettings),
+          dataBackupServiceProvider.overrideWithValue(fakeBackup),
         ],
         child: const MaterialApp(
           home: SettingsScreen(),
@@ -131,7 +116,8 @@ void main() {
   });
 
   testWidgets('Backup action generates backup and opens dialog', (tester) async {
-    final fakeRepo = FakeSettingsRepository();
+    final fakeSettings = FakeSettingsRepository();
+    final fakeBackup = FakeDataBackupService();
 
     tester.view.physicalSize = const Size(1280, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -141,7 +127,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          settingsRepositoryProvider.overrideWithValue(fakeRepo),
+          settingsRepositoryProvider.overrideWithValue(fakeSettings),
+          dataBackupServiceProvider.overrideWithValue(fakeBackup),
         ],
         child: const MaterialApp(
           home: SettingsScreen(),
@@ -168,7 +155,8 @@ void main() {
   });
 
   testWidgets('Clear all data opens double confirmation dialogs', (tester) async {
-    final fakeRepo = FakeSettingsRepository();
+    final fakeSettings = FakeSettingsRepository();
+    final fakeBackup = FakeDataBackupService();
 
     tester.view.physicalSize = const Size(1280, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -178,7 +166,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          settingsRepositoryProvider.overrideWithValue(fakeRepo),
+          settingsRepositoryProvider.overrideWithValue(fakeSettings),
+          dataBackupServiceProvider.overrideWithValue(fakeBackup),
         ],
         child: const MaterialApp(
           home: SettingsScreen(),

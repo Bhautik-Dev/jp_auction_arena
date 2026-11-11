@@ -43,36 +43,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // Data
   bool _autoBackupAfterSale = false;
-
-  bool _initialized = false;
   bool _isSaving = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      final settings = ref.read(settingsRepositoryProvider).getSettings();
-      _profileController = TextEditingController(text: settings.profileName);
-      _phoneController = TextEditingController(text: settings.phone);
-      _orgNameController = TextEditingController(text: settings.orgName);
-      _orgDescController = TextEditingController(text: settings.orgDescription);
+  void initState() {
+    super.initState();
+    final settings = ref.read(settingsRepositoryProvider).getSettings();
+    _profileController = TextEditingController(text: settings.profileName);
+    _phoneController = TextEditingController(text: settings.phone);
+    _orgNameController = TextEditingController(text: settings.orgName);
+    _orgDescController = TextEditingController(text: settings.orgDescription);
 
-      _currentPinController = TextEditingController();
-      _newPinController = TextEditingController();
-      _confirmPinController = TextEditingController();
+    _currentPinController = TextEditingController();
+    _newPinController = TextEditingController();
+    _confirmPinController = TextEditingController();
 
-      _auctionReminders = settings.auctionReminders;
-      _soundOn = settings.soundOn;
-      _voiceOn = settings.voiceOn;
-      _soldAnimation = settings.soldAnimation;
+    _auctionReminders = settings.auctionReminders;
+    _soundOn = settings.soundOn;
+    _voiceOn = settings.voiceOn;
+    _soldAnimation = settings.soldAnimation;
 
-      _language = settings.language;
-      _themeAccent = settings.themeAccent;
-      _fontSize = settings.fontSize;
-      _autoBackupAfterSale = settings.autoBackupAfterSale;
-
-      _initialized = true;
-    }
+    _language = settings.language;
+    _themeAccent = settings.themeAccent;
+    _fontSize = settings.fontSize;
+    _autoBackupAfterSale = settings.autoBackupAfterSale;
   }
 
   @override

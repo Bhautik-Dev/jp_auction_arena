@@ -12,15 +12,25 @@ class AppTypography {
     required Color color,
     double? letterSpacing,
   }) {
-    return GoogleFonts.poppins(
-      textStyle: TextStyle(
+    try {
+      return GoogleFonts.poppins(
+        textStyle: TextStyle(
+          fontFamily: fontFamily,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: color,
+          letterSpacing: letterSpacing,
+        ),
+      );
+    } catch (_) {
+      return TextStyle(
         fontFamily: fontFamily,
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
         letterSpacing: letterSpacing,
-      ),
-    );
+      );
+    }
   }
 
   static TextTheme createTextTheme([

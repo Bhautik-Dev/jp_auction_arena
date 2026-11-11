@@ -347,13 +347,19 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       voiceOn: fields[6] as bool? ?? true,
       isSetupComplete: fields[7] as bool? ?? false,
       role: fields[8] as UserRole? ?? UserRole.admin,
+      orgDescription: fields[9] as String? ?? '',
+      auctionReminders: fields[10] as bool? ?? true,
+      soldAnimation: fields[11] as bool? ?? true,
+      themeAccent: fields[12] as String? ?? 'blue',
+      fontSize: fields[13] as String? ?? 'normal',
+      autoBackupAfterSale: fields[14] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.profileName)
       ..writeByte(1)
@@ -371,7 +377,19 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(7)
       ..write(obj.isSetupComplete)
       ..writeByte(8)
-      ..write(obj.role);
+      ..write(obj.role)
+      ..writeByte(9)
+      ..write(obj.orgDescription)
+      ..writeByte(10)
+      ..write(obj.auctionReminders)
+      ..writeByte(11)
+      ..write(obj.soldAnimation)
+      ..writeByte(12)
+      ..write(obj.themeAccent)
+      ..writeByte(13)
+      ..write(obj.fontSize)
+      ..writeByte(14)
+      ..write(obj.autoBackupAfterSale);
   }
 }
 

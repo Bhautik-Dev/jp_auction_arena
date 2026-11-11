@@ -5,3 +5,4 @@ export 'player_repository.dart';
 export 'bid_repository.dart';
 export 'settings_repository.dart';
 export 'auth_provider.dart';
+export 'data_backup_service.dart';

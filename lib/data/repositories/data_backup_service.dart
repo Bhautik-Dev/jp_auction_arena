@@ -1,0 +1,116 @@
+import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../models/models.dart';
+import 'hive_service.dart';
+
+class DataBackupService {
+  DataBackupService._();
+
+  /// Exports all data across all boxes to a single JSON string.
+  static Future<String> createBackupJson() async {
+    final auctionsBox = Hive.box<Auction>(HiveBoxes.auctions);
+    final teamsBox = Hive.box<Team>(HiveBoxes.teams);
+    final playersBox = Hive.box<Player>(HiveBoxes.players);
+    final bidsBox = Hive.box<Bid>(HiveBoxes.bids);
+    final settingsBox = Hive.box<AppSettings>(HiveBoxes.settings);
+
+    final currentSettings = settingsBox.get('app_settings');
+
+    final backupMap = <String, dynamic>{
+      'version': '1.0',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'auctions': auctionsBox.values.map((a) => a.toMap()).toList(),
+      'teams': teamsBox.values.map((t) => t.toMap()).toList(),
+      'players': playersBox.values.map((p) => p.toMap()).toList(),
+      'bids': bidsBox.values.map((b) => b.toMap()).toList(),
+      'settings': currentSettings?.toMap(),
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(backupMap);
+  }
+
+  /// Restores all data from a JSON string.
+  static Future<Map<String, int>> restoreFromJson(String jsonString) async {
+    final dynamic decoded = jsonDecode(jsonString);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Invalid backup file structure: expected JSON object');
+    }
+
+    final auctionsBox = Hive.box<Auction>(HiveBoxes.auctions);
+    final teamsBox = Hive.box<Team>(HiveBoxes.teams);
+    final playersBox = Hive.box<Player>(HiveBoxes.players);
+    final bidsBox = Hive.box<Bid>(HiveBoxes.bids);
+    final settingsBox = Hive.box<AppSettings>(HiveBoxes.settings);
+
+    int auctionsCount = 0;
+    int teamsCount = 0;
+    int playersCount = 0;
+    int bidsCount = 0;
+
+    // Clear existing data before restoring
+    await auctionsBox.clear();
+    await teamsBox.clear();
+    await playersBox.clear();
+    await bidsBox.clear();
+
+    if (decoded['auctions'] is List) {
+      for (final item in decoded['auctions'] as List) {
+        if (item is Map) {
+          final auction = Auction.fromMap(Map<String, dynamic>.from(item));
+          await auctionsBox.put(auction.id, auction);
+          auctionsCount++;
+        }
+      }
+    }
+
+    if (decoded['teams'] is List) {
+      for (final item in decoded['teams'] as List) {
+        if (item is Map) {
+          final team = Team.fromMap(Map<String, dynamic>.from(item));
+          await teamsBox.put(team.id, team);
+          teamsCount++;
+        }
+      }
+    }
+
+    if (decoded['players'] is List) {
+      for (final item in decoded['players'] as List) {
+        if (item is Map) {
+          final player = Player.fromMap(Map<String, dynamic>.from(item));
+          await playersBox.put(player.id, player);
+          playersCount++;
+        }
+      }
+    }
+
+    if (decoded['bids'] is List) {
+      for (final item in decoded['bids'] as List) {
+        if (item is Map) {
+          final bid = Bid.fromMap(Map<String, dynamic>.from(item));
+          await bidsBox.put(bid.id, bid);
+          bidsCount++;
+        }
+      }
+    }
+
+    if (decoded['settings'] is Map) {
+      final settings = AppSettings.fromMap(Map<String, dynamic>.from(decoded['settings'] as Map));
+      await settingsBox.put('app_settings', settings);
+    }
+
+    return {
+      'auctions': auctionsCount,
+      'teams': teamsCount,
+      'players': playersCount,
+      'bids': bidsCount,
+    };
+  }
+
+  /// Clears all auction, team, player, and bid data from the database.
+  static Future<void> clearAllData() async {
+    await Hive.box<Auction>(HiveBoxes.auctions).clear();
+    await Hive.box<Team>(HiveBoxes.teams).clear();
+    await Hive.box<Player>(HiveBoxes.players).clear();
+    await Hive.box<Bid>(HiveBoxes.bids).clear();
+  }
+}

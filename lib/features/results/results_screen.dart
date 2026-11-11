@@ -27,60 +27,46 @@ class ResultsScreen extends ConsumerWidget {
       icon: Icons.checklist_rounded,
       children: [
         // Summary cards
-        Row(
-          children: [
-            Expanded(
-              child: GlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Total Sold', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${soldPlayers.length}',
-                      style: const TextStyle(color: AppColors.success, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 620;
+            final itemWidth = isCompact ? (constraints.maxWidth - 12) / 2 : (constraints.maxWidth - 32) / 3;
+
+            Widget buildCard(String title, String val, Color color) {
+              return SizedBox(
+                width: isCompact && title == 'Top Sale' ? constraints.maxWidth : itemWidth,
+                child: GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text(
+                        val,
+                        style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Unsold Players', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${unsoldPlayers.length}',
-                      style: const TextStyle(color: AppColors.error, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Top Sale', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(
-                      soldPlayers.isEmpty
-                          ? '₹0'
-                          : CurrencyFormatter.formatShort(
-                              soldPlayers.map((p) => p.soldPrice ?? 0).reduce((a, b) => a > b ? a : b),
-                            ),
-                      style: const TextStyle(color: AppColors.gold, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              );
+            }
+
+            final topSaleVal = soldPlayers.isEmpty
+                ? '₹0'
+                : CurrencyFormatter.formatShort(
+                    soldPlayers.map((p) => p.soldPrice ?? 0).reduce((a, b) => a > b ? a : b),
+                  );
+
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                buildCard('Total Sold', '${soldPlayers.length}', AppColors.success),
+                buildCard('Unsold Players', '${unsoldPlayers.length}', AppColors.error),
+                buildCard('Top Sale', topSaleVal, AppColors.gold),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
         const Text('Final Squads by Team', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -102,8 +88,11 @@ class ResultsScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         Text(
                           t.name,

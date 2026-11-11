@@ -219,7 +219,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -266,8 +266,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         spacing: 16,
         runSpacing: 12,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -278,13 +279,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ),
                 child: const Icon(Icons.analytics_rounded, color: AppColors.primaryBlue, size: 24),
               ),
-              const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
                     'Auction Analytics & Insights',
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     activeAuction != null ? 'Data for: ${activeAuction.name}' : 'Select an auction to view metrics',
@@ -300,6 +301,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             children: [
               // Auction dropdown filter
               Container(
+                constraints: const BoxConstraints(maxWidth: 220),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLight,
@@ -308,6 +310,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
+                    isExpanded: true,
                     dropdownColor: AppColors.card,
                     value: activeAuction?.id,
                     hint: const Text('Select Auction', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
@@ -318,6 +321,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         child: Text(
                           a.name,
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       );
                     }).toList(),
@@ -397,7 +401,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       builder: (context, constraints) {
         final crossCount = constraints.maxWidth > 1100
             ? 6
-            : (constraints.maxWidth > 750 ? 3 : 2);
+            : (constraints.maxWidth > 750 ? 3 : (constraints.maxWidth > 420 ? 2 : 1));
         final itemWidth = (constraints.maxWidth - ((crossCount - 1) * 12)) / crossCount;
 
         return Wrap(
@@ -570,8 +574,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               const Text(
                 'Team Spending Comparison',
@@ -605,10 +612,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             width: 10,
@@ -689,8 +699,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               const Text(
                 'Category Spending & Count',
@@ -891,8 +904,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               const Text(
                 'Bid Activity Timeline',
@@ -1133,10 +1149,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Wrap(
+            alignment: WrapAlignment.spaceAround,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.accentPink, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
@@ -1150,6 +1169,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ],
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
@@ -1180,10 +1200,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        const Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
           children: [
             Icon(Icons.bolt_rounded, color: AppColors.gold, size: 22),
-            SizedBox(width: 8),
             Text(
               'Advanced Intelligence & Special Insights',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -1270,76 +1291,89 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           const Text('Players with the fiercest bidding duels and speed metrics', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           const SizedBox(height: 16),
           // Highlights row: Most bids + Fastest sold
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.local_fire_department_rounded, color: AppColors.gold, size: 16),
-                          SizedBox(width: 4),
-                          Text('Most Bids on Player', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        mostBidsPlayer?.name ?? 'No duel yet',
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '$mostBidsCount bids placed',
-                        style: const TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 420;
+              final mostBidsBlock = Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.speed_rounded, color: AppColors.info, size: 16),
-                          SizedBox(width: 4),
-                          Text('Fastest Sold', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        fastestPlayerName,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Concluded in $fastestDuration',
-                        style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.local_fire_department_rounded, color: AppColors.gold, size: 16),
+                        SizedBox(width: 4),
+                        Text('Most Bids on Player', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      mostBidsPlayer?.name ?? 'No duel yet',
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '$mostBidsCount bids placed',
+                      style: const TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+
+              final fastestSoldBlock = Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.speed_rounded, color: AppColors.info, size: 16),
+                        SizedBox(width: 4),
+                        Text('Fastest Sold', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      fastestPlayerName,
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Concluded in $fastestDuration',
+                      style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              );
+
+              return isNarrow
+                  ? Column(
+                      children: [
+                        mostBidsBlock,
+                        const SizedBox(height: 10),
+                        fastestSoldBlock,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: mostBidsBlock),
+                        const SizedBox(width: 12),
+                        Expanded(child: fastestSoldBlock),
+                      ],
+                    );
+            },
           ),
           const SizedBox(height: 18),
           const Text('Bidding War Meter (Most Contested Players):', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -1443,8 +1477,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   children: [
                     Expanded(
                       flex: 3,
-                      child: Text(t.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      child: Text(
+                        t.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Expanded(
                       flex: 4,
                       child: ClipRRect(
@@ -1457,10 +1497,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     SizedBox(
                       width: 44,
-                      child: Text('$score/100', style: TextStyle(color: scoreColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: Text('$score/100', style: TextStyle(color: scoreColor, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -1562,14 +1602,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               const Text(
                 'Price vs Strike Rate Scatter Chart',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.accentPink, shape: BoxShape.circle)),
                   const SizedBox(width: 4),

@@ -5,6 +5,7 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../shared/widgets/app_ui_feedback.dart';
 import '../../shared/widgets/feature_placeholder_screen.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
@@ -48,18 +49,26 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   Future<void> _handleSave() async {
     final activeAuction = ref.read(activeAuctionProvider);
     if (activeAuction == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or create an auction first.')),
-      );
+      AppToast.showError(context, 'Please select or create an auction first.');
       return;
     }
 
     if (!_formKey.currentState!.validate()) return;
 
+    final inputPlayerNo = int.tryParse(_playerNoController.text.trim()) ?? 1;
+
+    // Guard against duplicate player number in the same auction
+    final existingPlayers = ref.read(playerRepositoryProvider).getByAuctionId(activeAuction.id);
+    final isDuplicate = existingPlayers.any((p) => p.playerNo == inputPlayerNo);
+    if (isDuplicate) {
+      AppToast.showError(context, 'Player lot number #$inputPlayerNo is already assigned in this auction. Please choose a unique number.');
+      return;
+    }
+
     final player = Player(
       id: 'pl_${DateTime.now().millisecondsSinceEpoch}',
       auctionId: activeAuction.id,
-      playerNo: int.tryParse(_playerNoController.text.trim()) ?? 1,
+      playerNo: inputPlayerNo,
       name: _nameController.text.trim(),
       age: int.tryParse(_ageController.text.trim()) ?? 20,
       village: _villageController.text.trim(),
@@ -77,16 +86,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     await ref.read(playerRepositoryProvider).save(player);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Player "${player.name}" registered successfully!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      AppToast.showSuccess(context, 'Player "${player.name}" (#${player.playerNo}) registered successfully!');
       _nameController.clear();
       _villageController.clear();
-      final nextNo = (int.tryParse(_playerNoController.text) ?? 1) + 1;
-      _playerNoController.text = nextNo.toString();
+      // Auto-calculate the next available unique player number
+      final nextNumber = existingPlayers.fold<int>(inputPlayerNo, (max, p) => p.playerNo > max ? p.playerNo : max) + 1;
+      _playerNoController.text = nextNumber.toString();
     }
   }
 
@@ -104,29 +109,52 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         Form(
           key: _formKey,
           child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Cricket Player Bio & Registration',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 18),
-                Row(
+            padding: const EdgeInsets.all(20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 600;
+
+                Widget wrapResponsiveRow(List<Widget> children, {double spacing = 12}) {
+                  if (isCompact) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: children
+                          .map((w) => Padding(
+                                padding: EdgeInsets.only(bottom: spacing),
+                                child: w,
+                              ))
+                          .toList(),
+                    );
+                  }
+                  return Row(
+                    children: children
+                        .map((w) => Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: spacing / 2),
+                                child: w,
+                              ),
+                            ))
+                        .toList(),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 120,
-                      child: TextFormField(
+                    const Text(
+                      'Cricket Player Bio & Registration',
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 18),
+                    wrapResponsiveRow([
+                      TextFormField(
                         controller: _playerNoController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Lot No.'),
                         validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
+                      TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: 'Player Full Name',
@@ -134,33 +162,23 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Enter player name' : null,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 120,
-                      child: TextFormField(
+                      TextFormField(
                         controller: _ageController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Age'),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
+                    ]),
+                    const SizedBox(height: 12),
+                    wrapResponsiveRow([
+                      TextFormField(
                         controller: _villageController,
                         decoration: const InputDecoration(
                           labelText: 'Village / Town / Club',
                           prefixIcon: Icon(Icons.location_city_outlined),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _category,
                         decoration: const InputDecoration(labelText: 'Category'),
                         items: const [
@@ -173,14 +191,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           if (val != null) setState(() => _category = val);
                         },
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
+                    ]),
+                    const SizedBox(height: 12),
+                    wrapResponsiveRow([
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _battingStyle,
                         decoration: const InputDecoration(labelText: 'Batting Style'),
                         items: const [
@@ -191,10 +206,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           if (val != null) setState(() => _battingStyle = val);
                         },
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _bowlingStyle,
                         decoration: const InputDecoration(labelText: 'Bowling Style'),
                         items: const [
@@ -208,10 +221,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           if (val != null) setState(() => _bowlingStyle = val);
                         },
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
+                      TextFormField(
                         controller: _basePriceController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
@@ -219,65 +229,53 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           prefixIcon: Icon(Icons.currency_rupee_rounded),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
+                    ]),
+                    const SizedBox(height: 12),
+                    wrapResponsiveRow([
+                      TextFormField(
                         controller: _matchesController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Matches'),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
+                      TextFormField(
                         controller: _runsController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Total Runs'),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
+                      TextFormField(
                         controller: _wicketsController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Total Wickets'),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
+                      TextFormField(
                         controller: _strikeRateController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Strike Rate'),
                       ),
+                    ]),
+                    const SizedBox(height: 14),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Icon Player (Marquee / Star)', style: TextStyle(color: Colors.white)),
+                      subtitle: const Text('Highlighted during live lot generation', style: TextStyle(color: AppColors.textSecondary)),
+                      value: _isIcon,
+                      activeTrackColor: AppColors.accentPink.withValues(alpha: 0.5),
+                      activeThumbColor: AppColors.accentPink,
+                      onChanged: (val) => setState(() => _isIcon = val),
+                    ),
+                    const SizedBox(height: 20),
+                    Align(
+                      alignment: isCompact ? Alignment.center : Alignment.centerRight,
+                      child: GradientButton(
+                        width: isCompact ? double.infinity : null,
+                        onPressed: _handleSave,
+                        icon: Icons.person_add_rounded,
+                        label: 'Register Player to Pool',
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Icon Player (Marquee / Star)', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Highlighted during live lot generation', style: TextStyle(color: AppColors.textSecondary)),
-                  value: _isIcon,
-                  activeTrackColor: AppColors.accentPink.withValues(alpha: 0.5),
-                  activeThumbColor: AppColors.accentPink,
-                  onChanged: (val) => setState(() => _isIcon = val),
-                ),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GradientButton(
-                    onPressed: _handleSave,
-                    icon: Icons.person_add_rounded,
-                    label: 'Register Player to Pool',
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),

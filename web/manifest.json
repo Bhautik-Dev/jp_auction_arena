@@ -3,10 +3,11 @@
     "short_name": "JP ARENA",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#080A1D",
-    "theme_color": "#080A1D",
-    "description": "Cricket Auction Management",
-    "orientation": "portrait-primary",
+    "background_color": "#0B1026",
+    "theme_color": "#0B1026",
+    "description": "Professional Cricket Auction Management Application for Tournaments, Teams & Live Bidding",
+    "orientation": "any",
+    "categories": ["sports", "productivity", "utilities"],
     "prefer_related_applications": false,
     "icons": [
         {

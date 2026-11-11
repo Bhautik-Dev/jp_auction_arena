@@ -10,6 +10,7 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../shared/widgets/app_ui_feedback.dart';
 
 class AuctionsScreen extends ConsumerStatefulWidget {
   const AuctionsScreen({super.key});
@@ -39,7 +40,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,15 +135,37 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                   },
                 );
               },
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(48),
-                  child: CircularProgressIndicator(),
-                ),
+              loading: () => LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = constraints.maxWidth >= 1150
+                      ? 3
+                      : (constraints.maxWidth >= 720 ? 2 : 1);
+                  final spacing = 18.0;
+                  final totalSpacing = (crossAxisCount - 1) * spacing;
+                  final cardWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
+
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: List.generate(
+                      crossAxisCount * 2,
+                      (_) => SizedBox(
+                        width: cardWidth,
+                        child: const AppSkeleton.card(height: 280),
+                      ),
+                    ),
+                  );
+                },
               ),
-              error: (e, _) => Center(
-                child: Text('Error loading auctions: $e',
-                    style: const TextStyle(color: AppColors.error)),
+              error: (e, _) => AppEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Error Loading Auctions',
+                description: e.toString(),
+                action: ElevatedButton.icon(
+                  onPressed: () => ref.invalidate(auctionsListProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Retry'),
+                ),
               ),
             ),
           ],
@@ -153,10 +176,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
   // 1. HEADER
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 620;
+
+        final titleRow = Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
@@ -173,36 +197,58 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 size: 26,
               ),
             ),
-            const SizedBox(width: 16),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'My Tournaments & Auctions',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'My Tournaments & Auctions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Manage tournaments, duplicate setups, configure purse, and track results',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
+                  SizedBox(height: 2),
+                  Text(
+                    'Manage tournaments, duplicate setups, configure purse, and track results',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
-        ),
-        GradientButton(
+        );
+
+        final actionBtn = GradientButton(
+          width: isCompact ? double.infinity : null,
           onPressed: () => context.go(RouteNames.createAuctionPath),
           icon: Icons.add_rounded,
           label: 'New Tournament',
-        ),
-      ],
+        );
+
+        return isCompact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  titleRow,
+                  const SizedBox(height: 14),
+                  actionBtn,
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: titleRow),
+                  const SizedBox(width: 16),
+                  actionBtn,
+                ],
+              );
+      },
     );
   }
 
@@ -524,97 +570,111 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
           // Mini Stats: Teams x/y, Players, Sold
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.surfaceLight.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMiniStat(
-                  label: 'Teams',
-                  value: '${teams.length}/${auction.numberOfTeams}',
-                  icon: Icons.groups_rounded,
-                  color: AppColors.primaryBlue,
-                ),
-                Container(
-                    width: 1, height: 28, color: AppColors.cardBorder),
-                _buildMiniStat(
-                  label: 'Players',
-                  value: '${players.length}',
-                  icon: Icons.person_rounded,
-                  color: AppColors.secondaryPurple,
-                ),
-                Container(
-                    width: 1, height: 28, color: AppColors.cardBorder),
-                _buildMiniStat(
-                  label: 'Sold',
-                  value: '$soldCount',
-                  icon: Icons.how_to_reg_rounded,
-                  color: AppColors.success,
-                ),
-                Container(
-                    width: 1, height: 28, color: AppColors.cardBorder),
-                _buildMiniStat(
-                  label: 'Purse/Team',
-                  value: CurrencyFormatter.formatShort(auction.teamPurse),
-                  icon: Icons.currency_rupee_rounded,
-                  color: AppColors.gold,
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildMiniStat(
+                    label: 'Teams',
+                    value: '${teams.length}/${auction.numberOfTeams}',
+                    icon: Icons.groups_rounded,
+                    color: AppColors.primaryBlue,
+                  ),
+                  Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 1, height: 28, color: AppColors.cardBorder),
+                  _buildMiniStat(
+                    label: 'Players',
+                    value: '${players.length}',
+                    icon: Icons.person_rounded,
+                    color: AppColors.secondaryPurple,
+                  ),
+                  Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 1, height: 28, color: AppColors.cardBorder),
+                  _buildMiniStat(
+                    label: 'Sold',
+                    value: '$soldCount',
+                    icon: Icons.how_to_reg_rounded,
+                    color: AppColors.success,
+                  ),
+                  Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 1, height: 28, color: AppColors.cardBorder),
+                  _buildMiniStat(
+                    label: 'Purse/Team',
+                    value: CurrencyFormatter.formatShort(auction.teamPurse),
+                    icon: Icons.currency_rupee_rounded,
+                    color: AppColors.gold,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 18),
 
           // Card Action Buttons
-          Row(
-            children: [
-              // 1. View Results
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-                    context.go(RouteNames.resultsPath);
-                  },
-                  icon: const Icon(Icons.assessment_outlined, size: 16),
-                  label: const Text('View Results', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 280;
 
-              // 2. Reopen (if completed) OR Go Live (if draft/paused/live)
-              if (auction.status == AuctionStatus.completed ||
-                  auction.status == AuctionStatus.archived)
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _handleReopenAuction(auction),
-                    icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                    label: const Text('Reopen', style: TextStyle(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondaryPurple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: GradientButton(
-                    height: 40,
-                    onPressed: () {
-                      ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-                      context.go(RouteNames.livePath);
-                    },
-                    icon: Icons.gavel_rounded,
-                    label: 'Go Live',
-                  ),
+              final resultsBtn = OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                  context.go(RouteNames.resultsPath);
+                },
+                icon: const Icon(Icons.assessment_outlined, size: 16),
+                label: const Text('View Results', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                 ),
-            ],
+              );
+
+              final primaryActionBtn = (auction.status == AuctionStatus.completed ||
+                      auction.status == AuctionStatus.archived)
+                  ? ElevatedButton.icon(
+                      onPressed: () => _handleReopenAuction(auction),
+                      icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                      label: const Text('Reopen', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondaryPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                      ),
+                    )
+                  : GradientButton(
+                      height: 40,
+                      onPressed: () {
+                        ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                        context.go(RouteNames.livePath);
+                      },
+                      icon: Icons.gavel_rounded,
+                      label: 'Go Live',
+                    );
+
+              return isCompact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        resultsBtn,
+                        const SizedBox(height: 8),
+                        primaryActionBtn,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: resultsBtn),
+                        const SizedBox(width: 10),
+                        Expanded(child: primaryActionBtn),
+                      ],
+                    );
+            },
           ),
         ],
       ),

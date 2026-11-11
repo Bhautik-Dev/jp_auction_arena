@@ -6,6 +6,7 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../shared/widgets/app_ui_feedback.dart';
 import '../../shared/widgets/feature_placeholder_screen.dart';
 
 class TeamsScreen extends ConsumerWidget {
@@ -179,14 +180,28 @@ class TeamsScreen extends ConsumerWidget {
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
                                   onPressed: () async {
-                                    await ref.read(teamRepositoryProvider).delete(team.id);
+                                    final confirm = await AppConfirmDialog.show(
+                                     context,
+                                     title: 'Delete Team',
+                                     content: 'Delete team "${team.name}"? Players assigned to this team will remain in the database.',
+                                     confirmText: 'Delete Team',
+                                     isDestructive: true,
+                                    );
+                                    if (confirm == true) {
+                                     await ref.read(teamRepositoryProvider).delete(team.id);
+                                     if (context.mounted) {
+                                       AppToast.showSuccess(context, 'Team "${team.name}" deleted.');
+                                     }
+                                    }
                                   },
                                 ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              spacing: 8,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   'Remaining: ${CurrencyFormatter.formatShort(team.purseRemaining)}',
@@ -215,8 +230,10 @@ class TeamsScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              spacing: 8,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   'Players: ${team.squadCount}',
@@ -237,8 +254,33 @@ class TeamsScreen extends ConsumerWidget {
               },
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Error: $e', style: const TextStyle(color: AppColors.error)),
+          loading: () => LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 580 ? 2 : 1);
+              final itemWidth = (constraints.maxWidth - ((crossAxisCount - 1) * 16)) / crossAxisCount;
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: List.generate(
+                  crossAxisCount * 2,
+                  (_) => SizedBox(
+                    width: itemWidth,
+                    child: const AppSkeleton.card(height: 180),
+                  ),
+                ),
+              );
+            },
+          ),
+          error: (e, _) => AppEmptyState(
+            icon: Icons.error_outline_rounded,
+            title: 'Unable to Load Teams',
+            description: e.toString(),
+            action: ElevatedButton.icon(
+              onPressed: () => ref.invalidate(currentAuctionTeamsProvider),
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Retry'),
+            ),
+          ),
         ),
       ],
     );

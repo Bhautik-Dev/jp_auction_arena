@@ -458,39 +458,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ==========================================
   Widget _buildProfileAndOrgSection() {
     return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 580;
+
+          Widget wrapRow(Widget first, Widget second) {
+            if (isCompact) {
+              return Column(
+                children: [
+                  first,
+                  const SizedBox(height: 14),
+                  second,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: first),
+                const SizedBox(width: 16),
+                Expanded(child: second),
+              ],
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.person_outline_rounded, color: AppColors.primaryBlue, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Profile & Organization',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              const Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  Icon(Icons.person_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                  Text(
+                    'Profile & Organization',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Your identity and tournament organization branding',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
+              const SizedBox(height: 4),
+              const Text(
+                'Your identity and tournament organization branding',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 18),
+              wrapRow(
+                TextField(
                   controller: _profileController,
                   decoration: const InputDecoration(
                     labelText: 'Auctioneer / Admin Name',
                     prefixIcon: Icon(Icons.badge_outlined, color: AppColors.textSecondary, size: 18),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
+                TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
@@ -499,23 +518,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
+              const SizedBox(height: 14),
+              wrapRow(
+                TextField(
                   controller: _orgNameController,
                   decoration: const InputDecoration(
                     labelText: 'Organization / League Name',
                     prefixIcon: Icon(Icons.business_outlined, color: AppColors.textSecondary, size: 18),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
+                TextField(
                   controller: _orgDescController,
                   decoration: const InputDecoration(
                     labelText: 'Organization Tagline / Description',
@@ -524,8 +536,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -535,83 +547,97 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ==========================================
   Widget _buildSecuritySection() {
     return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 620;
+
+          final currentField = TextField(
+            controller: _currentPinController,
+            obscureText: _obscureCurrentPin,
+            maxLength: 6,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Current PIN',
+              counterText: '',
+              prefixIcon: const Icon(Icons.key_outlined, color: AppColors.textSecondary, size: 18),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureCurrentPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
+                onPressed: () => setState(() => _obscureCurrentPin = !_obscureCurrentPin),
+              ),
+            ),
+          );
+
+          final newField = TextField(
+            controller: _newPinController,
+            obscureText: _obscureNewPin,
+            maxLength: 6,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'New PIN (4-6 digits)',
+              counterText: '',
+              prefixIcon: const Icon(Icons.password_rounded, color: AppColors.textSecondary, size: 18),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureNewPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
+                onPressed: () => setState(() => _obscureNewPin = !_obscureNewPin),
+              ),
+            ),
+          );
+
+          final confirmField = TextField(
+            controller: _confirmPinController,
+            obscureText: _obscureConfirmPin,
+            maxLength: 6,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Confirm New PIN',
+              counterText: '',
+              prefixIcon: const Icon(Icons.check_circle_outline, color: AppColors.textSecondary, size: 18),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureConfirmPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
+                onPressed: () => setState(() => _obscureConfirmPin = !_obscureConfirmPin),
+              ),
+            ),
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lock_outline_rounded, color: AppColors.accentPink, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Security & PIN Access',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              const Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  Icon(Icons.lock_outline_rounded, color: AppColors.accentPink, size: 20),
+                  Text(
+                    'Security & PIN Access',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
+              const SizedBox(height: 4),
+              const Text(
+                'Change master auctioneer PIN for administrative actions and live hammer overrides',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 18),
+              if (isCompact) ...[
+                currentField,
+                const SizedBox(height: 12),
+                newField,
+                const SizedBox(height: 12),
+                confirmField,
+              ] else
+                Row(
+                  children: [
+                    Expanded(child: currentField),
+                    const SizedBox(width: 14),
+                    Expanded(child: newField),
+                    const SizedBox(width: 14),
+                    Expanded(child: confirmField),
+                  ],
+                ),
             ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Change master auctioneer PIN for administrative actions and live hammer overrides',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _currentPinController,
-                  obscureText: _obscureCurrentPin,
-                  maxLength: 6,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Current PIN',
-                    counterText: '',
-                    prefixIcon: const Icon(Icons.key_outlined, color: AppColors.textSecondary, size: 18),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureCurrentPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureCurrentPin = !_obscureCurrentPin),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: TextField(
-                  controller: _newPinController,
-                  obscureText: _obscureNewPin,
-                  maxLength: 6,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'New PIN (4-6 digits)',
-                    counterText: '',
-                    prefixIcon: const Icon(Icons.password_rounded, color: AppColors.textSecondary, size: 18),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureNewPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureNewPin = !_obscureNewPin),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: TextField(
-                  controller: _confirmPinController,
-                  obscureText: _obscureConfirmPin,
-                  maxLength: 6,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm New PIN',
-                    counterText: '',
-                    prefixIcon: const Icon(Icons.check_circle_outline, color: AppColors.textSecondary, size: 18),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirmPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureConfirmPin = !_obscureConfirmPin),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -624,10 +650,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          const Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
               Icon(Icons.notifications_active_outlined, color: AppColors.gold, size: 20),
-              SizedBox(width: 8),
               Text(
                 'Notifications & Live Auction Audio',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -712,10 +739,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          const Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
               Icon(Icons.palette_outlined, color: AppColors.info, size: 20),
-              SizedBox(width: 8),
               Text(
                 'Appearance, Language & Display',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -887,13 +915,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
-              const Row(
+              const Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
                 children: [
                   Icon(Icons.storage_rounded, color: AppColors.success, size: 20),
-                  SizedBox(width: 8),
                   Text(
                     'Data Management & Offline Sync',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),

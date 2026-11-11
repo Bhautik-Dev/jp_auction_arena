@@ -7,6 +7,7 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../shared/widgets/app_ui_feedback.dart';
 import '../../shared/widgets/feature_placeholder_screen.dart';
 
 class PlayersScreen extends ConsumerWidget {
@@ -93,7 +94,9 @@ class PlayersScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Text(
                                   p.name,
@@ -103,8 +106,7 @@ class PlayersScreen extends ConsumerWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                if (p.isIcon) ...[
-                                  const SizedBox(width: 8),
+                                if (p.isIcon)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
@@ -116,7 +118,6 @@ class PlayersScreen extends ConsumerWidget {
                                       style: TextStyle(color: AppColors.gold, fontSize: 9, fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                ],
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -156,7 +157,19 @@ class PlayersScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
                         onPressed: () async {
-                          await ref.read(playerRepositoryProvider).delete(p.id);
+                          final confirm = await AppConfirmDialog.show(
+                            context,
+                            title: 'Delete Player',
+                            content: 'Are you sure you want to remove "${p.name}" (#${p.playerNo}) from this auction pool?',
+                            confirmText: 'Delete',
+                            isDestructive: true,
+                          );
+                          if (confirm == true) {
+                            await ref.read(playerRepositoryProvider).delete(p.id);
+                            if (context.mounted) {
+                              AppToast.showSuccess(context, 'Player "${p.name}" deleted.');
+                            }
+                          }
                         },
                       ),
                     ],
@@ -165,8 +178,25 @@ class PlayersScreen extends ConsumerWidget {
               },
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Error: $e', style: const TextStyle(color: AppColors.error)),
+          loading: () => Column(
+            children: List.generate(
+              4,
+              (i) => const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: AppSkeleton.card(height: 72),
+              ),
+            ),
+          ),
+          error: (e, _) => AppEmptyState(
+            icon: Icons.error_outline_rounded,
+            title: 'Unable to Load Players',
+            description: e.toString(),
+            action: ElevatedButton.icon(
+              onPressed: () => ref.invalidate(currentAuctionPlayersProvider),
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Retry'),
+            ),
+          ),
         ),
       ],
     );

@@ -123,28 +123,34 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.image_rounded, color: AppColors.primaryBlue),
-                  title: const Text('Export as High-Res Image (PNG)', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Render current dashboard with all charts', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  tileColor: AppColors.surfaceLight,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _exportAsImage();
-                  },
+                Material(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    leading: const Icon(Icons.image_rounded, color: AppColors.primaryBlue),
+                    title: const Text('Export as High-Res Image (PNG)', style: TextStyle(color: Colors.white)),
+                    subtitle: const Text('Render current dashboard with all charts', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _exportAsImage();
+                    },
+                  ),
                 ),
                 const SizedBox(height: 10),
-                ListTile(
-                  leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accentPink),
-                  title: const Text('Export Analytics Summary (PDF / Report Text)', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Generate printable metrics document', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  tileColor: AppColors.surfaceLight,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _exportSummaryReport(auctionName, players, teams, bids);
-                  },
+                Material(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accentPink),
+                    title: const Text('Export Analytics Summary (PDF / Report Text)', style: TextStyle(color: Colors.white)),
+                    subtitle: const Text('Generate printable metrics document', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _exportSummaryReport(auctionName, players, teams, bids);
+                    },
+                  ),
                 ),
               ],
             ),

@@ -100,14 +100,31 @@ void main() {
     expect(find.text('Neon Pink'), findsOneWidget);
     expect(find.text('Normal (Recommended)'), findsOneWidget);
 
-    // Verify Data actions
-    expect(find.text('Auto-backup after every sale'), findsOneWidget);
-    expect(find.text('Backup (Download JSON)'), findsOneWidget);
-    expect(find.text('Restore from JSON'), findsOneWidget);
-    expect(find.text('Clear All Data'), findsOneWidget);
+    // Scroll and verify Data actions
+    final autoBackupFinder = find.text('Auto-backup after every sale');
+    await tester.ensureVisible(autoBackupFinder);
+    await tester.pumpAndSettle();
+    expect(autoBackupFinder, findsOneWidget);
 
-    // Test Save Changes Button click
+    final backupFinder = find.text('Backup (Download JSON)');
+    await tester.ensureVisible(backupFinder);
+    await tester.pumpAndSettle();
+    expect(backupFinder, findsOneWidget);
+
+    final restoreFinder = find.text('Restore from JSON');
+    await tester.ensureVisible(restoreFinder);
+    await tester.pumpAndSettle();
+    expect(restoreFinder, findsOneWidget);
+
+    final clearFinder = find.text('Clear All Data');
+    await tester.ensureVisible(clearFinder);
+    await tester.pumpAndSettle();
+    expect(clearFinder, findsOneWidget);
+
+    // Test Save Changes Button click (header button)
     final saveButton = find.text('Save Changes').first;
+    await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 

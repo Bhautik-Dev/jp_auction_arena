@@ -148,10 +148,15 @@ void main() {
     await tester.ensureVisible(backupButton);
     await tester.pumpAndSettle();
     await tester.tap(backupButton);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Backup Generated'), findsOneWidget);
     expect(find.text('Copy Again'), findsOneWidget);
+
+    final closeButton = find.text('Close');
+    await tester.tap(closeButton);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Clear all data opens double confirmation dialogs', (tester) async {
@@ -176,17 +181,23 @@ void main() {
     await tester.ensureVisible(clearButton);
     await tester.pumpAndSettle();
     await tester.tap(clearButton);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     // First confirmation dialog
     expect(find.text('Clear All Data?'), findsOneWidget);
     final continueButton = find.text('Continue to Final Confirmation');
     expect(continueButton, findsOneWidget);
     await tester.tap(continueButton);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Second double-confirmation dialog
     expect(find.text('Double Confirmation'), findsOneWidget);
     expect(find.text('To finalize total reset, type "CLEAR ALL" below:'), findsOneWidget);
+
+    final abortButton = find.text('Abort');
+    await tester.tap(abortButton);
+    await tester.pumpAndSettle();
   });
 }

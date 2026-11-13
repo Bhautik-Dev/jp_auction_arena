@@ -31,7 +31,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     if (price > team.purseRemaining) {
       AppToast.showError(
         context,
-        'Cannot sell: "${team.name}" only has ${CurrencyFormatter.formatShort(team.purseRemaining)} remaining in purse.',
+        'Cannot sell: "${team.name}" only has ${formatShort(team.purseRemaining)} remaining in purse.',
       );
       return;
     }
@@ -39,7 +39,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Confirm Player Sale',
-      content: 'Sell #${player.playerNo} "${player.name}" to "${team.name}" for ${CurrencyFormatter.formatInr(price)}?',
+      content: 'Sell #${player.playerNo} "${player.name}" to "${team.name}" for ${formatRupee(price)}?',
       confirmText: 'Hammer SOLD',
     );
     if (confirm != true) return;
@@ -83,7 +83,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     if (mounted) {
       AppToast.showSuccess(
         context,
-        'SOLD! "${player.name}" awarded to ${team.name} for ${CurrencyFormatter.formatInr(price)}.',
+        'SOLD! "${player.name}" awarded to ${team.name} for ${formatRupee(price)}.',
       );
       setState(() {
         _customHammerPrice = null;
@@ -161,7 +161,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final availablePlayers = players.where((p) => p.status == PlayerStatus.available).toList();
     final currentPlayer = availablePlayers.isNotEmpty ? availablePlayers.first : null;
 
-    final effectiveHammerPrice = _customHammerPrice ?? (currentPlayer?.basePrice ?? 10000.0);
+    final effectiveHammerPrice = _customHammerPrice ?? (currentPlayer?.basePrice ?? (activeAuction?.basePriceDefault ?? 10000.0));
     final activeTeam = teams.firstWhere(
       (t) => t.id == _selectedTeamId,
       orElse: () => teams.isNotEmpty ? teams.first : Team(id: '', auctionId: '', name: 'No Team', purseTotal: 0),
@@ -325,7 +325,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                       children: [
                         const Text('Base Price', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                         Text(
-                          CurrencyFormatter.formatInr(currentPlayer.basePrice),
+                          formatRupee(currentPlayer.basePrice),
                           style: const TextStyle(
                             color: AppColors.gold,
                             fontSize: 22,
@@ -386,7 +386,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Active Bid Step: +${CurrencyFormatter.formatShort(activeAuction?.bidIncrement ?? 2000)}',
+                      'Active Bid Step: +${formatShort(activeAuction?.bidIncrement ?? 2000)}',
                       style: const TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -403,7 +403,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                       selectedColor: AppColors.primaryBlue,
                       backgroundColor: AppColors.surfaceLight,
                       label: Text(
-                        '${team.name} (${CurrencyFormatter.formatShort(team.purseRemaining)})',
+                        '${team.name} (${formatShort(team.purseRemaining)})',
                         style: TextStyle(
                           color: isSelected ? Colors.white : AppColors.textSecondary,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -427,7 +427,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                     children: [
                       const Text('Hammer Price: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                       Text(
-                        CurrencyFormatter.formatInr(effectiveHammerPrice),
+                        formatRupee(effectiveHammerPrice),
                         style: const TextStyle(color: AppColors.gold, fontSize: 18, fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(width: 12),

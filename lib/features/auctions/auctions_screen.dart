@@ -609,7 +609,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                       width: 1, height: 28, color: AppColors.cardBorder),
                   _buildMiniStat(
                     label: 'Purse/Team',
-                    value: CurrencyFormatter.formatShort(auction.teamPurse),
+                    value: formatShort(auction.teamPurse),
                     icon: Icons.currency_rupee_rounded,
                     color: AppColors.gold,
                   ),

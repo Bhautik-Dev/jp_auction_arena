@@ -13,8 +13,11 @@ class ResultsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeAuction = ref.watch(activeAuctionProvider);
-    final players = ref.watch(currentAuctionPlayersProvider).value ?? [];
-    final teams = ref.watch(currentAuctionTeamsProvider).value ?? [];
+    final playersAsync = ref.watch(currentAuctionPlayersProvider);
+    final teamsAsync = ref.watch(currentAuctionTeamsProvider);
+
+    final players = playersAsync.value ?? [];
+    final teams = teamsAsync.value ?? [];
 
     final soldPlayers = players.where((p) => p.status == PlayerStatus.sold).toList();
     final unsoldPlayers = players.where((p) => p.status == PlayerStatus.unsold).toList();
@@ -52,8 +55,8 @@ class ResultsScreen extends ConsumerWidget {
             }
 
             final topSaleVal = soldPlayers.isEmpty
-                ? '₹0'
-                : CurrencyFormatter.formatShort(
+                ? formatRupee(0)
+                : formatShort(
                     soldPlayers.map((p) => p.soldPrice ?? 0).reduce((a, b) => a > b ? a : b),
                   );
 
@@ -99,7 +102,7 @@ class ResultsScreen extends ConsumerWidget {
                           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          'Spent: ${CurrencyFormatter.formatShort(t.purseSpent)} | Remaining: ${CurrencyFormatter.formatShort(t.purseRemaining)}',
+                          'Spent: ${formatShort(t.purseSpent)} | Remaining: ${formatShort(t.purseRemaining)}',
                           style: const TextStyle(color: AppColors.primaryBlue, fontSize: 12),
                         ),
                       ],
@@ -115,7 +118,7 @@ class ResultsScreen extends ConsumerWidget {
                           return Chip(
                             backgroundColor: AppColors.surfaceLight,
                             label: Text(
-                              '${p.name} (${CurrencyFormatter.formatShort(p.soldPrice ?? 0)})',
+                              '${p.name} (${formatShort(p.soldPrice ?? 0)})',
                               style: const TextStyle(color: Colors.white, fontSize: 11),
                             ),
                           );

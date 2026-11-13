@@ -132,7 +132,7 @@ class PlayersScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            CurrencyFormatter.formatShort(p.basePrice),
+                            formatShort(p.basePrice),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,

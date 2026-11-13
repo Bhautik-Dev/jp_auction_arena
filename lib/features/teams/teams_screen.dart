@@ -204,7 +204,7 @@ class TeamsScreen extends ConsumerWidget {
                               runSpacing: 4,
                               children: [
                                 Text(
-                                  'Remaining: ${CurrencyFormatter.formatShort(team.purseRemaining)}',
+                                  'Remaining: ${formatShort(team.purseRemaining)}',
                                   style: const TextStyle(
                                     color: AppColors.success,
                                     fontSize: 13,
@@ -212,7 +212,7 @@ class TeamsScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  'Purse: ${CurrencyFormatter.formatShort(team.purseTotal)}',
+                                  'Purse: ${formatShort(team.purseTotal)}',
                                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                                 ),
                               ],
@@ -240,7 +240,7 @@ class TeamsScreen extends ConsumerWidget {
                                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                                 ),
                                 Text(
-                                  'Spent: ${CurrencyFormatter.formatShort(team.purseSpent)}',
+                                  'Spent: ${formatShort(team.purseSpent)}',
                                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                                 ),
                               ],

@@ -27,7 +27,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _matchesController = TextEditingController(text: '0');
   final _strikeRateController = TextEditingController(text: '0.0');
 
-  String _category = 'All-Rounder';
+  String? _category;
   String _battingStyle = 'Right Hand Bat';
   String _bowlingStyle = 'Right Arm Medium';
   bool _isIcon = false;
@@ -65,6 +65,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return;
     }
 
+    final categories = activeAuction.categories.isNotEmpty
+        ? activeAuction.categories
+        : const ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'];
+
     final player = Player(
       id: 'pl_${DateTime.now().millisecondsSinceEpoch}',
       auctionId: activeAuction.id,
@@ -72,7 +76,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       name: _nameController.text.trim(),
       age: int.tryParse(_ageController.text.trim()) ?? 20,
       village: _villageController.text.trim(),
-      category: _category,
+      category: _category ?? (categories.isNotEmpty ? categories.first : 'All-Rounder'),
       battingStyle: _battingStyle,
       bowlingStyle: _bowlingStyle,
       matches: int.tryParse(_matchesController.text.trim()) ?? 0,
@@ -98,6 +102,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final activeAuction = ref.watch(activeAuctionProvider);
+
+    final availableCategories = activeAuction?.categories.isNotEmpty == true
+        ? activeAuction!.categories
+        : const ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'];
+
+    if (_category == null || !availableCategories.contains(_category)) {
+      _category = availableCategories.first;
+    }
 
     return FeaturePlaceholderScreen(
       title: 'Player Registration Desk',
@@ -181,12 +193,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         isExpanded: true,
                         initialValue: _category,
                         decoration: const InputDecoration(labelText: 'Category'),
-                        items: const [
-                          DropdownMenuItem(value: 'Batsman', child: Text('Batsman')),
-                          DropdownMenuItem(value: 'Bowler', child: Text('Bowler')),
-                          DropdownMenuItem(value: 'All-Rounder', child: Text('All-Rounder')),
-                          DropdownMenuItem(value: 'Wicket-Keeper', child: Text('Wicket-Keeper')),
-                        ],
+                        items: availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                         onChanged: (val) {
                           if (val != null) setState(() => _category = val);
                         },

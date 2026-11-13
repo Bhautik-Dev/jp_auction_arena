@@ -13,6 +13,10 @@ class CurrencyFormatter {
     return format.format(amount);
   }
 
+  /// Alias for formatInr (formatRupee)
+  static String formatRupee(double amount, {bool showDecimals = false}) =>
+      formatInr(amount, showDecimals: showDecimals);
+
   /// Short Indian currency format, e.g. ₹2.9L, ₹14K, ₹1.5Cr
   static String formatShort(double amount) {
     if (amount.isNaN || amount.isInfinite) return '₹0';
@@ -43,3 +47,9 @@ class CurrencyFormatter {
     return result;
   }
 }
+
+/// Convenience global helpers for consistent currency formatting across all screens
+String formatRupee(double amount, {bool showDecimals = false}) =>
+    CurrencyFormatter.formatRupee(amount, showDecimals: showDecimals);
+
+String formatShort(double amount) => CurrencyFormatter.formatShort(amount);

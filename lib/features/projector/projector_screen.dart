@@ -147,7 +147,7 @@ class ProjectorScreen extends ConsumerWidget {
                           style: TextStyle(color: AppColors.textSecondary, fontSize: 13, letterSpacing: 1),
                         ),
                         Text(
-                          CurrencyFormatter.formatInr(currentPlayer.basePrice),
+                          formatRupee(currentPlayer.basePrice),
                           style: const TextStyle(
                             color: AppColors.gold,
                             fontSize: 32,
@@ -188,7 +188,7 @@ class ProjectorScreen extends ConsumerWidget {
                         Text(t.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                         const SizedBox(width: 10),
                         Text(
-                          CurrencyFormatter.formatShort(t.purseRemaining),
+                          formatShort(t.purseRemaining),
                           style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold),
                         ),
                       ],

@@ -31,13 +31,13 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   String _auctionId = '';
 
   // Step 1: Tournament Info
-  final _nameController = TextEditingController(text: 'Premier T20 Cup 2026');
-  final _venueController = TextEditingController(text: 'JP Sports Ground');
+  final _nameController = TextEditingController();
+  final _venueController = TextEditingController();
   DateTime _startDate = DateTime.now().add(const Duration(days: 3));
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  final _descController = TextEditingController(text: 'Official seasonal cricket auction');
+  final _descController = TextEditingController();
   String? _logoBase64;
 
   // Step 1 Validation Errors
@@ -98,14 +98,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     for (final cat in _categories) {
       _categoryBasePriceControllers[cat] = TextEditingController(text: '10000');
     }
-
-    // Default 4 initial draft teams
-    _draftTeams.addAll([
-      _TeamDraftItem(name: 'Royal Strikers', ownerName: 'Jay Patel'),
-      _TeamDraftItem(name: 'Thunderbolts XI', ownerName: 'Priya Sharma'),
-      _TeamDraftItem(name: 'Gujarat Gladiators', ownerName: 'Karan Shah'),
-      _TeamDraftItem(name: 'Mumbai Blasters', ownerName: 'Amit Verma'),
-    ]);
 
     if (widget.editAuctionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadExistingAuction());
@@ -1623,13 +1615,13 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                 runSpacing: 14,
                 children: [
                   _buildSummaryItem('Auction Mode', _selectedMode.displayName),
-                  _buildSummaryItem('Franchise Purse', CurrencyFormatter.formatInr(purse)),
-                  _buildSummaryItem('Default Base Price', CurrencyFormatter.formatInr(basePrice)),
-                  _buildSummaryItem('Bid Increment', CurrencyFormatter.formatInr(bidInc)),
+                  _buildSummaryItem('Franchise Purse', formatRupee(purse)),
+                  _buildSummaryItem('Default Base Price', formatRupee(basePrice)),
+                  _buildSummaryItem('Bid Increment', formatRupee(bidInc)),
                   _buildSummaryItem('Squad Size Range', '${_minSquadController.text} - ${_maxSquadController.text} Players'),
                   _buildSummaryItem('Hammer Timer', '${_countdownController.text}s'),
                   _buildSummaryItem('Reserve Purse Rule', _reservePurseRule ? 'Enabled (Active)' : 'Disabled'),
-                  _buildSummaryItem('Smart Bid Slabs', _smartBidSlabs ? 'Enabled (+1K to +10K)' : 'Fixed (+${CurrencyFormatter.formatShort(bidInc)})'),
+                  _buildSummaryItem('Smart Bid Slabs', _smartBidSlabs ? 'Enabled (+1K to +10K)' : 'Fixed (+${formatShort(bidInc)})'),
                   _buildSummaryItem('Teams Registered', '${_draftTeams.length} / $teamsCount teams'),
                 ],
               ),

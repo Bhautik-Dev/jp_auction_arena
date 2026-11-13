@@ -174,16 +174,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     report.writeln('  Generated: ${DateTime.now().toLocal().toString().split('.')[0]}');
     report.writeln('==============================================\n');
     report.writeln('KEY METRICS:');
-    report.writeln('- Total Auction Value: ${CurrencyFormatter.formatInr(totalSpent)} (${CurrencyFormatter.formatShort(totalSpent)})');
-    report.writeln('- Average Player Price: ${CurrencyFormatter.formatInr(avgPrice)}');
-    report.writeln('- Highest Bid: ${CurrencyFormatter.formatInr(highestBid)}');
-    report.writeln('- Lowest Bid: ${CurrencyFormatter.formatInr(lowestBid)}');
+    report.writeln('- Total Auction Value: ${formatRupee(totalSpent)} (${formatShort(totalSpent)})');
+    report.writeln('- Average Player Price: ${formatRupee(avgPrice)}');
+    report.writeln('- Highest Bid: ${formatRupee(highestBid)}');
+    report.writeln('- Lowest Bid: ${formatRupee(lowestBid)}');
     report.writeln('- Total Bids Placed: ${bids.length}');
     report.writeln('- Clearance: ${soldPlayers.length}/${players.length} players sold\n');
 
     report.writeln('TEAM EXPENDITURES:');
     for (final t in teams) {
-      report.writeln('- ${t.name}: Spent ${CurrencyFormatter.formatInr(t.purseSpent)} / Remaining ${CurrencyFormatter.formatInr(t.purseRemaining)} (${t.squadCount} players)');
+      report.writeln('- ${t.name}: Spent ${formatRupee(t.purseSpent)} / Remaining ${formatRupee(t.purseRemaining)} (${t.squadCount} players)');
     }
 
     Clipboard.setData(ClipboardData(text: report.toString()));
@@ -412,8 +412,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               width: itemWidth,
               child: _buildMetricCard(
                 title: 'Total Auction Value',
-                value: CurrencyFormatter.formatShort(totalSpent),
-                subtitle: CurrencyFormatter.formatInr(totalSpent),
+                value: formatShort(totalSpent),
+                subtitle: formatRupee(totalSpent),
                 accentColor: AppColors.gold,
                 icon: Icons.account_balance_wallet_rounded,
               ),
@@ -422,8 +422,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               width: itemWidth,
               child: _buildMetricCard(
                 title: 'Average Player Price',
-                value: CurrencyFormatter.formatShort(avgSoldPrice),
-                subtitle: CurrencyFormatter.formatInr(avgSoldPrice),
+                value: formatShort(avgSoldPrice),
+                subtitle: formatRupee(avgSoldPrice),
                 accentColor: AppColors.primaryBlue,
                 icon: Icons.trending_up_rounded,
               ),
@@ -432,8 +432,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               width: itemWidth,
               child: _buildMetricCard(
                 title: 'Highest Bid',
-                value: CurrencyFormatter.formatShort(highestBid),
-                subtitle: CurrencyFormatter.formatInr(highestBid),
+                value: formatShort(highestBid),
+                subtitle: formatRupee(highestBid),
                 accentColor: AppColors.accentPink,
                 icon: Icons.military_tech_rounded,
               ),
@@ -442,8 +442,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               width: itemWidth,
               child: _buildMetricCard(
                 title: 'Lowest Bid',
-                value: CurrencyFormatter.formatShort(lowestBid),
-                subtitle: CurrencyFormatter.formatInr(lowestBid),
+                value: formatShort(lowestBid),
+                subtitle: formatRupee(lowestBid),
                 accentColor: AppColors.info,
                 icon: Icons.arrow_downward_rounded,
               ),
@@ -633,7 +633,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         ],
                       ),
                       Text(
-                        '${CurrencyFormatter.formatShort(team.purseSpent)} ($percentOfPurse% purse)',
+                        '${formatShort(team.purseSpent)} ($percentOfPurse% purse)',
                         style: TextStyle(color: barColor, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -740,7 +740,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       final spend = categoryTotals[cat] ?? 0.0;
                       final count = categoryCounts[cat] ?? 0;
                       return BarTooltipItem(
-                        '$cat\n${CurrencyFormatter.formatInr(spend)}\n$count sold',
+                        '$cat\n${formatRupee(spend)}\n$count sold',
                         const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       );
                     },
@@ -754,7 +754,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       reservedSize: 42,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          CurrencyFormatter.formatShort(value),
+                          formatShort(value),
                           style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
                         );
                       },
@@ -950,7 +950,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       reservedSize: 42,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          CurrencyFormatter.formatShort(value),
+                          formatShort(value),
                           style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
                         );
                       },
@@ -984,7 +984,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         final bid = sortedBids[spot.x.toInt()];
                         final timeStr = '${bid.timestamp.hour.toString().padLeft(2, '0')}:${bid.timestamp.minute.toString().padLeft(2, '0')}:${bid.timestamp.second.toString().padLeft(2, '0')}';
                         return LineTooltipItem(
-                          '${CurrencyFormatter.formatInr(spot.y)}\nTime: $timeStr',
+                          '${formatRupee(spot.y)}\nTime: $timeStr',
                           const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                         );
                       }).toList();
@@ -1139,7 +1139,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      CurrencyFormatter.formatShort(total),
+                      formatShort(total),
                       style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const Text('Total Purse', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
@@ -1163,7 +1163,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Spent', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                      Text(CurrencyFormatter.formatInr(spent), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(formatRupee(spent), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -1177,7 +1177,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Remaining', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                      Text(CurrencyFormatter.formatInr(remaining), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(formatRupee(remaining), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -1652,7 +1652,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       reservedSize: 44,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          CurrencyFormatter.formatShort(value),
+                          formatShort(value),
                           style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
                         );
                       },
@@ -1682,7 +1682,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         orElse: () => validPlayers.first,
                       );
                       return ScatterTooltipItem(
-                        '${p.name}\nSR: ${p.strikeRate}\nPrice: ${CurrencyFormatter.formatInr(touchedSpot.y)}',
+                        '${p.name}\nSR: ${p.strikeRate}\nPrice: ${formatRupee(touchedSpot.y)}',
                         textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       );
                     },

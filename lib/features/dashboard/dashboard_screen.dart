@@ -548,8 +548,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               isLoading: isLoading,
               title: 'Total Auction Value',
               countValue: totalAuctionValue,
-              customDisplayValue: CurrencyFormatter.formatShort(totalAuctionValue),
-              subtitle: CurrencyFormatter.formatInr(totalAuctionValue),
+              customDisplayValue: formatShort(totalAuctionValue),
+              subtitle: formatRupee(totalAuctionValue),
               icon: Icons.currency_rupee_rounded,
               accentColor: AppColors.gold,
             ),
@@ -791,7 +791,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        CurrencyFormatter.formatShort(maxPrice),
+                        formatShort(maxPrice),
                         style: const TextStyle(
                           color: AppColors.gold,
                           fontSize: 22,
@@ -799,7 +799,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                       Text(
-                        CurrencyFormatter.formatInr(maxPrice),
+                        formatRupee(maxPrice),
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 11,
@@ -1234,7 +1234,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  '${CurrencyFormatter.formatShort(team.purseSpent)} / ${CurrencyFormatter.formatShort(team.purseTotal)}',
+                                  '${formatShort(team.purseSpent)} / ${formatShort(team.purseTotal)}',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 13,
@@ -1242,7 +1242,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Left: ${CurrencyFormatter.formatShort(team.purseRemaining)}',
+                                  'Left: ${formatShort(team.purseRemaining)}',
                                   style: const TextStyle(
                                     color: AppColors.success,
                                     fontSize: 11,
@@ -1430,7 +1430,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           Text(
                             isSold
-                                ? CurrencyFormatter.formatShort(player.soldPrice ?? 0)
+                                ? formatShort(player.soldPrice ?? 0)
                                 : 'UNSOLD',
                             style: TextStyle(
                               color: isSold ? AppColors.gold : AppColors.textMuted,

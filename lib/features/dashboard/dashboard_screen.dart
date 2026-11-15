@@ -52,7 +52,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(allTeamsListProvider);
     ref.invalidate(allPlayersListProvider);
     ref.invalidate(allBidsListProvider);
-    ref.read(authProvider.notifier).refresh();
 
     await Future.delayed(const Duration(milliseconds: 650));
     if (mounted) {
@@ -70,8 +69,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final profileName = authState.settings.profileName.isNotEmpty
-        ? authState.settings.profileName
+    final profileName = authState.profileName.isNotEmpty
+        ? authState.profileName
         : 'Auctioneer';
 
     final auctionsAsync = ref.watch(auctionsListProvider);

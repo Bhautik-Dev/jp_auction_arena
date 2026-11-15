@@ -7,6 +7,9 @@ class RouteNames {
   static const String login = 'login';
   static const String loginPath = '/login';
 
+  static const String resetPassword = 'reset-password';
+  static const String resetPasswordPath = '/reset-password';
+
   static const String dashboard = 'dashboard';
   static const String dashboardPath = '/dashboard';
 
@@ -42,6 +45,9 @@ class RouteNames {
 
   static const String settings = 'settings';
   static const String settingsPath = '/settings';
+
+  static const String operators = 'operators';
+  static const String operatorsPath = '/operators';
 
   static const String notFound = 'not-found';
   static const String notFoundPath = '/404';

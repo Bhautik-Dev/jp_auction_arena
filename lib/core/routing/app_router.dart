@@ -9,7 +9,9 @@ import 'package:jp_auction_arena/features/auctions/auctions_screen.dart';
 import 'package:jp_auction_arena/features/create_auction/create_auction_screen.dart';
 import 'package:jp_auction_arena/features/dashboard/dashboard_screen.dart';
 import 'package:jp_auction_arena/features/live/live_screen.dart';
+import 'package:jp_auction_arena/features/auth/reset_password_screen.dart';
 import 'package:jp_auction_arena/features/login/login_screen.dart';
+import 'package:jp_auction_arena/features/operators/operators_screen.dart';
 import 'package:jp_auction_arena/features/players/players_screen.dart';
 import 'package:jp_auction_arena/features/projector/projector_screen.dart';
 import 'package:jp_auction_arena/features/registration/registration_screen.dart';
@@ -49,7 +51,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Role-based route enforcement
       final role = authState.currentRole;
-      if (authState.isAuthenticated) {
+      if (authState.isAuthenticated && role != null) {
         // Viewer can ONLY access results, projector, analytics, and dashboard
         if (role.isReadOnly) {
           final allowedForViewer = [
@@ -95,6 +97,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.loginPath,
         name: RouteNames.login,
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.resetPasswordPath,
+        name: RouteNames.resetPassword,
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
 
       // 3. Shell Route for Main App Scaffolding
@@ -196,6 +203,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: RouteNames.settings,
             pageBuilder: (context, state) => const NoTransitionPage(
               child: SettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: RouteNames.operatorsPath,
+            name: RouteNames.operators,
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: OperatorsScreen(),
             ),
           ),
         ],

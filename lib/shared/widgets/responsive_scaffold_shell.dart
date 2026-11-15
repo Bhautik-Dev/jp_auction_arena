@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
+import '../../data/models/enums.dart';
 import '../../data/repositories/auth_provider.dart';
 import 'app_sidebar.dart';
 import 'connection_indicator.dart';
@@ -20,7 +21,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
 
   void _showMoreMenu(BuildContext context, WidgetRef ref, String currentPath) {
     final authState = ref.read(authProvider);
-    final userRole = authState.currentRole;
+    final userRole = authState.currentRole ?? UserRole.admin;
     final secondaryItems = getFilteredSecondaryNavItems(userRole);
 
     showModalBottomSheet(
@@ -55,7 +56,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            'Signed in as ${authState.settings.profileName.isNotEmpty ? authState.settings.profileName : "User"} (${userRole.displayName})',
+                            'Signed in as ${authState.profileName.isNotEmpty ? authState.profileName : "User"} (${userRole.displayName})',
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 11,
@@ -146,7 +147,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentPath = state.matchedLocation;
     final authState = ref.watch(authProvider);
-    final userRole = authState.currentRole;
+    final userRole = authState.currentRole ?? UserRole.admin;
     final primaryItems = getFilteredPrimaryNavItems(userRole);
 
     return LayoutBuilder(

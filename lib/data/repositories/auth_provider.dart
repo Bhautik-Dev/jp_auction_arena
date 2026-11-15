@@ -1,155 +1,119 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../models/models.dart';
-import 'hive_service.dart';
-import 'settings_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/supabase/supabase_auth_service.dart';
+import '../../core/supabase/supabase_models.dart';
+import '../../data/models/enums.dart';
 
+/// Authentication state backed by Supabase Auth + `profiles` table.
 class AuthState {
   final bool isAuthenticated;
-  final bool isProfileCreated;
-  final UserRole currentRole;
-  final AppSettings settings;
+  final User? user;
+  final SupabaseProfile? profile;
+  final UserRole? role;
 
   const AuthState({
     required this.isAuthenticated,
-    required this.isProfileCreated,
-    required this.currentRole,
-    required this.settings,
+    this.user,
+    this.profile,
+    this.role,
   });
+
+  // Backwards-compatible getters for existing UI code
+  String get profileName => profile?.fullName ?? '';
+  String get orgName => profile?.orgName ?? '';
+  String get phone => profile?.phone ?? '';
+  String get email => profile?.email ?? user?.email ?? '';
+
+  bool get isProfileCreated => profile != null;
+
+  /// Backwards-compatible: current role
+  UserRole? get currentRole => role;
 
   AuthState copyWith({
     bool? isAuthenticated,
-    bool? isProfileCreated,
-    UserRole? currentRole,
-    AppSettings? settings,
+    User? user,
+    SupabaseProfile? profile,
+    UserRole? role,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      isProfileCreated: isProfileCreated ?? this.isProfileCreated,
-      currentRole: currentRole ?? this.currentRole,
-      settings: settings ?? this.settings,
+      user: user ?? this.user,
+      profile: profile ?? this.profile,
+      role: role ?? this.role,
     );
   }
 }
 
+/// Notifier that wraps Supabase Auth and keeps local state in sync.
 class AuthNotifier extends Notifier<AuthState> {
-  SettingsRepository get _settingsRepo => ref.read(settingsRepositoryProvider);
+  SupabaseAuthService get _service => SupabaseAuthService.instance;
 
   @override
   AuthState build() {
-    final settings = _settingsRepo.getSettings();
-    final hasProfile = settings.isSetupComplete && settings.pin.isNotEmpty;
+    final session = _service.currentSession;
+    final user = session?.user;
+
+    // Load profile for existing session
+    if (user != null) {
+      _loadProfile(user.id);
+    }
+
     return AuthState(
-      isAuthenticated: false,
-      isProfileCreated: hasProfile,
-      currentRole: settings.role,
-      settings: settings,
+      isAuthenticated: user != null,
+      user: user,
+      profile: null,
+      role: null,
     );
   }
 
-  /// Check if the user needs to register or enter PIN
-  void refresh() {
-    final settings = _settingsRepo.getSettings();
-    final hasProfile = settings.isSetupComplete && settings.pin.isNotEmpty;
-    state = state.copyWith(
-      isProfileCreated: hasProfile,
-      currentRole: settings.role,
-      settings: settings,
-    );
-  }
-
-  /// Create local profile on first launch
-  Future<bool> createProfile({
-    required String name,
-    required String orgName,
-    required String phone,
-    required String pin,
-    required UserRole role,
-  }) async {
-    final newSettings = state.settings.copyWith(
-      profileName: name.trim(),
-      orgName: orgName.trim(),
-      phone: phone.trim(),
-      pin: pin.trim(),
-      isSetupComplete: true,
-      role: role,
-    );
-    await _settingsRepo.saveSettings(newSettings);
-    state = AuthState(
-      isAuthenticated: true,
-      isProfileCreated: true,
-      currentRole: role,
-      settings: newSettings,
-    );
-    return true;
-  }
-
-  /// Login with 4-digit PIN
-  bool loginWithPin(String pin, {UserRole? selectedRole}) {
-    final currentPin = state.settings.pin;
-    if (currentPin.isEmpty) {
-      return false;
-    }
-
-    if (pin.trim() == currentPin.trim()) {
-      final effectiveRole = selectedRole ?? state.settings.role;
+  Future<void> _loadProfile(String userId) async {
+    final profile = await _service.getProfile(userId);
+    if (profile != null) {
+      final role = UserRole.fromString(profile.role);
       state = state.copyWith(
-        isAuthenticated: true,
-        currentRole: effectiveRole,
+        profile: profile,
+        role: role,
       );
-      return true;
     }
-    return false;
   }
 
-  /// Switch role on the fly (for testing or multi-role sessions)
-  Future<void> switchRole(UserRole role) async {
-    final updated = state.settings.copyWith(role: role);
-    await _settingsRepo.saveSettings(updated);
-    state = state.copyWith(
-      currentRole: role,
-      settings: updated,
+  /// Sign up with email + password. Creates auth user + profiles row.
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String fullName,
+    String? orgName,
+    String? phone,
+  }) async {
+    await _service.signUp(
+      email: email,
+      password: password,
+      fullName: fullName,
+      orgName: orgName,
+      phone: phone,
     );
   }
 
-  /// Logout
-  void logout() {
-    state = state.copyWith(isAuthenticated: false);
+  /// Sign in with email + password.
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {
+    await _service.signIn(email: email, password: password);
   }
 
-  /// Forgot PIN: Wipe all local data from all Hive boxes and reset
-  Future<void> wipeAllDataAndReset() async {
-    final auctionsBox = Hive.box<Auction>(HiveBoxes.auctions);
-    final teamsBox = Hive.box<Team>(HiveBoxes.teams);
-    final playersBox = Hive.box<Player>(HiveBoxes.players);
-    final bidsBox = Hive.box<Bid>(HiveBoxes.bids);
-    final settingsBox = Hive.box<AppSettings>(HiveBoxes.settings);
+  /// Send a password reset email.
+  Future<void> resetPassword(String email) async {
+    await _service.resetPassword(email);
+  }
 
-    await auctionsBox.clear();
-    await teamsBox.clear();
-    await playersBox.clear();
-    await bidsBox.clear();
-    await settingsBox.clear();
-
-    final blankSettings = AppSettings(
-      profileName: '',
-      orgName: '',
-      phone: '',
-      pin: '',
-      isSetupComplete: false,
-      role: UserRole.admin,
-    );
-    await _settingsRepo.saveSettings(blankSettings);
-
-    state = AuthState(
-      isAuthenticated: false,
-      isProfileCreated: false,
-      currentRole: UserRole.admin,
-      settings: blankSettings,
-    );
+  /// Sign out the current user.
+  Future<void> logout() async {
+    await _service.signOut();
   }
 }
 
+/// Riverpod provider for Supabase-backed authentication.
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );

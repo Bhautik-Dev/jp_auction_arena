@@ -4,6 +4,8 @@
 -- Run this entire script in your Supabase project's SQL Editor.
 -- Creates all 8 tables, enables RLS, and sets up permissive policies for
 -- the anon role (public client access via the Flutter app).
+-- Safe to run multiple times: uses CREATE TABLE IF NOT EXISTS,
+-- DROP POLICY IF EXISTS before CREATE POLICY, and CREATE OR REPLACE FUNCTION.
 -- No paid services required — works on Supabase Free Tier.
 -- ============================================================================
 
@@ -189,6 +191,7 @@ CREATE INDEX IF NOT EXISTS idx_auction_state_auction_id ON auction_state(auction
 -- For production multi-tenant use, replace WITH CHECK (true) with appropriate
 -- tenant/auction ID isolation rules.
 
+-- Enable RLS on all tables (safe to run multiple times)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auctions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auction_members ENABLE ROW LEVEL SECURITY;
@@ -199,29 +202,139 @@ ALTER TABLE auction_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies for anon role (public client access)
+-- Use DROP POLICY IF EXISTS before CREATE POLICY so the script is idempotent
+-- and can be re-run without "policy already exists" errors.
+
+DROP POLICY IF EXISTS "Enable all access for anon role" ON profiles;
 CREATE POLICY "Enable all access for anon role" ON profiles
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON auctions;
 CREATE POLICY "Enable all access for anon role" ON auctions
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON auction_members;
 CREATE POLICY "Enable all access for anon role" ON auction_members
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON teams;
 CREATE POLICY "Enable all access for anon role" ON teams
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON players;
 CREATE POLICY "Enable all access for anon role" ON players
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON bids;
 CREATE POLICY "Enable all access for anon role" ON bids
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON auction_state;
 CREATE POLICY "Enable all access for anon role" ON auction_state
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for anon role" ON activity_log;
 CREATE POLICY "Enable all access for anon role" ON activity_log
   FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- ============================================================================
+-- RPC: add_auction_member(auction_id, email, role)
+-- Security definer: runs with function owner privileges (bypasses RLS)
+-- Only callable by auction owner (caller profile role = 'admin' or 'owner')
+-- Looks up profile by email, inserts into auction_members
+-- ============================================================================
+CREATE OR REPLACE FUNCTION add_auction_member(
+  p_auction_id TEXT,
+  p_email TEXT,
+  p_role TEXT DEFAULT 'operator'
+)
+RETURNS TABLE (
+  id UUID,
+  auction_id TEXT,
+  profile_id UUID,
+  role TEXT,
+  joined_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_profile_id UUID;
+  v_caller_id UUID := auth.uid();
+  v_caller_role TEXT;
+BEGIN
+  -- Only authenticated users can call
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  -- Get caller's role from profiles
+  SELECT role INTO v_caller_role FROM profiles WHERE id = v_caller_id;
+
+  -- Only admin/owner can add members
+  IF v_caller_role IS NULL OR v_caller_role NOT IN ('admin', 'owner') THEN
+    RAISE EXCEPTION 'Only the auction owner can add members';
+  END IF;
+
+  -- Look up profile by email
+  SELECT id INTO v_profile_id FROM profiles WHERE email = p_email;
+
+  IF v_profile_id IS NULL THEN
+    RAISE EXCEPTION 'No user found with email: %', p_email;
+  END IF;
+
+  -- Insert into auction_members (upsert on conflict)
+  INSERT INTO auction_members (auction_id, profile_id, role)
+  VALUES (p_auction_id, v_profile_id, p_role)
+  ON CONFLICT (auction_id, profile_id) DO UPDATE SET role = EXCLUDED.role
+  RETURNING id, auction_id, profile_id, role, joined_at;
+END;
+$$;
+
+-- RPC: remove_auction_member(auction_id, email)
+-- Security definer: only callable by auction owner
+CREATE OR REPLACE FUNCTION remove_auction_member(
+  p_auction_id TEXT,
+  p_email TEXT
+)
+RETURNS TABLE (
+  deleted_count INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_profile_id UUID;
+  v_caller_id UUID := auth.uid();
+  v_caller_role TEXT;
+BEGIN
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT role INTO v_caller_role FROM profiles WHERE id = v_caller_id;
+
+  IF v_caller_role IS NULL OR v_caller_role NOT IN ('admin', 'owner') THEN
+    RAISE EXCEPTION 'Only the auction owner can remove members';
+  END IF;
+
+  SELECT id INTO v_profile_id FROM profiles WHERE email = p_email;
+
+  IF v_profile_id IS NULL THEN
+    RAISE EXCEPTION 'No user found with email: %', p_email;
+  END IF;
+
+  DELETE FROM auction_members
+  WHERE auction_id = p_auction_id AND profile_id = v_profile_id
+  RETURNING 1 INTO deleted_count;
+
+  IF deleted_count IS NULL THEN
+    deleted_count := 0;
+  END IF;
+
+  RETURN;
+END;
+$$;
 
 -- ============================================================================
 -- COMPLETE
@@ -229,6 +342,7 @@ CREATE POLICY "Enable all access for anon role" ON activity_log
 -- After running this script:
 -- 1. All 8 tables exist with correct column names matching the Flutter models
 -- 2. RLS is enabled and the anon role can perform INSERT/UPDATE/DELETE/SELECT
--- 3. The Flutter app can connect and sync data to Supabase
--- 4. Data persists across app restarts and devices
+-- 3. RPC functions add_auction_member and remove_auction_member are installed
+-- 4. The Flutter app can connect and sync data to Supabase
+-- 5. Data persists across app restarts and devices
 -- ============================================================================

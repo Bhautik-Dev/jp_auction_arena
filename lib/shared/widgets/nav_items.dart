@@ -105,6 +105,13 @@ const List<NavItem> secondaryNavItems = [
     path: '/settings',
     allowedRoles: [UserRole.admin],
   ),
+  NavItem(
+    label: 'Operators',
+    icon: Icons.supervised_user_circle_outlined,
+    activeIcon: Icons.supervised_user_circle_rounded,
+    path: '/operators',
+    allowedRoles: [UserRole.admin],
+  ),
 ];
 
 List<NavItem> getFilteredPrimaryNavItems(UserRole role) {

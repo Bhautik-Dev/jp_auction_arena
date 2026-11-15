@@ -20,7 +20,7 @@ class AppSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userRole = authState.currentRole;
+    final userRole = authState.currentRole ?? UserRole.admin;
     final primaryItems = getFilteredPrimaryNavItems(userRole);
     final secondaryItems = getFilteredSecondaryNavItems(userRole);
 
@@ -111,10 +111,10 @@ class AppSidebar extends ConsumerWidget {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: AppColors.accentPink.withValues(alpha: 0.2),
-                    child: Text(
-                      authState.settings.profileName.isNotEmpty
-                          ? authState.settings.profileName[0].toUpperCase()
-                          : 'U',
+                          child: Text(
+                            authState.profileName.isNotEmpty
+                                ? authState.profileName[0].toUpperCase()
+                                : 'U',
                       style: const TextStyle(
                         color: AppColors.accentPink,
                         fontWeight: FontWeight.bold,
@@ -128,8 +128,8 @@ class AppSidebar extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          authState.settings.profileName.isNotEmpty
-                              ? authState.settings.profileName
+                          authState.profileName.isNotEmpty
+                              ? authState.profileName
                               : 'JP Arena User',
                           style: const TextStyle(
                             color: Colors.white,

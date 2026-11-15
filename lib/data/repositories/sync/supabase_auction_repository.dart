@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
+import 'package:jp_auction_arena/core/utils/app_logger.dart';
 import '../../models/auction.dart';
 import '../hive_service.dart';
 import '../auction_repository.dart';
@@ -12,7 +13,8 @@ import 'supabase_sync_service.dart';
 /// Supabase-backed implementation of [AuctionRepository].
 ///
 /// Reads/writes are mirrored to the local Hive box so the app stays fully
-/// functional offline. Cloud writes are best-effort and never block the UI.
+/// functional offline. Cloud writes are best-effort — failures are logged
+/// but never block the UI or roll back the local write.
 class SupabaseAuctionRepository implements AuctionRepository {
   SupabaseAuctionRepository();
 
@@ -34,7 +36,7 @@ class SupabaseAuctionRepository implements AuctionRepository {
   @override
   Future<void> save(Auction auction) async {
     await _box.put(auction.id, auction);
-    unawaited(SupabaseSyncService.instance.pushAuction(
+    final ok = await SupabaseSyncService.instance.pushAuction(
       SupabaseAuction(
         id: auction.id,
         name: auction.name,
@@ -59,7 +61,13 @@ class SupabaseAuctionRepository implements AuctionRepository {
         reservePurseRule: auction.reservePurseRule,
         smartBidSlabs: auction.smartBidSlabs,
       ),
-    ));
+    );
+    if (!ok) {
+      AppLogger.warning(
+        'Auction ${auction.id} saved locally but cloud sync failed',
+        tag: 'SupabaseSync',
+      );
+    }
   }
 
   @override
@@ -67,14 +75,20 @@ class SupabaseAuctionRepository implements AuctionRepository {
     final auction = getById(id);
     await _box.delete(id);
     if (auction != null) {
-      unawaited(SupabaseSyncService.instance.deleteAuction(
+      final ok = await SupabaseSyncService.instance.deleteAuction(
         SupabaseAuction(
           id: auction.id,
           name: auction.name,
           startDateTime: auction.startDateTime,
           createdAt: auction.createdAt,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Auction $id deleted locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 

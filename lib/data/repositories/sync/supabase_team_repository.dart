@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
+import 'package:jp_auction_arena/core/utils/app_logger.dart';
 import '../../models/team.dart';
 import '../hive_service.dart';
 import '../team_repository.dart';
@@ -12,8 +13,9 @@ import 'supabase_sync_service.dart';
 /// Supabase-backed implementation of [TeamRepository].
 ///
 /// Reads come from the local Hive box (single source of truth for the UI).
-/// Writes are mirrored to the local box first, then pushed to Supabase
-/// best-effort so the app remains fully functional offline.
+/// Writes are mirrored to the local box first, then pushed to Supabase.
+/// Cloud sync failures are reported to the user via toast but never block
+/// the UI or roll back the local write.
 class SupabaseTeamRepository implements TeamRepository {
   SupabaseTeamRepository();
 
@@ -39,7 +41,7 @@ class SupabaseTeamRepository implements TeamRepository {
   @override
   Future<void> save(Team team) async {
     await _box.put(team.id, team);
-    unawaited(SupabaseSyncService.instance.pushTeam(
+    final ok = await SupabaseSyncService.instance.pushTeam(
       SupabaseTeam(
         id: team.id,
         auctionId: team.auctionId,
@@ -50,7 +52,13 @@ class SupabaseTeamRepository implements TeamRepository {
         purseSpent: team.purseSpent,
         playerIds: team.playerIds,
       ),
-    ));
+    );
+    if (!ok) {
+      AppLogger.warning(
+        'Team ${team.id} saved locally but cloud sync failed',
+        tag: 'SupabaseSync',
+      );
+    }
   }
 
   @override
@@ -58,13 +66,19 @@ class SupabaseTeamRepository implements TeamRepository {
     final team = getById(id);
     await _box.delete(id);
     if (team != null) {
-      unawaited(SupabaseSyncService.instance.deleteTeam(
+      final ok = await SupabaseSyncService.instance.deleteTeam(
         SupabaseTeam(
           id: team.id,
           auctionId: team.auctionId,
           name: team.name,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Team $id deleted locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 
@@ -73,13 +87,19 @@ class SupabaseTeamRepository implements TeamRepository {
     final teams = getByAuctionId(auctionId);
     await _box.deleteAll(teams.map((t) => t.id).toList());
     for (final team in teams) {
-      unawaited(SupabaseSyncService.instance.deleteTeam(
+      final ok = await SupabaseSyncService.instance.deleteTeam(
         SupabaseTeam(
           id: team.id,
           auctionId: team.auctionId,
           name: team.name,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Team ${team.id} deleted locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
+import 'package:jp_auction_arena/core/utils/app_logger.dart';
 import '../../models/player.dart';
 import '../hive_service.dart';
 import '../player_repository.dart';
@@ -12,8 +13,9 @@ import 'supabase_sync_service.dart';
 /// Supabase-backed implementation of [PlayerRepository].
 ///
 /// Reads come from the local Hive box (single source of truth for the UI).
-/// Writes are mirrored to the local box first, then pushed to Supabase
-/// best-effort so the app remains fully functional offline.
+/// Writes are mirrored to the local box first, then pushed to Supabase.
+/// Cloud sync failures are logged but never block the UI or roll back
+/// the local write.
 class SupabasePlayerRepository implements PlayerRepository {
   SupabasePlayerRepository();
 
@@ -42,7 +44,7 @@ class SupabasePlayerRepository implements PlayerRepository {
   @override
   Future<void> save(Player player) async {
     await _box.put(player.id, player);
-    unawaited(SupabaseSyncService.instance.pushPlayer(
+    final ok = await SupabaseSyncService.instance.pushPlayer(
       SupabasePlayer(
         id: player.id,
         auctionId: player.auctionId,
@@ -69,7 +71,13 @@ class SupabasePlayerRepository implements PlayerRepository {
         soldPrice: player.soldPrice,
         soldTeamId: player.soldTeamId,
       ),
-    ));
+    );
+    if (!ok) {
+      AppLogger.warning(
+        'Player ${player.id} saved locally but cloud sync failed',
+        tag: 'SupabaseSync',
+      );
+    }
   }
 
   @override
@@ -77,7 +85,7 @@ class SupabasePlayerRepository implements PlayerRepository {
     final map = {for (final p in players) p.id: p};
     await _box.putAll(map);
     for (final player in players) {
-      unawaited(SupabaseSyncService.instance.pushPlayer(
+      final ok = await SupabaseSyncService.instance.pushPlayer(
         SupabasePlayer(
           id: player.id,
           auctionId: player.auctionId,
@@ -104,7 +112,13 @@ class SupabasePlayerRepository implements PlayerRepository {
           soldPrice: player.soldPrice,
           soldTeamId: player.soldTeamId,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Player ${player.id} saved locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 
@@ -113,14 +127,20 @@ class SupabasePlayerRepository implements PlayerRepository {
     final player = getById(id);
     await _box.delete(id);
     if (player != null) {
-      unawaited(SupabaseSyncService.instance.deletePlayer(
+      final ok = await SupabaseSyncService.instance.deletePlayer(
         SupabasePlayer(
           id: player.id,
           auctionId: player.auctionId,
           playerNo: player.playerNo,
           name: player.name,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Player $id deleted locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 
@@ -129,14 +149,20 @@ class SupabasePlayerRepository implements PlayerRepository {
     final players = getByAuctionId(auctionId);
     await _box.deleteAll(players.map((p) => p.id).toList());
     for (final player in players) {
-      unawaited(SupabaseSyncService.instance.deletePlayer(
+      final ok = await SupabaseSyncService.instance.deletePlayer(
         SupabasePlayer(
           id: player.id,
           auctionId: player.auctionId,
           playerNo: player.playerNo,
           name: player.name,
         ),
-      ));
+      );
+      if (!ok) {
+        AppLogger.warning(
+          'Player ${player.id} deleted locally but cloud sync failed',
+          tag: 'SupabaseSync',
+        );
+      }
     }
   }
 

@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
+import 'package:jp_auction_arena/core/utils/app_logger.dart';
 
 /// Best-effort cloud sync helper.
 ///
-/// All methods are fire-and-forget: failures are swallowed so the local Hive
-/// repository remains the single source of truth for the UI. The service
-/// guards against unconfigured clients and silent failures.
+/// All methods return [bool] indicating whether the cloud write succeeded.
+/// Failures are logged via [AppLogger] so they are visible in the debug console
+/// and can be reported to the user. The local Hive repository remains the
+/// single source of truth for the UI regardless of cloud sync outcome.
 class SupabaseSyncService {
   SupabaseSyncService._();
 
@@ -16,102 +19,172 @@ class SupabaseSyncService {
   /// Singleton accessor.
   static SupabaseSyncService get instance => _instance;
 
+  SupabaseClient? get _client => SupabaseClientService.instance.client;
+
+  /// Whether a Supabase client is available for cloud writes.
+  bool get isConnected => _client != null;
+
   /// Push a single auction row to Supabase (upsert).
-  Future<void> pushAuction(SupabaseAuction auction) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('auctions').upsert(auction.toJson());
-    } catch (_) {
-      // Best-effort: never block the UI on cloud failures.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushAuction(SupabaseAuction auction) async {
+    return _write(
+      operation: () async {
+        await _client!.from('auctions').upsert(auction.toJson());
+      },
+      table: 'auctions',
+      op: 'upsert',
+      recordId: auction.id,
+    );
   }
 
   /// Delete an auction row from Supabase.
-  Future<void> deleteAuction(SupabaseAuction auction) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('auctions').delete().eq('id', auction.id);
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> deleteAuction(SupabaseAuction auction) async {
+    return _write(
+      operation: () async {
+        await _client!.from('auctions').delete().eq('id', auction.id);
+      },
+      table: 'auctions',
+      op: 'delete',
+      recordId: auction.id,
+    );
   }
 
   /// Push a player row to Supabase (upsert).
-  Future<void> pushPlayer(SupabasePlayer player) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('players').upsert(player.toJson());
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushPlayer(SupabasePlayer player) async {
+    return _write(
+      operation: () async {
+        await _client!.from('players').upsert(player.toJson());
+      },
+      table: 'players',
+      op: 'upsert',
+      recordId: player.id,
+    );
   }
 
   /// Delete a player row from Supabase.
-  Future<void> deletePlayer(SupabasePlayer player) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('players').delete().eq('id', player.id);
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> deletePlayer(SupabasePlayer player) async {
+    return _write(
+      operation: () async {
+        await _client!.from('players').delete().eq('id', player.id);
+      },
+      table: 'players',
+      op: 'delete',
+      recordId: player.id,
+    );
   }
 
   /// Push a team row to Supabase (upsert).
-  Future<void> pushTeam(SupabaseTeam team) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('teams').upsert(team.toJson());
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushTeam(SupabaseTeam team) async {
+    return _write(
+      operation: () async {
+        await _client!.from('teams').upsert(team.toJson());
+      },
+      table: 'teams',
+      op: 'upsert',
+      recordId: team.id,
+    );
   }
 
   /// Delete a team row from Supabase.
-  Future<void> deleteTeam(SupabaseTeam team) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('teams').delete().eq('id', team.id);
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> deleteTeam(SupabaseTeam team) async {
+    return _write(
+      operation: () async {
+        await _client!.from('teams').delete().eq('id', team.id);
+      },
+      table: 'teams',
+      op: 'delete',
+      recordId: team.id,
+    );
   }
 
   /// Push a bid row to Supabase (insert).
-  Future<void> pushBid(SupabaseBid bid) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('bids').insert(bid.toJson());
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushBid(SupabaseBid bid) async {
+    return _write(
+      operation: () async {
+        await _client!.from('bids').insert(bid.toJson());
+      },
+      table: 'bids',
+      op: 'insert',
+      recordId: bid.id,
+    );
+  }
+
+  /// Delete a bid row from Supabase.
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> deleteBid(SupabaseBid bid) async {
+    return _write(
+      operation: () async {
+        await _client!.from('bids').delete().eq('id', bid.id);
+      },
+      table: 'bids',
+      op: 'delete',
+      recordId: bid.id,
+    );
   }
 
   /// Push a live auction-state row to Supabase (upsert).
-  Future<void> pushAuctionState(SupabaseAuctionState state) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-    try {
-      await client.from('auction_state').upsert(state.toJson());
-    } catch (_) {
-      // Best-effort.
-    }
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushAuctionState(SupabaseAuctionState state) async {
+    return _write(
+      operation: () async {
+        await _client!.from('auction_state').upsert(state.toJson());
+      },
+      table: 'auction_state',
+      op: 'upsert',
+      recordId: state.id,
+    );
   }
 
   /// Push an activity-log row to Supabase (insert).
-  Future<void> pushActivityLog(SupabaseActivityLog log) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
+  /// Returns `true` if the write succeeded, `false` otherwise.
+  Future<bool> pushActivityLog(SupabaseActivityLog log) async {
+    return _write(
+      operation: () async {
+        await _client!.from('activity_log').insert(log.toJson());
+      },
+      table: 'activity_log',
+      op: 'insert',
+      recordId: log.id,
+    );
+  }
+
+  /// Internal helper that executes a Supabase write, logs errors, and returns
+  /// whether it succeeded.
+  Future<bool> _write({
+    required Future<void> Function() operation,
+    required String table,
+    required String op,
+    required String recordId,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      AppLogger.warning(
+        'Supabase client not initialized — skipping $op on $table/$recordId',
+        tag: 'SupabaseSync',
+      );
+      return false;
+    }
     try {
-      await client.from('activity_log').insert(log.toJson());
-    } catch (_) {
-      // Best-effort.
+      await operation();
+      AppLogger.debug(
+        'Supabase $op on $table/$recordId succeeded',
+        tag: 'SupabaseSync',
+      );
+      return true;
+    } catch (e, st) {
+      AppLogger.error(
+        'Supabase $op on $table/$recordId failed: $e',
+        tag: 'SupabaseSync',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
     }
   }
 }

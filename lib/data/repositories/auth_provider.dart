@@ -137,14 +137,15 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// Sign up with email + password. Creates auth user + profiles row.
-  Future<void> signUp({
+  /// Returns the [AuthResponse] so callers can check email confirmation status.
+  Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String fullName,
     String? orgName,
     String? phone,
   }) async {
-    await _service.signUp(
+    return _service.signUp(
       email: email,
       password: password,
       fullName: fullName,
@@ -164,6 +165,11 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Send a password reset email.
   Future<void> resetPassword(String email) async {
     await _service.resetPassword(email);
+  }
+
+  /// Resend email confirmation (uses password reset flow).
+  Future<void> resendConfirmationEmail(String email) async {
+    await _service.resendConfirmationEmail(email);
   }
 
   /// Sign out the current user.

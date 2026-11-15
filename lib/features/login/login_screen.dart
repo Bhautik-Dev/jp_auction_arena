@@ -86,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await ref.read(authProvider.notifier).signUp(
+      final response = await ref.read(authProvider.notifier).signUp(
             email: _signUpEmailController.text.trim(),
             password: _signUpPasswordController.text.trim(),
             fullName: _signUpNameController.text.trim(),
@@ -98,18 +98,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 : _signUpPhoneController.text.trim(),
           );
 
-      if (mounted) {
+      if (!mounted) return;
+
+      // Stop loading indicator regardless of outcome
+      setState(() => _isLoading = false);
+
+      // Check if email confirmation is required
+      final needsConfirmation = response.user != null &&
+          response.user!.emailConfirmedAt == null;
+
+      if (needsConfirmation) {
+        // Email confirmation required — show guidance and switch to sign-in
+        setState(() => _isSignUp = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Account created! Check your email to confirm, then sign in.',
+          SnackBar(
+            content: const Text(
+              'Account created! Please check your email to confirm your account, then sign in.',
             ),
-            backgroundColor: AppColors.success,
-            duration: Duration(seconds: 4),
+            backgroundColor: AppColors.info,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Resend',
+              onPressed: () async {
+                await ref
+                    .read(authProvider.notifier)
+                    .resendConfirmationEmail(
+                      _signUpEmailController.text.trim(),
+                    );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Confirmation email resent.'),
+                      backgroundColor: AppColors.info,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+            ),
           ),
         );
-        setState(() => _isSignUp = false);
+        return;
       }
+
+      // No confirmation required — auto-sign in and go to dashboard
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      context.go(RouteNames.dashboardPath);
     } on AuthException catch (e) {
       setState(() {
         _errorMessage = _mapAuthError(e.message);
@@ -125,20 +165,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String _mapAuthError(String? message) {
     final msg = (message ?? '').toLowerCase();
+
+    // Email rate limit — Supabase server-side protection
+    if (msg.contains('rate limit') ||
+        msg.contains('too many requests') ||
+        msg.contains('signup emails disabled') ||
+        msg.contains('rate_limit')) {
+      return 'Too many sign-up attempts. Please wait a few minutes and try again.';
+    }
+
+    // Invalid credentials / wrong password / email not confirmed
     if (msg.contains('invalid login') ||
         msg.contains('wrong password') ||
         msg.contains('email not confirmed')) {
+      if (msg.contains('email not confirmed')) {
+        return 'Please confirm your email address before signing in. Check your inbox (and spam folder) for the confirmation link.';
+      }
       return 'Invalid email or password. Please try again.';
     }
+
+    // Already registered
     if (msg.contains('already registered') || msg.contains('user already exists')) {
       return 'An account with this email already exists. Try signing in.';
     }
+
+    // Network errors
     if (msg.contains('network') || msg.contains('failed to fetch')) {
       return 'Network error. Please check your connection and try again.';
     }
+
+    // Password too short
     if (msg.contains('password should be at least')) {
       return 'Password is too short. Please use at least 6 characters.';
     }
+
     return message ?? 'Authentication failed. Please try again.';
   }
 

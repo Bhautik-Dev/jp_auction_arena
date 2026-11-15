@@ -103,6 +103,26 @@ class SupabaseAuthService {
     await client.auth.resetPasswordForEmail(email.trim());
   }
 
+  /// Resend a confirmation email to the given address.
+  ///
+  /// Uses [resetPasswordForEmail] which sends a password reset email —
+  /// this is the standard Supabase approach for re-establishing contact
+  /// with an unconfirmed user.
+  Future<void> resendConfirmationEmail(String email) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase client not initialized.');
+    }
+    await client.auth.resetPasswordForEmail(email.trim());
+  }
+
+  /// Check whether the current session's user has confirmed their email.
+  bool get isEmailConfirmed {
+    final user = currentUser;
+    if (user == null) return false;
+    return user.emailConfirmedAt != null;
+  }
+
   /// Upsert a row into the `profiles` table.
   Future<void> _upsertProfile({
     required String id,

@@ -97,14 +97,83 @@ All views adapt across three distinct viewport tiers:
    ```
 
 4. **Launch the application**:
-   - Web:
-     ```bash
-     flutter run -d chrome
-     ```
-   - Android / Desktop:
-     ```bash
-     flutter run
-     ```
+    - Web:
+      ```bash
+      flutter run -d chrome
+      ```
+    - Android / Desktop:
+      ```bash
+      flutter run
+      ```
+
+### Supabase Configuration
+
+JP AUCTION ARENA integrates with Supabase for cloud synchronization and real-time features.
+
+**Your project is pre-configured** with the following defaults (safe client-side values only):
+
+| Setting | Default Value |
+|---|---|
+| Project URL | `https://fxiiivbqrjxdnsvfegvy.supabase.co` |
+| Publishable Key | `sb_publishable_dkaOxQ4DvKZnC0T8wIHk4A_1f4kPfnL` |
+
+These defaults are embedded via `String.fromEnvironment(defaultValue: ...)` in
+`lib/core/supabase/supabase_config.dart`. To override for a different project,
+pass `--dart-define` at run time.
+
+#### Security
+
+- **Never** commit the Supabase **Secret / Service Role Key** (`sb_secret_*`) to source control.
+- The secret key is **never** loaded by the client app — it is only used server-side.
+- The publishable key is safe to ship in the app bundle (it is the anonymous key).
+
+#### Run the App
+
+No extra flags are required — the defaults will be used:
+
+```bash
+# Web
+flutter run -d chrome
+
+# Android / Desktop
+flutter run
+```
+
+To override with a different Supabase project:
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=YOUR_PROJECT_URL \
+  --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
+```
+
+#### Required Supabase Tables
+
+The following tables must exist in your Supabase database:
+
+| Table | Description |
+|---|---|
+| `profiles` | User profiles linked to Supabase Auth |
+| `auctions` | Auction configurations |
+| `auction_members` | Many-to-many relation between profiles and auctions |
+| `teams` | Teams participating in an auction |
+| `players` | Players registered in an auction |
+| `bids` | Individual bid records |
+| `auction_state` | Live auction operational state |
+| `activity_log` | System event log for audit trails |
+
+Dart models with `fromJson()` / `toJson()` are located in `lib/core/supabase/`.
+
+#### Supabase Client Access
+
+The Supabase client is exposed via Riverpod:
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:jp_auction_arena/core/supabase/supabase_provider.dart';
+
+final client = ref.read(supabaseClientProvider);
+```
 
 ---
 

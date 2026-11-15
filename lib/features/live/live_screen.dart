@@ -293,8 +293,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             ]
           ),
-        ),
-      }
+        )); }
 
     return GlassCard(
       padding: const EdgeInsets.all(24),

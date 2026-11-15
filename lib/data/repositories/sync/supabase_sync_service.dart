@@ -24,6 +24,11 @@ class SupabaseSyncService {
   /// Whether a Supabase client is available for cloud writes.
   bool get isConnected => _client != null;
 
+  /// Optional callback invoked after every cloud write attempt.
+  /// Signature: (table, operation, success, errorMessageOrNull)
+  static void Function(String table, String op, bool success, String? error)?
+      onSyncResult;
+
   /// Push a single auction row to Supabase (upsert).
   /// Returns `true` if the write succeeded, `false` otherwise.
   Future<bool> pushAuction(SupabaseAuction auction) async {
@@ -176,6 +181,7 @@ class SupabaseSyncService {
         'Supabase $op on $table/$recordId succeeded',
         tag: 'SupabaseSync',
       );
+      onSyncResult?.call(table, op, true, null);
       return true;
     } catch (e, st) {
       AppLogger.error(
@@ -184,6 +190,7 @@ class SupabaseSyncService {
         error: e,
         stackTrace: st,
       );
+      onSyncResult?.call(table, op, false, e.toString());
       return false;
     }
   }

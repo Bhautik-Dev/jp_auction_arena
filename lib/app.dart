@@ -5,6 +5,7 @@ import 'package:jp_auction_arena/core/config/app_config.dart';
 import 'package:jp_auction_arena/core/routing/app_router.dart';
 import 'package:jp_auction_arena/core/theme/app_theme.dart';
 import 'package:jp_auction_arena/core/theme/theme_mode_provider.dart';
+import 'package:jp_auction_arena/shared/widgets/sync_toast_listener.dart';
 
 class JpAuctionArenaApp extends ConsumerWidget {
   const JpAuctionArenaApp({super.key});
@@ -14,13 +15,15 @@ class JpAuctionArenaApp extends ConsumerWidget {
     final GoRouter router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    return MaterialApp.router(
-      title: AppConfig.appName,
-      debugShowCheckedModeBanner: AppConfig.isDebugBannerEnabled,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      routerConfig: router,
+    return SyncToastListener(
+      child: MaterialApp.router(
+        title: AppConfig.appName,
+        debugShowCheckedModeBanner: AppConfig.isDebugBannerEnabled,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
+        routerConfig: router,
+      ),
     );
   }
 }

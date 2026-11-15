@@ -24,13 +24,12 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: RouteNames.splashPath,
     debugLogDiagnostics: false,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final loc = state.matchedLocation;
       final isSplash = loc == RouteNames.splashPath;
       final isLogin = loc == RouteNames.loginPath;

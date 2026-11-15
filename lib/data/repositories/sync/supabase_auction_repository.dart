@@ -1,11 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../core/supabase/supabase_client.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
+import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
 import '../../models/auction.dart';
-import '../../models/models.dart';
 import '../hive_service.dart';
 import '../auction_repository.dart';
 import 'supabase_sync_service.dart';
@@ -15,9 +14,7 @@ import 'supabase_sync_service.dart';
 /// Reads/writes are mirrored to the local Hive box so the app stays fully
 /// functional offline. Cloud writes are best-effort and never block the UI.
 class SupabaseAuctionRepository implements AuctionRepository {
-  SupabaseAuctionRepository(this._client);
-
-  final SupabaseClient _client;
+  SupabaseAuctionRepository();
 
   Box<Auction> get _box => Hive.box<Auction>(HiveBoxes.auctions);
 
@@ -94,5 +91,5 @@ final supabaseAuctionRepositoryProvider =
   if (client == null) {
     return HiveAuctionRepository();
   }
-  return SupabaseAuctionRepository(client);
+  return SupabaseAuctionRepository();
 });

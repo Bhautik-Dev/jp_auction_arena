@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/supabase/supabase_client.dart';
 import 'auction_repository.dart';
 import 'bid_repository.dart';
 import 'player_repository.dart';
@@ -36,7 +37,7 @@ class RepositoryFactory {
   static AuctionRepository auction() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseAuctionRepository(client);
+      return SupabaseAuctionRepository();
     }
     return HiveAuctionRepository();
   }
@@ -45,7 +46,7 @@ class RepositoryFactory {
   static PlayerRepository player() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabasePlayerRepository(client);
+      return SupabasePlayerRepository();
     }
     return HivePlayerRepository();
   }
@@ -54,7 +55,7 @@ class RepositoryFactory {
   static TeamRepository team() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseTeamRepository(client);
+      return SupabaseTeamRepository();
     }
     return HiveTeamRepository();
   }
@@ -63,7 +64,7 @@ class RepositoryFactory {
   static BidRepository bid() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseBidRepository(client);
+      return SupabaseBidRepository();
     }
     return HiveBidRepository();
   }

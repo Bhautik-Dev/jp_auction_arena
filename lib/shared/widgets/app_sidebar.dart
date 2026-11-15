@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverprovider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/connection/connection_service.dart';
 import '../../core/routing/route_names.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/enums.dart';
@@ -219,7 +218,7 @@ class AppSidebar extends ConsumerWidget {
             ),
           ),
 
-          // Bottom offline badge
+          // Bottom online/offline status badge
           Padding(
             padding: const EdgeInsets.all(16),
             child: Container(
@@ -229,22 +228,7 @@ class AppSidebar extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.cardBorder),
               ),
-              child: const Row(
-                children: [
-                  CircleAvatar(radius: 4, backgroundColor: AppColors.success),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Hive Local Storage • Offline',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: const ConnectionIndicator(showLabel: true),
             ),
           ),
         ],

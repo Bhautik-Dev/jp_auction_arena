@@ -175,6 +175,46 @@ import 'package:jp_auction_arena/core/supabase/supabase_provider.dart';
 final client = ref.read(supabaseClientProvider);
 ```
 
+#### Online/Offline Connection Status
+
+The app monitors network connectivity using `connectivity_plus` and displays an
+online/offline indicator in the AppBar (mobile) and sidebar (desktop). The
+status is exposed via Riverpod:
+
+```dart
+import 'package:jp_auction_arena/core/connection/connection_service.dart';
+
+final status = ref.watch(connectionStatusProvider);
+```
+
+Initialize the service in `main()`:
+
+```dart
+await ConnectionService.instance.init();
+```
+
+#### Repository Abstraction & Cloud Sync
+
+The app uses a dual-storage architecture:
+- **Hive** (local/offline): Single source of truth for the UI, always available.
+- **Supabase** (cloud): Best-effort mirror of writes; never blocks the UI.
+
+Repository abstraction interfaces are defined in `lib/data/repositories/`
+and the active implementation is selected at startup by `RepositoryFactory`:
+
+```dart
+import 'package:jp_auction_arena/data/repositories/repository_factory.dart';
+
+final bundle = ref.watch(repositoryFactoryProvider);
+bundle.auction  // AuctionRepository (Hive or Supabase-backed)
+bundle.player   // PlayerRepository
+bundle.team     // TeamRepository
+bundle.bid      // BidRepository
+```
+
+The `SupabaseSyncService` pushes local changes to Supabase best-effort —
+failures are swallowed so the app remains fully functional offline.
+
 ---
 
 ## 🧪 Testing & Verification

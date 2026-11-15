@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../core/supabase/supabase_client.dart';
-import '../../models/models.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
+import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
+import '../../models/team.dart';
 import '../hive_service.dart';
 import '../team_repository.dart';
 import 'supabase_sync_service.dart';
@@ -15,9 +15,7 @@ import 'supabase_sync_service.dart';
 /// Writes are mirrored to the local box first, then pushed to Supabase
 /// best-effort so the app remains fully functional offline.
 class SupabaseTeamRepository implements TeamRepository {
-  SupabaseTeamRepository(this._client);
-
-  final SupabaseClient _client;
+  SupabaseTeamRepository();
 
   Box<Team> get _box => Hive.box<Team>(HiveBoxes.teams);
 
@@ -98,5 +96,5 @@ final supabaseTeamRepositoryProvider =
   if (client == null) {
     return HiveTeamRepository();
   }
-  return SupabaseTeamRepository(client);
+  return SupabaseTeamRepository();
 });

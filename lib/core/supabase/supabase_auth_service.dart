@@ -31,6 +31,9 @@ class SupabaseAuthService {
       const Stream.empty();
 
   /// Sign up with email + password. Creates auth user + profiles row.
+  ///
+  /// If email confirmation is disabled in Supabase Auth settings, the user
+  /// is signed in immediately and can proceed to the dashboard.
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -54,8 +57,7 @@ class SupabaseAuthService {
       },
     );
 
-    // If email confirmation is not required, user is signed in immediately.
-    // Create/update profiles row.
+    // Create/update profiles row if user was created.
     if (response.user != null) {
       await _upsertProfile(
         id: response.user!.id,
@@ -71,6 +73,10 @@ class SupabaseAuthService {
   }
 
   /// Sign in with email + password.
+  ///
+  /// Works with both confirmed and unconfirmed users when email confirmation
+  /// is disabled in Supabase Auth settings. When confirmation is required,
+  /// unconfirmed users receive an "email not confirmed" error.
   Future<AuthResponse> signIn({
     required String email,
     required String password,
@@ -95,6 +101,10 @@ class SupabaseAuthService {
   }
 
   /// Send a password reset email to the given address.
+  ///
+  /// This is the standard Supabase flow for password recovery. It is also
+  /// used as the mechanism to re-establish contact with unconfirmed users
+  /// when custom SMTP is configured.
   Future<void> resetPassword(String email) async {
     final client = _client;
     if (client == null) {
@@ -103,11 +113,12 @@ class SupabaseAuthService {
     await client.auth.resetPasswordForEmail(email.trim());
   }
 
-  /// Resend a confirmation email to the given address.
+  /// Resend a confirmation/re-establishment email.
   ///
-  /// Uses [resetPasswordForEmail] which sends a password reset email —
-  /// this is the standard Supabase approach for re-establishing contact
-  /// with an unconfirmed user.
+  /// Supabase's client SDK does not expose a dedicated "resend confirmation"
+  /// endpoint. This method uses [resetPasswordForEmail] which sends a
+  /// password-reset email — the recommended Supabase approach for contacting
+  /// an unconfirmed user.
   Future<void> resendConfirmationEmail(String email) async {
     final client = _client;
     if (client == null) {
@@ -121,6 +132,15 @@ class SupabaseAuthService {
     final user = currentUser;
     if (user == null) return false;
     return user.emailConfirmedAt != null;
+  }
+
+  /// Check whether email confirmation is likely required based on the last
+  /// known auth state. Returns true if no session exists or the current
+  /// user's email is unconfirmed.
+  Future<bool> isConfirmationRequired() async {
+    final user = currentUser;
+    if (user == null) return false;
+    return user.emailConfirmedAt == null;
   }
 
   /// Upsert a row into the `profiles` table.

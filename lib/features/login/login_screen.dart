@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorMessage;
+  Timer? _cooldownTimer;
 
   // Sign in controllers
   final _signInEmailController = TextEditingController();
@@ -44,6 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _signUpPasswordController.dispose();
     _signUpOrgController.dispose();
     _signUpPhoneController.dispose();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -79,6 +82,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _handleSignUp() async {
     if (!_signUpFormKey.currentState!.validate()) return;
+
+    // Proactive rate-limit check
+    if (_isRateLimited) {
+      setState(() {
+        _errorMessage = 'Too many sign-up attempts. '
+            'Please wait ${_getCooldownSeconds()} seconds and try again.';
+        _startCooldownTimer();
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -171,6 +184,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         msg.contains('too many requests') ||
         msg.contains('signup emails disabled') ||
         msg.contains('rate_limit')) {
+      final remaining = _getCooldownSeconds();
+      if (remaining > 0) {
+        return 'Too many sign-up attempts. Please wait $remaining seconds and try again.';
+      }
       return 'Too many sign-up attempts. Please wait a few minutes and try again.';
     }
 
@@ -204,6 +221,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _clearError() {
     setState(() => _errorMessage = null);
+  }
+
+  /// Returns remaining cooldown seconds, or 0 if not rate-limited.
+  int _getCooldownSeconds() {
+    return EmailRateLimiter.instance.secondsRemaining;
+  }
+
+  /// Whether email operations are currently rate-limited.
+  bool get _isRateLimited => EmailRateLimiter.instance.isRateLimited;
+
+  /// Start a countdown timer that updates the UI each second while rate-limited.
+  void _startCooldownTimer() {
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) {
+        _cooldownTimer?.cancel();
+        return;
+      }
+      if (!EmailRateLimiter.instance.isRateLimited) {
+        _cooldownTimer?.cancel();
+        return;
+      }
+      setState(() {}); // rebuild to update countdown
+    });
   }
 
   @override
@@ -576,6 +617,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: _clearError,
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Rate-limit cooldown warning
+        if (_isRateLimited) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.warning.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.hourglass_empty,
+                    color: AppColors.warning, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Email rate limit reached. Please wait ${_getCooldownSeconds()} seconds before creating another account.',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ],
             ),

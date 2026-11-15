@@ -36,6 +36,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = loc == RouteNames.splashPath;
       final isLogin = loc == RouteNames.loginPath;
 
+      // While auth is still being checked, don't redirect — let SplashScreen handle it
+      if (authState.isLoading) return null;
+
       // Allow splash to run freely
       if (isSplash) return null;
 

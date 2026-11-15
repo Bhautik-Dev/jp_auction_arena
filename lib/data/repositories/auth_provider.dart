@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/supabase/supabase_auth_service.dart';
@@ -7,16 +9,26 @@ import '../../data/models/enums.dart';
 /// Authentication state backed by Supabase Auth + `profiles` table.
 class AuthState {
   final bool isAuthenticated;
+  final bool isLoading;
   final User? user;
   final SupabaseProfile? profile;
   final UserRole? role;
 
   const AuthState({
     required this.isAuthenticated,
+    required this.isLoading,
     this.user,
     this.profile,
     this.role,
   });
+
+  /// Initial loading state — auth is still being checked.
+  const AuthState.loading()
+      : isAuthenticated = false,
+        isLoading = true,
+        user = null,
+        profile = null,
+        role = null;
 
   // Backwards-compatible getters for existing UI code
   String get profileName => profile?.fullName ?? '';
@@ -31,12 +43,14 @@ class AuthState {
 
   AuthState copyWith({
     bool? isAuthenticated,
+    bool? isLoading,
     User? user,
     SupabaseProfile? profile,
     UserRole? role,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      isLoading: isLoading ?? this.isLoading,
       user: user ?? this.user,
       profile: profile ?? this.profile,
       role: role ?? this.role,
@@ -45,36 +59,81 @@ class AuthState {
 }
 
 /// Notifier that wraps Supabase Auth and keeps local state in sync.
+///
+/// Listens to Supabase auth state changes and keeps [AuthState] in sync.
+/// Starts in [AuthState.loading] until the initial session check completes.
 class AuthNotifier extends Notifier<AuthState> {
   SupabaseAuthService get _service => SupabaseAuthService.instance;
 
+  // ignore: unused_field
+  StreamSubscription<dynamic>? _authSubscription;
+
   @override
   AuthState build() {
-    final session = _service.currentSession;
-    final user = session?.user;
-
-    // Load profile for existing session
-    if (user != null) {
-      _loadProfile(user.id);
-    }
-
-    return AuthState(
-      isAuthenticated: user != null,
-      user: user,
-      profile: null,
-      role: null,
-    );
+    // Return loading state immediately; async init runs below
+    _initialize();
+    return const AuthState.loading();
   }
 
-  Future<void> _loadProfile(String userId) async {
-    final profile = await _service.getProfile(userId);
-    if (profile != null) {
-      final role = UserRole.fromString(profile.role);
-      state = state.copyWith(
+  Future<void> _initialize() async {
+    // Listen to Supabase auth state changes for the lifetime of this notifier
+    _authSubscription = _service.authStateChanges.listen((event) async {
+      final session = event.session;
+      final user = session?.user;
+
+      if (user == null) {
+        // Signed out
+        state = const AuthState(
+          isAuthenticated: false,
+          isLoading: false,
+          user: null,
+          profile: null,
+          role: null,
+        );
+        return;
+      }
+
+      // Signed in — load profile from profiles table
+      final profile = await _service.getProfile(user.id);
+      final role =
+          profile != null ? UserRole.fromString(profile.role) : UserRole.admin;
+
+      state = AuthState(
+        isAuthenticated: true,
+        isLoading: false,
+        user: user,
         profile: profile,
         role: role,
       );
+    });
+
+    // Perform initial session check
+    final session = _service.currentSession;
+    final user = session?.user;
+
+    if (user == null) {
+      state = const AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        profile: null,
+        role: null,
+      );
+      return;
     }
+
+    // Load profile for existing session
+    final profile = await _service.getProfile(user.id);
+    final role =
+        profile != null ? UserRole.fromString(profile.role) : UserRole.admin;
+
+    state = AuthState(
+      isAuthenticated: true,
+      isLoading: false,
+      user: user,
+      profile: profile,
+      role: role,
+    );
   }
 
   /// Sign up with email + password. Creates auth user + profiles row.

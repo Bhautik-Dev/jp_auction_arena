@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _slideAnimation;
-  Timer? _navigationTimer;
+
+  // Minimum splash duration so the animation is visible (prevents flash)
+  static const Duration _minSplashDuration = Duration(milliseconds: 1800);
+
+  bool _navigated = false;
+  Timer? _minDurationTimer;
 
   @override
   void initState() {
@@ -51,30 +57,61 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _animController.forward();
 
-    // After animation delay, navigate to Login or Dashboard
-    _navigationTimer = Timer(const Duration(milliseconds: 2600), _navigateNext);
+    // Enforce a minimum splash duration so the animation is visible
+    _minDurationTimer = Timer(_minSplashDuration, () {
+      _tryNavigate();
+    });
   }
 
-  void _navigateNext() {
-    if (!mounted) return;
-    final authState = ref.read(authProvider);
+  /// Called when auth state is ready (isLoading == false).
+  /// Navigates to Dashboard if signed in, otherwise Login.
+  void _tryNavigate() {
+    if (_navigated || !mounted) return;
+    _navigated = true;
 
-    if (authState.isAuthenticated) {
-      context.go(RouteNames.dashboardPath);
-    } else {
-      context.go(RouteNames.loginPath);
+    final authState = ref.read(authProvider);
+    if (!authState.isLoading) {
+      if (authState.isAuthenticated) {
+        context.go(RouteNames.dashboardPath);
+      } else {
+        context.go(RouteNames.loginPath);
+      }
     }
   }
 
   @override
+  void didUpdateWidget(SplashScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Auth state may have changed reactively — try to navigate
+    _tryNavigate();
+  }
+
+  @override
   void dispose() {
-    _navigationTimer?.cancel();
+    _minDurationTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch auth state so we react when it settles
+    final authState = ref.watch(authProvider);
+
+    // Once auth is no longer loading, navigate (safety net)
+    if (!authState.isLoading && !_navigated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_navigated) {
+          _navigated = true;
+          if (authState.isAuthenticated) {
+            context.go(RouteNames.dashboardPath);
+          } else {
+            context.go(RouteNames.loginPath);
+          }
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -167,7 +204,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                                   vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surfaceLight.withValues(alpha: 0.6),
+                                  color: AppColors.surfaceLight
+                                      .withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: AppColors.cardBorder,

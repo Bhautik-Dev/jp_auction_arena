@@ -74,14 +74,14 @@ class SupabasePlayerRepository implements PlayerRepository {
 
   @override
   List<Player> getAll() {
-    final data = _client.from('players').select().order('player_no') as List<dynamic>;
-    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+    final data = _client.from('players').select().order('player_no') as List<Map<String, dynamic>>;
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   List<Player> getByAuctionId(String auctionId) {
-    final data = _client.from('players').select().eq('auction_id', auctionId).order('player_no') as List<dynamic>;
-    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+    final data = _client.from('players').select().eq('auction_id', auctionId).order('player_no') as List<Map<String, dynamic>>;
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override

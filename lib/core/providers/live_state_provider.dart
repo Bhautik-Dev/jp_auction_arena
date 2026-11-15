@@ -144,7 +144,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen((rows) {
       state = state.copyWith(
-        players: rows as List<dynamic>,
+        players: rows as List<Map<String, dynamic>>,
       );
     });
 
@@ -154,7 +154,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen((rows) {
       state = state.copyWith(
-        teams: rows as List<dynamic>,
+        teams: rows as List<Map<String, dynamic>>,
       );
     });
 
@@ -165,7 +165,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .order('timestamp', ascending: false)
         .listen((rows) {
       state = state.copyWith(
-        recentBids: (rows as List<dynamic>).take(10).toList(),
+        recentBids: (rows as List<Map<String, dynamic>>).take(10).toList(),
       );
     });
 

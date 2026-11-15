@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/routing/route_names.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/repositories/repositories.dart';
@@ -22,15 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late TextEditingController _orgNameController;
   late TextEditingController _orgDescController;
 
-  // Security (Change PIN)
-  late TextEditingController _currentPinController;
-  late TextEditingController _newPinController;
-  late TextEditingController _confirmPinController;
-  bool _obscureCurrentPin = true;
-  bool _obscureNewPin = true;
-  bool _obscureConfirmPin = true;
-
-  // Notifications
+// Notifications
   bool _auctionReminders = true;
   bool _soundOn = true;
   bool _voiceOn = true;
@@ -54,16 +48,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _orgNameController = TextEditingController(text: settings.orgName);
     _orgDescController = TextEditingController(text: settings.orgDescription);
 
-    _currentPinController = TextEditingController();
-    _newPinController = TextEditingController();
-    _confirmPinController = TextEditingController();
-
+    _language = settings.language;
     _auctionReminders = settings.auctionReminders;
     _soundOn = settings.soundOn;
     _voiceOn = settings.voiceOn;
     _soldAnimation = settings.soldAnimation;
-
-    _language = settings.language;
     _themeAccent = settings.themeAccent;
     _fontSize = settings.fontSize;
     _autoBackupAfterSale = settings.autoBackupAfterSale;
@@ -75,9 +64,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _phoneController.dispose();
     _orgNameController.dispose();
     _orgDescController.dispose();
-    _currentPinController.dispose();
-    _newPinController.dispose();
-    _confirmPinController.dispose();
     super.dispose();
   }
 
@@ -86,38 +72,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final repo = ref.read(settingsRepositoryProvider);
     final currentSettings = repo.getSettings();
 
-    // Check if user is trying to change PIN
-    String updatedPin = currentSettings.pin;
-    final newPinText = _newPinController.text.trim();
-    if (newPinText.isNotEmpty) {
-      final currentPinInput = _currentPinController.text.trim();
-      if (currentSettings.pin.isNotEmpty && currentPinInput != currentSettings.pin) {
-        setState(() => _isSaving = false);
-        _showToast('Current PIN is incorrect.', isError: true);
-        return;
-      }
-      if (newPinText != _confirmPinController.text.trim()) {
-        setState(() => _isSaving = false);
-        _showToast('New PIN and confirmation PIN do not match.', isError: true);
-        return;
-      }
-      if (newPinText.length < 4) {
-        setState(() => _isSaving = false);
-        _showToast('PIN must be at least 4 digits.', isError: true);
-        return;
-      }
-      updatedPin = newPinText;
-      _currentPinController.clear();
-      _newPinController.clear();
-      _confirmPinController.clear();
-    }
-
     final updated = currentSettings.copyWith(
       profileName: _profileController.text.trim(),
       phone: _phoneController.text.trim(),
       orgName: _orgNameController.text.trim(),
       orgDescription: _orgDescController.text.trim(),
-      pin: updatedPin,
       auctionReminders: _auctionReminders,
       soundOn: _soundOn,
       voiceOn: _voiceOn,
@@ -423,7 +382,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     return FeaturePlaceholderScreen(
       title: 'Application Settings',
-      description: 'Personal profile, security PIN, notifications, branding & local data backup',
+      description: 'Personal profile, account security, notifications, branding & local data backup',
       icon: Icons.settings_rounded,
       actionButton: GradientButton(
         onPressed: _isSaving ? null : _saveChanges,
@@ -543,102 +502,94 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   // ==========================================
-  // SECTION 2: Security (Change PIN)
+  // SECTION 2: Security (Supabase Auth)
   // ==========================================
   Widget _buildSecuritySection() {
-    return GlassCard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 620;
+    return Consumer(
+      builder: (context, ref, child) {
+        final authState = ref.watch(authProvider);
 
-          final currentField = TextField(
-            controller: _currentPinController,
-            obscureText: _obscureCurrentPin,
-            maxLength: 6,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Current PIN',
-              counterText: '',
-              prefixIcon: const Icon(Icons.key_outlined, color: AppColors.textSecondary, size: 18),
-              suffixIcon: IconButton(
-                icon: Icon(_obscureCurrentPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                onPressed: () => setState(() => _obscureCurrentPin = !_obscureCurrentPin),
-              ),
-            ),
-          );
-
-          final newField = TextField(
-            controller: _newPinController,
-            obscureText: _obscureNewPin,
-            maxLength: 6,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'New PIN (4-6 digits)',
-              counterText: '',
-              prefixIcon: const Icon(Icons.password_rounded, color: AppColors.textSecondary, size: 18),
-              suffixIcon: IconButton(
-                icon: Icon(_obscureNewPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                onPressed: () => setState(() => _obscureNewPin = !_obscureNewPin),
-              ),
-            ),
-          );
-
-          final confirmField = TextField(
-            controller: _confirmPinController,
-            obscureText: _obscureConfirmPin,
-            maxLength: 6,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Confirm New PIN',
-              counterText: '',
-              prefixIcon: const Icon(Icons.check_circle_outline, color: AppColors.textSecondary, size: 18),
-              suffixIcon: IconButton(
-                icon: Icon(_obscureConfirmPin ? Icons.visibility_off : Icons.visibility, size: 18, color: AppColors.textMuted),
-                onPressed: () => setState(() => _obscureConfirmPin = !_obscureConfirmPin),
-              ),
-            ),
-          );
-
-          return Column(
+        return GlassCard(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 8,
                 children: [
-                  Icon(Icons.lock_outline_rounded, color: AppColors.accentPink, size: 20),
+                  Icon(Icons.shield_outlined, color: AppColors.accentPink, size: 20),
                   Text(
-                    'Security & PIN Access',
+                    'Security & Account Access',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               const Text(
-                'Change master auctioneer PIN for administrative actions and live hammer overrides',
+                'Manage your Supabase account session, password, and device access.',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
               const SizedBox(height: 18),
-              if (isCompact) ...[
-                currentField,
-                const SizedBox(height: 12),
-                newField,
-                const SizedBox(height: 12),
-                confirmField,
-              ] else
-                Row(
-                  children: [
-                    Expanded(child: currentField),
-                    const SizedBox(width: 14),
-                    Expanded(child: newField),
-                    const SizedBox(width: 14),
-                    Expanded(child: confirmField),
-                  ],
+              if (authState.isAuthenticated) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_outlined, color: AppColors.textSecondary, size: 20),
+                  title: const Text('Email Address', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  subtitle: Text(authState.email.isNotEmpty ? authState.email : 'No email',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                 ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.lock_outlined, color: AppColors.textSecondary, size: 20),
+                  title: const Text('Change Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Reset your Supabase password via email',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
+                  onTap: () => context.go(RouteNames.resetPasswordPath),
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                  title: const Text('Logout', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Sign out of this device',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
+                  onTap: () async {
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) context.go('/login');
+                  },
+                ),
+              ] else ...[
+                Center(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.login_outlined, color: AppColors.textMuted, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Not signed in',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Sign in to manage your account security.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      const SizedBox(height: 16),
+                      GradientButton(
+                        onPressed: () => context.go('/login'),
+                        icon: Icons.login_rounded,
+                        label: 'Sign In',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

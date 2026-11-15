@@ -4,6 +4,7 @@ import '../../core/supabase/supabase_client.dart';
 import 'auction_repository.dart';
 import 'bid_repository.dart';
 import 'player_repository.dart';
+import 'settings_repository.dart';
 import 'team_repository.dart';
 import 'sync/supabase_auction_repository.dart';
 import 'sync/supabase_bid_repository.dart';
@@ -17,19 +18,24 @@ class RepositoryBundle {
     required this.player,
     required this.team,
     required this.bid,
+    required this.settings,
   });
 
   final AuctionRepository auction;
   final PlayerRepository player;
   final TeamRepository team;
   final BidRepository bid;
+  final SettingsRepository settings;
 }
 
 /// Factory that selects the active repository implementation.
 ///
-/// When Supabase is configured, the Supabase-backed repositories are used so
-/// writes are mirrored to the cloud. When Supabase is unavailable (or the app
-/// is offline), the pure Hive implementations are used.
+/// Supabase-backed repositories are used as the primary source of truth when
+/// the Supabase client is initialized. Hive implementations are used only as
+/// fallback when Supabase is unavailable (offline mode).
+///
+/// Hive is retained exclusively for [SettingsRepository] (UI preferences) and
+/// as an optional offline cache.
 class RepositoryFactory {
   const RepositoryFactory._();
 
@@ -37,7 +43,7 @@ class RepositoryFactory {
   static AuctionRepository auction() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseAuctionRepository();
+      return SupabaseAuctionRepository(client);
     }
     return HiveAuctionRepository();
   }
@@ -46,7 +52,7 @@ class RepositoryFactory {
   static PlayerRepository player() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabasePlayerRepository();
+      return SupabasePlayerRepository(client);
     }
     return HivePlayerRepository();
   }
@@ -55,7 +61,7 @@ class RepositoryFactory {
   static TeamRepository team() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseTeamRepository();
+      return SupabaseTeamRepository(client);
     }
     return HiveTeamRepository();
   }
@@ -64,17 +70,21 @@ class RepositoryFactory {
   static BidRepository bid() {
     final client = SupabaseClientService.instance.client;
     if (client != null) {
-      return SupabaseBidRepository();
+      return SupabaseBidRepository(client);
     }
     return HiveBidRepository();
   }
 
-  /// Build a [RepositoryBundle] containing all four repositories.
+  /// Settings always use Hive (UI preferences, offline cache only).
+  static SettingsRepository settings() => HiveSettingsRepository();
+
+  /// Build a [RepositoryBundle] containing all five repositories.
   static RepositoryBundle bundle() => RepositoryBundle(
         auction: auction(),
         player: player(),
         team: team(),
         bid: bid(),
+        settings: settings(),
       );
 }
 

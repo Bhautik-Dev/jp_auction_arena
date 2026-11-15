@@ -122,7 +122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   // ==========================================
-  // DATA ACTIONS: Backup, Restore, Clear
+  // DATA ACTIONS: Backup, Restore, Clear, Import to Supabase
   // ==========================================
   Future<void> _handleDownloadBackup() async {
     try {
@@ -375,6 +375,103 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ref.invalidate(currentAuctionTeamsProvider);
       ref.invalidate(currentAuctionBidsProvider);
       _showToast('All local auction and player data has been cleared.');
+    }
+  }
+
+  /// One-time import of local Hive data to Supabase.
+  /// Reads all auctions, teams, players, and bids from Hive and uploads them
+  /// to Supabase using the atomic RPC and batch insert methods.
+  Future<void> _handleImportLocalData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.cloud_upload_rounded, color: AppColors.primaryBlue),
+            SizedBox(width: 10),
+            Text('Import Local Data to Supabase?', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: const Text(
+          'This will upload all local auctions, teams, players, and bids to Supabase.\n\n'
+          'Requires an active Supabase connection and email confirmation to be disabled '
+          'in Supabase Dashboard (Authentication → Settings).',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Import Data'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final auctionRepo = ref.read(auctionRepositoryProvider) as SupabaseAuctionRepository;
+      final playerRepo = ref.read(playerRepositoryProvider) as SupabasePlayerRepository;
+      final bidRepo = ref.read(bidRepositoryProvider) as SupabaseBidRepository;
+
+      // 1. Import auctions (via RPC which also creates teams)
+      final auctions = ref.read(auctionRepositoryProvider).getAll();
+      int auctionsImported = 0;
+      int teamsImported = 0;
+      int playersImported = 0;
+      int bidsImported = 0;
+
+      for (final auction in auctions) {
+        final teams = ref.read(teamRepositoryProvider).getByAuctionId(auction.id);
+      await auctionRepo.createAuctionWithTeams(
+        auction: auction,
+        teams: teams,
+      );
+      auctionsImported++;
+      teamsImported += teams.length;
+
+        // 2. Import players for this auction
+        final players = ref.read(playerRepositoryProvider).getByAuctionId(auction.id);
+        if (players.isNotEmpty) {
+          await playerRepo.saveAll(players);
+          playersImported += players.length;
+        }
+
+        // 3. Import bids for this auction
+        final bids = ref.read(bidRepositoryProvider).getByAuctionId(auction.id);
+        if (bids.isNotEmpty) {
+          for (final bid in bids) {
+            await bidRepo.save(bid);
+          }
+          bidsImported += bids.length;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+
+      _showToast(
+        'Import complete: $auctionsImported auctions, $teamsImported teams, '
+        '$playersImported players, $bidsImported bids.',
+      );
+
+      ref.invalidate(auctionsListProvider);
+      ref.invalidate(currentAuctionPlayersProvider);
+      ref.invalidate(currentAuctionTeamsProvider);
+      ref.invalidate(currentAuctionBidsProvider);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showToast('Import failed: $e', isError: true);
     }
   }
 
@@ -950,6 +1047,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 icon: const Icon(Icons.delete_forever_rounded, size: 18),
                 label: const Text('Clear All Data', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: _handleClearAllData,
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+                label: const Text('Import to Supabase', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: _isSaving ? null : _handleImportLocalData,
               ),
             ],
           ),

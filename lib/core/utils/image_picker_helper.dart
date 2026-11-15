@@ -42,6 +42,25 @@ class ImagePickerHelper {
       return null;
     }
   }
+
+  /// Picks an image file from gallery or camera without cropping.
+  /// Returns the [XFile] for direct upload to storage.
+  static Future<XFile?> pickImageFile({
+    ImageSource source = ImageSource.gallery,
+  }) async {
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      return file;
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      return null;
+    }
+  }
 }
 
 class _SquareCropDialog extends StatefulWidget {
@@ -67,7 +86,6 @@ class _SquareCropDialogState extends State<_SquareCropDialog> {
   }
 
   void _onConfirm() {
-    // Convert bytes directly to Base64 data string
     final base64String = base64Encode(widget.imageBytes);
     Navigator.pop(context, base64String);
   }
@@ -133,7 +151,6 @@ class _SquareCropDialogState extends State<_SquareCropDialog> {
                           ),
                         ),
                       ),
-                      // Square Rule of Thirds Guide Grid
                       IgnorePointer(
                         child: Container(
                           decoration: BoxDecoration(

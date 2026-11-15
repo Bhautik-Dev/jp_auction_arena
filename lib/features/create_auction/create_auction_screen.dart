@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -38,7 +38,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _descController = TextEditingController();
-  String? _logoBase64;
+  String? _logoUrl; // Supabase Storage public URL
 
   // Step 1 Validation Errors
   String? _nameError;
@@ -86,7 +86,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   // Step 5 Add Team fields
   final _teamNameController = TextEditingController();
   final _teamOwnerController = TextEditingController();
-  String? _teamLogoBase64;
+  String? _teamLogoUrl; // Supabase Storage public URL
   String? _teamTableError;
 
   @override
@@ -116,7 +116,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         _startTime = TimeOfDay(hour: a.startDateTime.hour, minute: a.startDateTime.minute);
         _phoneController.text = a.contactPhone;
         _emailController.text = a.contactEmail;
-        _logoBase64 = a.logoBase64;
+        _logoUrl = a.logoBase64; // May be base64 (old) or URL (new)
 
         _categories.clear();
         _categories.addAll(a.categories);
@@ -177,7 +177,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     super.dispose();
   }
 
-  // Auto-saves draft to Hive silently
+  // Auto-saves draft to Hive silently (optional offline cache)
   Future<void> _saveDraftAutomatically() async {
     final startDateTime = DateTime(
       _startDate.year,
@@ -198,7 +198,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
       name: _nameController.text.trim().isNotEmpty
           ? _nameController.text.trim()
           : 'Untitled Auction Draft',
-      logoBase64: _logoBase64,
+      logoBase64: _logoUrl,
       venue: _venueController.text.trim(),
       description: _descController.text.trim(),
       startDateTime: startDateTime,
@@ -244,14 +244,12 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             isValid = false;
           }
 
-          // 10 digits validation for phone if entered
           final phone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
           if (_phoneController.text.trim().isNotEmpty && phone.length != 10) {
             _phoneError = 'Contact phone must be exactly 10 digits (e.g. 9876543210)';
             isValid = false;
           }
 
-          // Email validation if entered
           if (_emailController.text.trim().isNotEmpty &&
               !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim())) {
             _emailError = 'Please enter a valid email address';
@@ -356,81 +354,141 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     }
   }
 
-  // Final Action: Create / Save Auction
-  Future<void> _handleFinalizeAuction() async {
-    setState(() => _isSaving = true);
+  // Pick and upload tournament logo to Supabase Storage
+  Future<void> _pickAndUploadLogo() async {
+    try {
+      final XFile? file = await ImagePickerHelper.pickImageFile();
+      if (file == null) return;
 
-    final startDateTime = DateTime(
-      _startDate.year,
-      _startDate.month,
-      _startDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
+      final bytes = await file.readAsBytes();
+      final repo = ref.read(auctionRepositoryProvider) as SupabaseAuctionRepository;
+      final url = await repo.uploadLogo(_auctionId, bytes);
 
-    final categoryBasePrices = <String, double>{};
-    for (final entry in _categoryBasePriceControllers.entries) {
-      categoryBasePrices[entry.key] = double.tryParse(entry.value.text.trim()) ??
-          (double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000);
-    }
-
-    final auction = Auction(
-      id: _auctionId,
-      name: _nameController.text.trim(),
-      logoBase64: _logoBase64,
-      venue: _venueController.text.trim(),
-      description: _descController.text.trim(),
-      startDateTime: startDateTime,
-      status: AuctionStatus.draft,
-      categories: _categories,
-      numberOfTeams: int.tryParse(_teamsCountController.text.trim()) ?? 8,
-      minSquad: int.tryParse(_minSquadController.text.trim()) ?? 11,
-      maxSquad: int.tryParse(_maxSquadController.text.trim()) ?? 15,
-      basePriceDefault: double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000,
-      bidIncrement: double.tryParse(_bidIncrementController.text.trim()) ?? 2000,
-      teamPurse: double.tryParse(_teamPurseController.text.trim()) ?? 1000000,
-      countdownSeconds: int.tryParse(_countdownController.text.trim()) ?? 30,
-      mode: _selectedMode,
-      contactPhone: _phoneController.text.trim(),
-      contactEmail: _emailController.text.trim(),
-      categoryBasePrices: categoryBasePrices,
-      reservePurseRule: _reservePurseRule,
-      smartBidSlabs: _smartBidSlabs,
-    );
-
-    final auctionRepo = ref.read(auctionRepositoryProvider);
-    await auctionRepo.save(auction);
-
-    // Save Teams to Hive Team Repository
-    final teamRepo = ref.read(teamRepositoryProvider);
-    final totalPurse = double.tryParse(_teamPurseController.text.trim()) ?? 1000000;
-
-    for (final t in _draftTeams) {
-      final team = Team(
-        id: t.id ?? 'team_${DateTime.now().millisecondsSinceEpoch}_${t.name.hashCode.abs() % 1000}',
-        auctionId: _auctionId,
-        name: t.name,
-        ownerName: t.ownerName,
-        logoBase64: t.logoBase64,
-        purseTotal: totalPurse,
-        purseSpent: 0,
-      );
-      await teamRepo.save(team);
-    }
-
-    ref.read(activeAuctionIdProvider.notifier).setAuctionId(_auctionId);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Auction "${auction.name}" and ${_draftTeams.length} franchise teams created!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      context.go('/auctions');
+      if (mounted) {
+        setState(() => _logoUrl = url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logo upload failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
+  // Pick and upload team logo to Supabase Storage
+  Future<void> _pickAndUploadTeamLogo() async {
+    try {
+      final XFile? file = await ImagePickerHelper.pickImageFile();
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      final repo = ref.read(teamRepositoryProvider) as SupabaseTeamRepository;
+      final url = await repo.uploadLogo(_auctionId, bytes);
+
+      if (mounted) {
+        setState(() => _teamLogoUrl = url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Team logo upload failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  // Final Action: Create / Save Auction (atomic via RPC)
+  Future<void> _handleFinalizeAuction() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final startDateTime = DateTime(
+        _startDate.year,
+        _startDate.month,
+        _startDate.day,
+        _startTime.hour,
+        _startTime.minute,
+      );
+
+      final categoryBasePrices = <String, double>{};
+      for (final entry in _categoryBasePriceControllers.entries) {
+        categoryBasePrices[entry.key] = double.tryParse(entry.value.text.trim()) ??
+            (double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000);
+      }
+
+      final auction = Auction(
+        id: _auctionId,
+        name: _nameController.text.trim(),
+        logoBase64: _logoUrl,
+        venue: _venueController.text.trim(),
+        description: _descController.text.trim(),
+        startDateTime: startDateTime,
+        status: AuctionStatus.draft,
+        categories: _categories,
+        numberOfTeams: int.tryParse(_teamsCountController.text.trim()) ?? 8,
+        minSquad: int.tryParse(_minSquadController.text.trim()) ?? 11,
+        maxSquad: int.tryParse(_maxSquadController.text.trim()) ?? 15,
+        basePriceDefault: double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000,
+        bidIncrement: double.tryParse(_bidIncrementController.text.trim()) ?? 2000,
+        teamPurse: double.tryParse(_teamPurseController.text.trim()) ?? 1000000,
+        countdownSeconds: int.tryParse(_countdownController.text.trim()) ?? 30,
+        mode: _selectedMode,
+        contactPhone: _phoneController.text.trim(),
+        contactEmail: _emailController.text.trim(),
+        categoryBasePrices: categoryBasePrices,
+        reservePurseRule: _reservePurseRule,
+        smartBidSlabs: _smartBidSlabs,
+      );
+
+      final totalPurse = double.tryParse(_teamPurseController.text.trim()) ?? 1000000;
+
+      final teams = _draftTeams.map((t) => Team(
+        id: t.id ?? 'team_${DateTime.now().millisecondsSinceEpoch}_${t.name.hashCode.abs() % 1000}',
+        auctionId: _auctionId,
+        name: t.name,
+        logoBase64: _teamLogoUrl, // Will be overridden per-team below
+        ownerName: t.ownerName,
+        purseTotal: totalPurse,
+        purseSpent: 0,
+      )).toList();
+
+      // Use atomic RPC: creates auction + teams in one transaction
+      final repo = ref.read(auctionRepositoryProvider) as SupabaseAuctionRepository;
+      final createdAuction = await repo.createAuctionWithTeams(
+        auction: auction,
+        teams: teams,
+      );
+
+      ref.read(activeAuctionIdProvider.notifier).setAuctionId(createdAuction.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Auction "${createdAuction.name}" and ${teams.length} franchise teams created!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.go('/auctions');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create auction: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -519,7 +577,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                       Icon(Icons.cloud_done_outlined, color: AppColors.success, size: 14),
                       SizedBox(width: 6),
                       Text(
-                        'Draft Auto-Saved to Hive',
+                        'Draft Auto-Saved',
                         style: TextStyle(
                           color: AppColors.success,
                           fontSize: 11,
@@ -573,8 +631,8 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                              ),
                             ),
-                          ),
                           if (!isSmall) ...[
                             const SizedBox(width: 8),
                             Text(
@@ -632,7 +690,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   // -------------------------------------------------------------
   Widget _buildStep1TournamentInfo() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Text(
           'Step 1: Tournament Information',
@@ -645,9 +703,8 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Logo Upload Row with Square Cropper Preview
+        // Logo Upload Row
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 90,
@@ -657,43 +714,25 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                 color: AppColors.surfaceLight,
                 border: Border.all(color: AppColors.cardBorder, width: 1.5),
               ),
-              child: _logoBase64 != null && _logoBase64!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Image.memory(
-                        base64Decode(_logoBase64!),
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.sports_cricket_rounded, size: 40, color: AppColors.textMuted),
-                    ),
+              child: _buildLogoPreview(),
             ),
             const SizedBox(width: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () async {
-                    final base64Image = await ImagePickerHelper.pickAndCropSquareImage(
-                      context,
-                      dialogTitle: 'Crop Tournament Logo (Square 1:1)',
-                    );
-                    if (base64Image != null) {
-                      setState(() => _logoBase64 = base64Image);
-                    }
-                  },
+                  onPressed: _isSaving ? null : _pickAndUploadLogo,
                   icon: const Icon(Icons.image_rounded, size: 18),
-                  label: Text(_logoBase64 != null ? 'Change Logo (Square)' : 'Upload Logo (Square Crop)'),
+                  label: Text(_logoUrl != null ? 'Change Logo' : 'Upload Logo'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryBlue,
                     side: const BorderSide(color: AppColors.primaryBlue),
                   ),
                 ),
-                if (_logoBase64 != null) ...[
+                if (_logoUrl != null) ...[
                   const SizedBox(height: 6),
                   TextButton.icon(
-                    onPressed: () => setState(() => _logoBase64 = null),
+                    onPressed: _isSaving ? null : () => setState(() => _logoUrl = null),
                     icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
                     label: const Text('Remove Logo', style: TextStyle(color: AppColors.error, fontSize: 12)),
                   ),
@@ -863,7 +902,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Category Chips
         const Text(
           'Player Categories:',
           style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
@@ -895,7 +933,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ],
         const SizedBox(height: 16),
 
-        // Add Custom Category input
         Row(
           children: [
             Expanded(
@@ -931,7 +968,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 28),
 
-        // Per-Category Base Price Slabs Table
         const Text(
           'Per-Category Base Prices (Indian Rupees ₹):',
           style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
@@ -1166,7 +1202,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Teams count & Squad sizes
         Row(
           children: [
             Expanded(
@@ -1197,7 +1232,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
               child: TextFormField(
                 controller: _maxSquadController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Max Squad Size *',
                   prefixIcon: Icon(Icons.group_add_outlined, color: AppColors.accentPink),
                 ),
@@ -1207,7 +1242,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 18),
 
-        // Purse & Base Prices
         Row(
           children: [
             Expanded(
@@ -1249,7 +1283,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 18),
 
-        // Countdown Timer
         SizedBox(
           width: 280,
           child: TextFormField(
@@ -1264,7 +1297,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 24),
 
-        // NEW: Reserve Purse Rule Toggle
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1290,7 +1322,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 14),
 
-        // NEW: Smart Bid Increment Slabs
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1343,7 +1374,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
               ],
             ),
             OutlinedButton.icon(
-              onPressed: () => _showAddTeamDialog(),
+              onPressed: _isSaving ? null : _showAddTeamDialog,
               icon: const Icon(Icons.group_add_rounded, size: 18),
               label: const Text('Add Team'),
               style: OutlinedButton.styleFrom(
@@ -1359,7 +1390,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ],
         const SizedBox(height: 20),
 
-        // Teams Table
         if (_draftTeams.isEmpty)
           const Center(
             child: Padding(
@@ -1457,9 +1487,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                           child: Center(
                             child: IconButton(
                               icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
-                              onPressed: () {
-                                setState(() => _draftTeams.removeAt(idx));
-                              },
+                              onPressed: _isSaving ? null : () => setState(() => _draftTeams.removeAt(idx)),
                             ),
                           ),
                         ),
@@ -1477,7 +1505,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   void _showAddTeamDialog() {
     _teamNameController.clear();
     _teamOwnerController.clear();
-    _teamLogoBase64 = null;
+    _teamLogoUrl = null;
 
     showDialog(
       context: context,
@@ -1518,14 +1546,14 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           GradientButton(
             height: 38,
-            onPressed: () {
+            onPressed: _isSaving ? null : () {
               final name = _teamNameController.text.trim();
               if (name.isEmpty) return;
               setState(() {
                 _draftTeams.add(_TeamDraftItem(
                   name: name,
                   ownerName: _teamOwnerController.text.trim(),
-                  logoBase64: _teamLogoBase64,
+                  logoBase64: _teamLogoUrl,
                 ));
               });
               Navigator.pop(ctx);
@@ -1560,7 +1588,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Summary Card
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -1573,10 +1600,18 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             children: [
               Row(
                 children: [
-                  if (_logoBase64 != null)
+                  if (_logoUrl != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(base64Decode(_logoBase64!), width: 50, height: 50, fit: BoxFit.cover),
+                      child: Image.network(
+                        _logoUrl!,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.sports_cricket, color: AppColors.textMuted),
+                        ),
+                      ),
                     )
                   else
                     Container(
@@ -1643,6 +1678,25 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     );
   }
 
+  Widget _buildLogoPreview() {
+    if (_isSaving) {
+      return const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)));
+    }
+    if (_logoUrl != null && _logoUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.network(
+          _logoUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Center(
+            child: Icon(Icons.sports_cricket_rounded, size: 40, color: AppColors.textMuted),
+          ),
+        ),
+      );
+    }
+    return const Center(child: Icon(Icons.sports_cricket_rounded, size: 40, color: AppColors.textMuted));
+  }
+
   // Bottom Navigation Buttons (Back, Cancel, Next, Create)
   Widget _buildNavigationButtons() {
     final isLastStep = _currentStep == _totalSteps - 1;
@@ -1653,13 +1707,13 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         Row(
           children: [
             OutlinedButton(
-              onPressed: () => context.go('/auctions'),
+              onPressed: _isSaving ? null : () => context.go('/auctions'),
               child: const Text('Cancel'),
             ),
             if (_currentStep > 0) ...[
               const SizedBox(width: 12),
               OutlinedButton.icon(
-                onPressed: _onPrevStep,
+                onPressed: _isSaving ? null : _onPrevStep,
                 icon: const Icon(Icons.arrow_back_rounded, size: 16),
                 label: const Text('Back'),
               ),
@@ -1670,7 +1724,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
           children: [
             if (!isLastStep)
               GradientButton(
-                onPressed: _onNextStep,
+                onPressed: _isSaving ? null : _onNextStep,
                 icon: Icons.arrow_forward_rounded,
                 label: 'Next Step',
               )
@@ -1692,7 +1746,7 @@ class _TeamDraftItem {
   String? id;
   String name;
   String ownerName;
-  String? logoBase64;
+  String? logoBase64; // May be base64 (old drafts) or URL (new)
 
   _TeamDraftItem({
     this.id,

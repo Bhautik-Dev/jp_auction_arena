@@ -1,41 +1,94 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
-import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
-import 'package:jp_auction_arena/core/utils/app_logger.dart';
-import '../../models/player.dart';
-import '../hive_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/services/image_upload_service.dart';
+import '../../../core/supabase/supabase_client.dart';
+import '../../models/models.dart';
 import '../player_repository.dart';
-import 'supabase_sync_service.dart';
 
-/// Supabase-backed implementation of [PlayerRepository].
-///
-/// Reads come from the local Hive box (single source of truth for the UI).
-/// Writes are mirrored to the local box first, then pushed to Supabase.
-/// Cloud sync failures are logged but never block the UI or roll back
-/// the local write.
+/// Supabase-first implementation of [PlayerRepository].
 class SupabasePlayerRepository implements PlayerRepository {
-  SupabasePlayerRepository();
+  SupabasePlayerRepository(this._client);
 
-  Box<Player> get _box => Hive.box<Player>(HiveBoxes.players);
+  final SupabaseClient _client;
+
+  dynamic _toSupabase(Player p) {
+    return {
+      'id': p.id,
+      'auction_id': p.auctionId,
+      'player_no': p.playerNo,
+      'name': p.name,
+      'photo_base64': p.photoBase64,
+      'age': p.age,
+      'village': p.village,
+      'category': p.category,
+      'batting_style': p.battingStyle,
+      'bowling_style': p.bowlingStyle,
+      'matches': p.matches,
+      'runs': p.runs,
+      'wickets': p.wickets,
+      'high_score': p.highScore,
+      'strike_rate': p.strikeRate,
+      'economy': p.economy,
+      'base_price': p.basePrice,
+      'is_icon': p.isIcon,
+      'is_owner': p.isOwner,
+      'is_retained': p.isRetained,
+      'retained_team_id': p.retainedTeamId,
+      'status': p.status.name,
+      'sold_price': p.soldPrice,
+      'sold_team_id': p.soldTeamId,
+      'created_by': _client.auth.currentUser?.id,
+    };
+  }
+
+  Player _fromSupabase(Map<String, dynamic> s) => Player(
+        id: s['id'] as String,
+        auctionId: s['auction_id'] as String,
+        playerNo: (s['player_no'] as num?)?.toInt() ?? 1,
+        name: s['name'] as String? ?? 'Player',
+        photoBase64: s['photo_base64'] as String?,
+        age: (s['age'] as num?)?.toInt() ?? 20,
+        village: s['village'] as String? ?? '',
+        category: s['category'] as String? ?? 'All-Rounder',
+        battingStyle: s['batting_style'] as String? ?? 'Right Hand Bat',
+        bowlingStyle: s['bowling_style'] as String? ?? 'Right Arm Medium',
+        matches: (s['matches'] as num?)?.toInt() ?? 0,
+        runs: (s['runs'] as num?)?.toInt() ?? 0,
+        wickets: (s['wickets'] as num?)?.toInt() ?? 0,
+        highScore: (s['high_score'] as num?)?.toInt() ?? 0,
+        strikeRate: (s['strike_rate'] as num?)?.toDouble() ?? 0.0,
+        economy: (s['economy'] as num?)?.toDouble() ?? 0.0,
+        basePrice: (s['base_price'] as num?)?.toDouble() ?? 10000.0,
+        isIcon: s['is_icon'] as bool? ?? false,
+        isOwner: s['is_owner'] as bool? ?? false,
+        isRetained: s['is_retained'] as bool? ?? false,
+        retainedTeamId: s['retained_team_id'] as String?,
+        status: PlayerStatus.fromString(s['status'] as String?),
+        soldPrice: (s['sold_price'] as num?)?.toDouble(),
+        soldTeamId: s['sold_team_id'] as String?,
+      );
 
   @override
-  List<Player> getAll() => _box.values.toList();
+  List<Player> getAll() {
+    final data = _client.from('players').select().order('player_no') as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+  }
 
   @override
   List<Player> getByAuctionId(String auctionId) {
-    return _box.values
-        .where((p) => p.auctionId == auctionId)
-        .toList()
-      ..sort((a, b) => a.playerNo.compareTo(b.playerNo));
+    final data = _client.from('players').select().eq('auction_id', auctionId).order('player_no') as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   Player? getById(String id) {
     try {
-      return _box.values.firstWhere((p) => p.id == id);
+      final data = _client.from('players').select().eq('id', id).single() as Map<String, dynamic>;
+      return _fromSupabase(data);
     } catch (_) {
       return null;
     }
@@ -43,132 +96,52 @@ class SupabasePlayerRepository implements PlayerRepository {
 
   @override
   Future<void> save(Player player) async {
-    await _box.put(player.id, player);
-    final ok = await SupabaseSyncService.instance.pushPlayer(
-      SupabasePlayer(
-        id: player.id,
-        auctionId: player.auctionId,
-        playerNo: player.playerNo,
-        name: player.name,
-        photoBase64: player.photoBase64,
-        age: player.age,
-        village: player.village,
-        category: player.category,
-        battingStyle: player.battingStyle,
-        bowlingStyle: player.bowlingStyle,
-        matches: player.matches,
-        runs: player.runs,
-        wickets: player.wickets,
-        highScore: player.highScore,
-        strikeRate: player.strikeRate,
-        economy: player.economy,
-        basePrice: player.basePrice,
-        isIcon: player.isIcon,
-        isOwner: player.isOwner,
-        isRetained: player.isRetained,
-        retainedTeamId: player.retainedTeamId,
-        status: player.status.name,
-        soldPrice: player.soldPrice,
-        soldTeamId: player.soldTeamId,
-      ),
-    );
-    if (!ok) {
-      AppLogger.warning(
-        'Player ${player.id} saved locally but cloud sync failed',
-        tag: 'SupabaseSync',
-      );
-    }
+    await _client.from('players').upsert(_toSupabase(player));
   }
 
   @override
   Future<void> saveAll(List<Player> players) async {
-    final map = {for (final p in players) p.id: p};
-    await _box.putAll(map);
-    for (final player in players) {
-      final ok = await SupabaseSyncService.instance.pushPlayer(
-        SupabasePlayer(
-          id: player.id,
-          auctionId: player.auctionId,
-          playerNo: player.playerNo,
-          name: player.name,
-          photoBase64: player.photoBase64,
-          age: player.age,
-          village: player.village,
-          category: player.category,
-          battingStyle: player.battingStyle,
-          bowlingStyle: player.bowlingStyle,
-          matches: player.matches,
-          runs: player.runs,
-          wickets: player.wickets,
-          highScore: player.highScore,
-          strikeRate: player.strikeRate,
-          economy: player.economy,
-          basePrice: player.basePrice,
-          isIcon: player.isIcon,
-          isOwner: player.isOwner,
-          isRetained: player.isRetained,
-          retainedTeamId: player.retainedTeamId,
-          status: player.status.name,
-          soldPrice: player.soldPrice,
-          soldTeamId: player.soldTeamId,
-        ),
-      );
-      if (!ok) {
-        AppLogger.warning(
-          'Player ${player.id} saved locally but cloud sync failed',
-          tag: 'SupabaseSync',
-        );
-      }
+    if (players.isEmpty) return;
+    const chunkSize = 200;
+    for (int i = 0; i < players.length; i += chunkSize) {
+      final chunk = players.skip(i).take(chunkSize).toList();
+      final rows = chunk.map((p) => _toSupabase(p)).toList();
+      await _client.from('players').upsert(rows);
     }
   }
 
   @override
   Future<void> delete(String id) async {
-    final player = getById(id);
-    await _box.delete(id);
-    if (player != null) {
-      final ok = await SupabaseSyncService.instance.deletePlayer(
-        SupabasePlayer(
-          id: player.id,
-          auctionId: player.auctionId,
-          playerNo: player.playerNo,
-          name: player.name,
-        ),
-      );
-      if (!ok) {
-        AppLogger.warning(
-          'Player $id deleted locally but cloud sync failed',
-          tag: 'SupabaseSync',
-        );
-      }
-    }
+    await _client.from('players').delete().eq('id', id);
   }
 
   @override
   Future<void> deleteByAuction(String auctionId) async {
-    final players = getByAuctionId(auctionId);
-    await _box.deleteAll(players.map((p) => p.id).toList());
-    for (final player in players) {
-      final ok = await SupabaseSyncService.instance.deletePlayer(
-        SupabasePlayer(
-          id: player.id,
-          auctionId: player.auctionId,
-          playerNo: player.playerNo,
-          name: player.name,
-        ),
-      );
-      if (!ok) {
-        AppLogger.warning(
-          'Player ${player.id} deleted locally but cloud sync failed',
-          tag: 'SupabaseSync',
-        );
-      }
-    }
+    await _client.from('players').delete().eq('auction_id', auctionId);
   }
 
   @override
   Stream<List<Player>> watchByAuction(String auctionId) {
-    return _box.watch().map((_) => getByAuctionId(auctionId));
+    return _client
+        .from('players')
+        .stream(primaryKey: ['id'])
+        .eq('auction_id', auctionId)
+        .order('player_no')
+        .map((rows) => rows.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList());
+  }
+
+  Future<int> importPlayers(List<Player> players) async {
+    await saveAll(players);
+    return players.length;
+  }
+
+  Future<String?> uploadPhoto(String auctionId, String playerId, Uint8List imageBytes) async {
+    final result = await ImageUploadService.instance.uploadPlayerPhoto(
+      auctionId: auctionId,
+      playerId: playerId,
+      imageBytes: imageBytes,
+    );
+    return result.publicUrl;
   }
 }
 
@@ -177,7 +150,7 @@ final supabasePlayerRepositoryProvider =
     Provider<PlayerRepository>((ref) {
   final client = SupabaseClientService.instance.client;
   if (client == null) {
-    return HivePlayerRepository();
+    throw StateError('Supabase client is not initialized.');
   }
-  return SupabasePlayerRepository();
+  return SupabasePlayerRepository(client);
 });

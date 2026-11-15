@@ -1,49 +1,65 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
-import 'package:jp_auction_arena/core/supabase/supabase_models.dart';
-import 'package:jp_auction_arena/core/utils/app_logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/supabase/supabase_client.dart';
 import '../../models/bid.dart';
-import '../hive_service.dart';
+import '../../models/models.dart';
 import '../bid_repository.dart';
-import 'supabase_sync_service.dart';
 
-/// Supabase-backed implementation of [BidRepository].
-///
-/// Reads come from the local Hive box (single source of truth for the UI).
-/// Writes are mirrored to the local box first, then pushed to Supabase.
-/// Cloud sync failures are logged but never block the UI or roll back
-/// the local write.
+/// Supabase-first implementation of [BidRepository].
 class SupabaseBidRepository implements BidRepository {
-  SupabaseBidRepository();
+  SupabaseBidRepository(this._client);
 
-  Box<Bid> get _box => Hive.box<Bid>(HiveBoxes.bids);
+  final SupabaseClient _client;
+
+  dynamic _toSupabase(Bid b) {
+    return {
+      'id': b.id,
+      'auction_id': b.auctionId,
+      'player_id': b.playerId,
+      'team_id': b.teamId,
+      'amount': b.amount,
+      'timestamp': b.timestamp.toIso8601String(),
+      'created_by': _client.auth.currentUser?.id,
+    };
+  }
+
+  Bid _fromSupabase(Map<String, dynamic> s) => Bid(
+        id: s['id'] as String,
+        auctionId: s['auction_id'] as String,
+        playerId: s['player_id'] as String,
+        teamId: s['team_id'] as String,
+        amount: (s['amount'] as num?)?.toDouble() ?? 0.0,
+        timestamp: s['timestamp'] != null
+            ? DateTime.parse(s['timestamp'] as String)
+            : DateTime.now(),
+      );
 
   @override
-  List<Bid> getAll() => _box.values.toList();
+  List<Bid> getAll() {
+    final data = _client.from('bids').select().order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+  }
 
   @override
   List<Bid> getByAuctionId(String auctionId) {
-    return _box.values
-        .where((b) => b.auctionId == auctionId)
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final data = _client.from('bids').select().eq('auction_id', auctionId).order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   List<Bid> getByPlayerId(String playerId) {
-    return _box.values
-        .where((b) => b.playerId == playerId)
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final data = _client.from('bids').select().eq('player_id', playerId).order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   Bid? getById(String id) {
     try {
-      return _box.values.firstWhere((b) => b.id == id);
+      final data = _client.from('bids').select().eq('id', id).single() as Map<String, dynamic>;
+      return _fromSupabase(data);
     } catch (_) {
       return null;
     }
@@ -51,58 +67,27 @@ class SupabaseBidRepository implements BidRepository {
 
   @override
   Future<void> save(Bid bid) async {
-    await _box.put(bid.id, bid);
-    final ok = await SupabaseSyncService.instance.pushBid(
-      SupabaseBid(
-        id: bid.id,
-        auctionId: bid.auctionId,
-        playerId: bid.playerId,
-        teamId: bid.teamId,
-        amount: bid.amount,
-        timestamp: bid.timestamp,
-      ),
-    );
-    if (!ok) {
-      AppLogger.warning(
-        'Bid ${bid.id} saved locally but cloud sync failed',
-        tag: 'SupabaseSync',
-      );
-    }
+    await _client.from('bids').insert(_toSupabase(bid));
   }
 
   @override
   Future<void> delete(String id) async {
-    final bid = getById(id);
-    await _box.delete(id);
-    if (bid != null) {
-      final ok = await SupabaseSyncService.instance.deleteBid(
-        SupabaseBid(
-          id: bid.id,
-          auctionId: bid.auctionId,
-          playerId: bid.playerId,
-          teamId: bid.teamId,
-          amount: bid.amount,
-          timestamp: bid.timestamp,
-        ),
-      );
-      if (!ok) {
-        AppLogger.warning(
-          'Bid $id deleted locally but cloud sync failed',
-          tag: 'SupabaseSync',
-        );
-      }
-    }
+    await _client.from('bids').delete().eq('id', id);
   }
 
   @override
   Future<void> deleteByAuction(String auctionId) async {
-    final bids = getByAuctionId(auctionId);
-    await _box.deleteAll(bids.map((b) => b.id).toList());
+    await _client.from('bids').delete().eq('auction_id', auctionId);
   }
 
   @override
   Stream<List<Bid>> watchByAuction(String auctionId) {
-    return _box.watch().map((_) => getByAuctionId(auctionId));
+    return _client
+        .from('bids')
+        .stream(primaryKey: ['id'])
+        .eq('auction_id', auctionId)
+        .order('timestamp', ascending: false)
+        .map((rows) => rows.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList());
   }
 }
 
@@ -111,7 +96,7 @@ final supabaseBidRepositoryProvider =
     Provider<BidRepository>((ref) {
   final client = SupabaseClientService.instance.client;
   if (client == null) {
-    return HiveBidRepository();
+    throw StateError('Supabase client is not initialized.');
   }
-  return SupabaseBidRepository();
+  return SupabaseBidRepository(client);
 });

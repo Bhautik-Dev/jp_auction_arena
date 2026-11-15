@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverprovider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/connection/connection_service.dart';
 import '../../core/routing/route_names.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/models/enums.dart';
 import '../../data/repositories/auth_provider.dart';
+import 'connection_indicator.dart';
 import 'nav_items.dart';
 
 class AppSidebar extends ConsumerWidget {

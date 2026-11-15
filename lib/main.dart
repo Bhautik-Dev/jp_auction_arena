@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:jp_auction_arena/app.dart';
+import 'package:jp_auction_arena/core/connection/connection_service.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 import 'package:jp_auction_arena/data/repositories/repositories.dart';
 
@@ -13,6 +14,9 @@ void main() async {
   if (kIsWeb) {
     usePathUrlStrategy();
   }
+
+  // Initialize network connection monitoring (online/offline indicator)
+  await ConnectionService.instance.init();
 
   // Initialize local offline Hive database (Web and Android support)
   await HiveBoxes.init();

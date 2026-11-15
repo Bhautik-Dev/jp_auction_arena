@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 import 'hive_service.dart';
 import 'auction_repository.dart';
+import 'repository_factory.dart';
 
 abstract class TeamRepository {
   List<Team> getAll();
@@ -60,7 +61,7 @@ class HiveTeamRepository implements TeamRepository {
 }
 
 final teamRepositoryProvider = Provider<TeamRepository>((ref) {
-  return HiveTeamRepository();
+  return ref.watch(repositoryFactoryProvider).team;
 });
 
 final currentAuctionTeamsProvider = StreamProvider<List<Team>>((ref) async* {

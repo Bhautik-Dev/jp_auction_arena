@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 import 'hive_service.dart';
 import 'auction_repository.dart';
+import 'repository_factory.dart';
 
 abstract class PlayerRepository {
   List<Player> getAll();
@@ -70,7 +71,7 @@ class HivePlayerRepository implements PlayerRepository {
 }
 
 final playerRepositoryProvider = Provider<PlayerRepository>((ref) {
-  return HivePlayerRepository();
+  return ref.watch(repositoryFactoryProvider).player;
 });
 
 final currentAuctionPlayersProvider = StreamProvider<List<Player>>((ref) async* {

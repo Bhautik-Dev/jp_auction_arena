@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 import 'hive_service.dart';
 import 'auction_repository.dart';
+import 'repository_factory.dart';
 
 abstract class BidRepository {
   List<Bid> getAll();
@@ -72,7 +73,7 @@ class HiveBidRepository implements BidRepository {
 }
 
 final bidRepositoryProvider = Provider<BidRepository>((ref) {
-  return HiveBidRepository();
+  return ref.watch(repositoryFactoryProvider).bid;
 });
 
 final currentAuctionBidsProvider = StreamProvider<List<Bid>>((ref) async* {

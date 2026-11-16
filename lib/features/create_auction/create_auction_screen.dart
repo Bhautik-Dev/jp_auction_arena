@@ -30,6 +30,9 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   bool _isAutoDraftSaved = false;
   String _auctionId = '';
 
+  // Step validation tracking
+  final List<bool> _stepValid = List.filled(6, false);
+
   // Step 1: Tournament Info
   final _nameController = TextEditingController();
   final _venueController = TextEditingController();
@@ -256,17 +259,25 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             isValid = false;
           }
         });
+        _stepValid[step] = isValid;
         return isValid;
 
       case 1: // Auction Config
         if (_categories.isEmpty) {
-          setState(() => _categoryError = 'At least one player category is required');
+          setState(() {
+            _categoryError = 'At least one player category is required';
+            _stepValid[step] = false;
+          });
           return false;
         }
-        setState(() => _categoryError = null);
+        setState(() {
+          _categoryError = null;
+          _stepValid[step] = true;
+        });
         return true;
 
       case 2: // Auction Mode
+        setState(() => _stepValid[step] = true);
         return true;
 
       case 3: // Auction Settings
@@ -316,22 +327,33 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             isValid = false;
           }
         });
+        _stepValid[step] = isValid;
         return isValid;
 
       case 4: // Teams Setup
         if (_draftTeams.isEmpty) {
-          setState(() => _teamTableError = 'Please add at least 2 teams before reviewing');
+          setState(() {
+            _teamTableError = 'Please add at least 2 teams before reviewing';
+            _stepValid[step] = false;
+          });
           return false;
         }
         final maxTeams = int.tryParse(_teamsCountController.text.trim()) ?? 8;
         if (_draftTeams.length > maxTeams) {
-          setState(() => _teamTableError = 'You have added ${_draftTeams.length} teams, but maximum allowed is $maxTeams.');
+          setState(() {
+            _teamTableError = 'You have added ${_draftTeams.length} teams, but maximum allowed is $maxTeams.';
+            _stepValid[step] = false;
+          });
           return false;
         }
-        setState(() => _teamTableError = null);
+        setState(() {
+          _teamTableError = null;
+          _stepValid[step] = true;
+        });
         return true;
 
       case 5: // Review
+        setState(() => _stepValid[step] = true);
         return true;
 
       default:
@@ -341,12 +363,14 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
 
   void _onNextStep() {
     if (_validateStep(_currentStep)) {
-      _saveDraftAutomatically();
       if (_currentStep < _totalSteps - 1) {
         setState(() => _currentStep++);
       }
     }
   }
+
+  /// Whether all steps are valid and ready to save
+  bool get _allStepsValid => _stepValid.every((v) => v);
 
   void _onPrevStep() {
     if (_currentStep > 0) {
@@ -404,8 +428,45 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     }
   }
 
-  // Final Action: Create / Save Auction (atomic via RPC)
+  // Final Action: Save Auction (only on last step, after all validation)
   Future<void> _handleFinalizeAuction() async {
+    // Validate ALL steps before saving
+    bool allValid = true;
+    for (int i = 0; i < _totalSteps; i++) {
+      if (!_validateStep(i)) {
+        allValid = false;
+        // Jump to first invalid step
+        setState(() => _currentStep = i);
+        break;
+      }
+    }
+
+    if (!allValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please complete all required fields before saving.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check for duplicate auction name
+    final existingAuctions = ref.read(auctionRepositoryProvider).getAll();
+    if (existingAuctions.any((a) => a.name.trim().toLowerCase() == _nameController.text.trim().toLowerCase())) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('An auction with this name already exists. Please choose a different name.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -453,7 +514,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         id: t.id ?? 'team_${DateTime.now().millisecondsSinceEpoch}_${t.name.hashCode.abs() % 1000}',
         auctionId: _auctionId,
         name: t.name,
-        logoBase64: _teamLogoUrl, // Will be overridden per-team below
+        logoBase64: _teamLogoUrl,
         ownerName: t.ownerName,
         purseTotal: totalPurse,
         purseSpent: 0,
@@ -471,7 +532,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Auction "${createdAuction.name}" and ${teams.length} franchise teams created!'),
+            content: Text('Auction "${createdAuction.name}" and ${teams.length} franchise teams created successfully!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -598,15 +659,21 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                   final isDone = index < _currentStep;
                   final isCurrent = index == _currentStep;
 
-                  Color dotColor = AppColors.textMuted;
-                  if (isDone) dotColor = AppColors.success;
-                  if (isCurrent) dotColor = AppColors.accentPink;
+                  Color dotColor;
+                  if (_stepValid[index]) {
+                    dotColor = AppColors.success; // Green for valid steps
+                  } else if (isCurrent) {
+                    dotColor = AppColors.accentPink; // Pink for current step
+                  } else if (isDone) {
+                    dotColor = AppColors.error; // Red for invalid steps
+                  } else {
+                    dotColor = AppColors.textMuted; // Muted for future steps
+                  }
 
                   return Expanded(
                     child: InkWell(
                       onTap: () {
                         if (index < _currentStep || _validateStep(_currentStep)) {
-                          _saveDraftAutomatically();
                           setState(() => _currentStep = index);
                         }
                       },
@@ -1697,9 +1764,10 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     return const Center(child: Icon(Icons.sports_cricket_rounded, size: 40, color: AppColors.textMuted));
   }
 
-  // Bottom Navigation Buttons (Back, Cancel, Next, Create)
+  // Bottom Navigation Buttons (Back, Cancel, Next, Save)
   Widget _buildNavigationButtons() {
     final isLastStep = _currentStep == _totalSteps - 1;
+    final allStepsValid = _allStepsValid;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1724,16 +1792,16 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
           children: [
             if (!isLastStep)
               GradientButton(
-                onPressed: _isSaving ? null : _onNextStep,
+                onPressed: _isSaving || !_stepValid[_currentStep] ? null : _onNextStep,
                 icon: Icons.arrow_forward_rounded,
                 label: 'Next Step',
               )
             else
               GradientButton(
-                onPressed: _isSaving ? null : _handleFinalizeAuction,
+                onPressed: _isSaving || !allStepsValid ? null : _handleFinalizeAuction,
                 isLoading: _isSaving,
                 icon: Icons.check_circle_rounded,
-                label: widget.editAuctionId != null ? 'Update Tournament' : 'Create Auction & Launch',
+                label: 'Save Auction',
               ),
           ],
         ),

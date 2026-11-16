@@ -67,8 +67,10 @@ final teamRepositoryProvider = Provider<TeamRepository>((ref) {
 final currentAuctionTeamsProvider = StreamProvider<List<Team>>((ref) async* {
   final repo = ref.watch(teamRepositoryProvider);
   final activeAuction = ref.watch(activeAuctionProvider);
+  
   if (activeAuction == null) {
-    yield [];
+    // Show ALL teams when no auction is active
+    yield await repo.getAll();
     return;
   }
   yield await repo.getByAuctionId(activeAuction.id);

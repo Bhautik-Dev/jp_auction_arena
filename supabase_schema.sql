@@ -201,41 +201,41 @@ ALTER TABLE bids ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auction_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 
--- Permissive policies for anon role (public client access)
+-- Permissive policies for authenticated role (signed-in client access)
 -- Use DROP POLICY IF EXISTS before CREATE POLICY so the script is idempotent
 -- and can be re-run without "policy already exists" errors.
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON profiles;
-CREATE POLICY "Enable all access for anon role" ON profiles
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON profiles;
+CREATE POLICY "Enable all access for authenticated role" ON profiles
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON auctions;
-CREATE POLICY "Enable all access for anon role" ON auctions
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON auctions;
+CREATE POLICY "Enable all access for authenticated role" ON auctions
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON auction_members;
-CREATE POLICY "Enable all access for anon role" ON auction_members
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON auction_members;
+CREATE POLICY "Enable all access for authenticated role" ON auction_members
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON teams;
-CREATE POLICY "Enable all access for anon role" ON teams
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON teams;
+CREATE POLICY "Enable all access for authenticated role" ON teams
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON players;
-CREATE POLICY "Enable all access for anon role" ON players
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON players;
+CREATE POLICY "Enable all access for authenticated role" ON players
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON bids;
-CREATE POLICY "Enable all access for anon role" ON bids
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON bids;
+CREATE POLICY "Enable all access for authenticated role" ON bids
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON auction_state;
-CREATE POLICY "Enable all access for anon role" ON auction_state
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON auction_state;
+CREATE POLICY "Enable all access for authenticated role" ON auction_state
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Enable all access for anon role" ON activity_log;
-CREATE POLICY "Enable all access for anon role" ON activity_log
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable all access for authenticated role" ON activity_log;
+CREATE POLICY "Enable all access for authenticated role" ON activity_log
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ============================================================================
 -- RPC: add_auction_member(auction_id, email, role)

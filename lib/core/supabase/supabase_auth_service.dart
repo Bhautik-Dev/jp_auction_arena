@@ -144,6 +144,9 @@ class SupabaseAuthService {
   }
 
   /// Upsert a row into the `profiles` table.
+  ///
+  /// Failures are logged but not thrown — profile creation is best-effort
+  /// since the auth user is already created by Supabase Auth.
   Future<void> _upsertProfile({
     required String id,
     required String email,
@@ -155,18 +158,26 @@ class SupabaseAuthService {
     final client = _client;
     if (client == null) return;
 
-    await client.from('profiles').upsert({
-      'id': id,
-      'email': email,
-      'full_name': fullName,
-      'org_name': orgName,
-      'phone': phone,
-      'role': role ?? 'admin',
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+    try {
+      await client.from('profiles').upsert({
+        'id': id,
+        'email': email,
+        'full_name': fullName,
+        'org_name': orgName,
+        'phone': phone,
+        'role': role ?? 'admin',
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      AppLogger.warning('Failed to upsert profile for user $id: $e',
+          tag: 'SupabaseAuth');
+    }
   }
 
   /// Fetch a profile row by user id.
+  ///
+  /// Returns null if no profile exists (e.g. signup just completed and profile
+  /// row hasn't been created yet). Never throws.
   Future<SupabaseProfile?> getProfile(String userId) async {
     final client = _client;
     if (client == null) return null;
@@ -176,8 +187,9 @@ class SupabaseAuthService {
           .from('profiles')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
+      if (data == null) return null;
       return SupabaseProfile.fromJson(data);
     } catch (e) {
       AppLogger.warning('Profile not found for user $userId: $e',

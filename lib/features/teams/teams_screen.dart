@@ -19,54 +19,64 @@ class TeamsScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Tournament Team'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Team Name', hintText: 'e.g. Royal Strikers'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          bool _isSaving = false;
+          return AlertDialog(
+            title: const Text('Add Tournament Team'),
+            content: SizedBox(
+              width: 400,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Team Name', hintText: 'e.g. Royal Strikers'),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: ownerController,
+                    decoration: const InputDecoration(labelText: 'Owner / Captain Name'),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: purseController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Purse Allocation (₹)'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: ownerController,
-                decoration: const InputDecoration(labelText: 'Owner / Captain Name'),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: purseController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Purse Allocation (₹)'),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              GradientButton(
+                height: 40,
+                onPressed: _isSaving ? null : () async {
+                  final name = nameController.text.trim();
+                  if (name.isEmpty) return;
+                  setDialogState(() => _isSaving = true);
+                  try {
+                    final team = Team(
+                      id: 'team_${DateTime.now().millisecondsSinceEpoch}',
+                      auctionId: activeAuction?.id ?? '',
+                      name: name,
+                      ownerName: ownerController.text.trim(),
+                      purseTotal: double.tryParse(purseController.text.trim()) ?? (activeAuction?.teamPurse ?? 1000000),
+                    );
+                    await ref.read(teamRepositoryProvider).save(team);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } finally {
+                    if (ctx.mounted) setDialogState(() => _isSaving = false);
+                  }
+                },
+                label: 'Add Team',
+                isLoading: _isSaving,
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          GradientButton(
-            height: 40,
-            onPressed: () async {
-              final name = nameController.text.trim();
-              if (name.isEmpty) return;
-              final team = Team(
-                id: 'team_${DateTime.now().millisecondsSinceEpoch}',
-                auctionId: activeAuction?.id ?? '',
-                name: name,
-                ownerName: ownerController.text.trim(),
-                purseTotal: double.tryParse(purseController.text.trim()) ?? (activeAuction?.teamPurse ?? 1000000),
-              );
-              await ref.read(teamRepositoryProvider).save(team);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            label: 'Add Team',
-          ),
-        ],
       ),
-    );
-  }
+    }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

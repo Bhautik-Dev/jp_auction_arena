@@ -43,14 +43,14 @@ class SupabaseTeamRepository implements TeamRepository {
 
   @override
   List<Team> getAll() {
-    final data = _client.from('teams').select().order('name') as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('teams').select().order('name') as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   List<Team> getByAuctionId(String auctionId) {
-    final data = _client.from('teams').select().eq('auction_id', auctionId).order('name') as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('teams').select().eq('auction_id', auctionId).order('name') as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override

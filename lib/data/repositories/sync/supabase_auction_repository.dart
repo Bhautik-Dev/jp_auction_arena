@@ -86,8 +86,8 @@ class SupabaseAuctionRepository implements AuctionRepository {
 
   @override
   List<Auction> getAll() {
-    final data = _client.from('auctions').select().order('created_at', ascending: false) as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('auctions').select().order('created_at', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override

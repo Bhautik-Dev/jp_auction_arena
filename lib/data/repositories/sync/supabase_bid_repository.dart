@@ -39,20 +39,20 @@ class SupabaseBidRepository implements BidRepository {
 
   @override
   List<Bid> getAll() {
-    final data = _client.from('bids').select().order('timestamp', ascending: false) as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('bids').select().order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   List<Bid> getByAuctionId(String auctionId) {
-    final data = _client.from('bids').select().eq('auction_id', auctionId).order('timestamp', ascending: false) as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('bids').select().eq('auction_id', auctionId).order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override
   List<Bid> getByPlayerId(String playerId) {
-    final data = _client.from('bids').select().eq('player_id', playerId).order('timestamp', ascending: false) as List<Map<String, dynamic>>;
-    return data.map((r) => _fromSupabase(r)).toList();
+    final data = _client.from('bids').select().eq('player_id', playerId).order('timestamp', ascending: false) as List<dynamic>;
+    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
   }
 
   @override

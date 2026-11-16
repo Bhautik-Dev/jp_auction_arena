@@ -13,16 +13,9 @@ class TeamsScreen extends ConsumerWidget {
   const TeamsScreen({super.key});
 
   void _showAddTeamDialog(BuildContext context, WidgetRef ref, Auction? activeAuction) {
-    if (activeAuction == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or create an active auction first.')),
-      );
-      return;
-    }
-
     final nameController = TextEditingController();
     final ownerController = TextEditingController();
-    final purseController = TextEditingController(text: activeAuction.teamPurse.toStringAsFixed(0));
+    final purseController = TextEditingController(text: activeAuction?.teamPurse.toStringAsFixed(0) ?? '1000000');
 
     showDialog(
       context: context,
@@ -60,10 +53,10 @@ class TeamsScreen extends ConsumerWidget {
               if (name.isEmpty) return;
               final team = Team(
                 id: 'team_${DateTime.now().millisecondsSinceEpoch}',
-                auctionId: activeAuction.id,
+                auctionId: activeAuction?.id ?? '',
                 name: name,
                 ownerName: ownerController.text.trim(),
-                purseTotal: double.tryParse(purseController.text.trim()) ?? activeAuction.teamPurse,
+                purseTotal: double.tryParse(purseController.text.trim()) ?? (activeAuction?.teamPurse ?? 1000000),
               );
               await ref.read(teamRepositoryProvider).save(team);
               if (ctx.mounted) Navigator.pop(ctx);

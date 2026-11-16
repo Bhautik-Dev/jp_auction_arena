@@ -73,22 +73,22 @@ class SupabasePlayerRepository implements PlayerRepository {
       );
 
   @override
-  List<Player> getAll() {
-    final data = _client.from('players').select().order('player_no') as List<dynamic>;
-    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+  Future<List<Player>> getAll() async {
+    final data = await _client.from('players').select().order('player_no');
+    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
   }
 
   @override
-  List<Player> getByAuctionId(String auctionId) {
-    final data = _client.from('players').select().eq('auction_id', auctionId).order('player_no') as List<dynamic>;
-    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+  Future<List<Player>> getByAuctionId(String auctionId) async {
+    final data = await _client.from('players').select().eq('auction_id', auctionId).order('player_no');
+    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
   }
 
   @override
-  Player? getById(String id) {
+  Future<Player?> getById(String id) async {
     try {
-      final data = _client.from('players').select().eq('id', id).single() as Map<String, dynamic>;
-      return _fromSupabase(data);
+      final data = await _client.from('players').select().eq('id', id).single();
+      return _fromSupabase(data as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

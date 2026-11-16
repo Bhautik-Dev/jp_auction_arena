@@ -85,16 +85,16 @@ class SupabaseAuctionRepository implements AuctionRepository {
       );
 
   @override
-  List<Auction> getAll() {
-    final data = _client.from('auctions').select().order('created_at', ascending: false) as List<dynamic>;
-    return data.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList();
+  Future<List<Auction>> getAll() async {
+    final data = await _client.from('auctions').select().order('created_at', ascending: false);
+    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
   }
 
   @override
-  Auction? getById(String id) {
+  Future<Auction?> getById(String id) async {
     try {
-      final data = _client.from('auctions').select().eq('id', id).single() as Map<String, dynamic>;
-      return _fromSupabase(data);
+      final data = await _client.from('auctions').select().eq('id', id).single();
+      return _fromSupabase(data as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

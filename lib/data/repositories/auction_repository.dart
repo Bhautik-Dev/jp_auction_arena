@@ -6,8 +6,8 @@ import 'team_repository.dart';
 import 'repository_factory.dart';
 
 abstract class AuctionRepository {
-  List<Auction> getAll();
-  Auction? getById(String id);
+  Future<List<Auction>> getAll();
+  Future<Auction?> getById(String id);
   Future<void> save(Auction auction);
   Future<void> delete(String id);
   Stream<List<Auction>> watchAll();
@@ -17,13 +17,13 @@ class HiveAuctionRepository implements AuctionRepository {
   Box<Auction> get _box => Hive.box<Auction>(HiveBoxes.auctions);
 
   @override
-  List<Auction> getAll() {
+  Future<List<Auction>> getAll() async {
     return _box.values.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
-  Auction? getById(String id) {
+  Future<Auction?> getById(String id) async {
     try {
       return _box.values.firstWhere((a) => a.id == id);
     } catch (_) {
@@ -43,7 +43,7 @@ class HiveAuctionRepository implements AuctionRepository {
 
   @override
   Stream<List<Auction>> watchAll() {
-    return _box.watch().map((_) => getAll());
+    return _box.watch().asyncMap((_) => getAll());
   }
 }
 
@@ -53,7 +53,7 @@ final auctionRepositoryProvider = Provider<AuctionRepository>((ref) {
 
 final auctionsListProvider = StreamProvider<List<Auction>>((ref) async* {
   final repo = ref.watch(auctionRepositoryProvider);
-  yield repo.getAll();
+  yield await repo.getAll();
   yield* repo.watchAll();
 });
 
@@ -100,7 +100,7 @@ Future<Auction> duplicateAuction({
   await auctionRepo.save(duplicatedAuction);
 
   // Copy teams for this auction without bids / spent purse
-  final existingTeams = teamRepo.getByAuctionId(sourceAuction.id);
+  final existingTeams = await teamRepo.getByAuctionId(sourceAuction.id);
   for (final oldTeam in existingTeams) {
     final newTeamId = 'team_${DateTime.now().microsecondsSinceEpoch}_${oldTeam.id.hashCode.abs() % 10000}';
     final duplicatedTeam = oldTeam.copyWith(

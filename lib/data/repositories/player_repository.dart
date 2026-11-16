@@ -6,9 +6,9 @@ import 'auction_repository.dart';
 import 'repository_factory.dart';
 
 abstract class PlayerRepository {
-  List<Player> getAll();
-  List<Player> getByAuctionId(String auctionId);
-  Player? getById(String id);
+  Future<List<Player>> getAll();
+  Future<List<Player>> getByAuctionId(String auctionId);
+  Future<Player?> getById(String id);
   Future<void> save(Player player);
   Future<void> saveAll(List<Player> players);
   Future<void> delete(String id);
@@ -20,10 +20,10 @@ class HivePlayerRepository implements PlayerRepository {
   Box<Player> get _box => Hive.box<Player>(HiveBoxes.players);
 
   @override
-  List<Player> getAll() => _box.values.toList();
+  Future<List<Player>> getAll() async => _box.values.toList();
 
   @override
-  List<Player> getByAuctionId(String auctionId) {
+  Future<List<Player>> getByAuctionId(String auctionId) async {
     return _box.values
         .where((p) => p.auctionId == auctionId)
         .toList()
@@ -31,7 +31,7 @@ class HivePlayerRepository implements PlayerRepository {
   }
 
   @override
-  Player? getById(String id) {
+  Future<Player?> getById(String id) async {
     try {
       return _box.values.firstWhere((p) => p.id == id);
     } catch (_) {
@@ -66,7 +66,7 @@ class HivePlayerRepository implements PlayerRepository {
 
   @override
   Stream<List<Player>> watchByAuction(String auctionId) {
-    return _box.watch().map((_) => getByAuctionId(auctionId));
+    return _box.watch().asyncMap((_) => getByAuctionId(auctionId));
   }
 }
 
@@ -81,12 +81,12 @@ final currentAuctionPlayersProvider = StreamProvider<List<Player>>((ref) async* 
     yield [];
     return;
   }
-  yield repo.getByAuctionId(activeAuction.id);
+  yield await repo.getByAuctionId(activeAuction.id);
   yield* repo.watchByAuction(activeAuction.id);
 });
 
 final allPlayersListProvider = StreamProvider<List<Player>>((ref) async* {
   final repo = ref.watch(playerRepositoryProvider);
-  yield repo.getAll();
+  yield await repo.getAll();
   yield* repo.watchByAuction('');
 });

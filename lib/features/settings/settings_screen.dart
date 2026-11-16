@@ -424,30 +424,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final bidRepo = ref.read(bidRepositoryProvider) as SupabaseBidRepository;
 
       // 1. Import auctions (via RPC which also creates teams)
-      final auctions = ref.read(auctionRepositoryProvider).getAll();
+      final auctions = await ref.read(auctionRepositoryProvider).getAll();
       int auctionsImported = 0;
       int teamsImported = 0;
       int playersImported = 0;
       int bidsImported = 0;
 
       for (final auction in auctions) {
-        final teams = ref.read(teamRepositoryProvider).getByAuctionId(auction.id);
-      await auctionRepo.createAuctionWithTeams(
-        auction: auction,
-        teams: teams,
-      );
-      auctionsImported++;
-      teamsImported += teams.length;
+        final teams = await ref.read(teamRepositoryProvider).getByAuctionId(auction.id);
+        await auctionRepo.createAuctionWithTeams(
+          auction: auction,
+          teams: teams,
+        );
+        auctionsImported++;
+        teamsImported += teams.length;
 
         // 2. Import players for this auction
-        final players = ref.read(playerRepositoryProvider).getByAuctionId(auction.id);
+        final players = await ref.read(playerRepositoryProvider).getByAuctionId(auction.id);
         if (players.isNotEmpty) {
           await playerRepo.saveAll(players);
           playersImported += players.length;
         }
 
         // 3. Import bids for this auction
-        final bids = ref.read(bidRepositoryProvider).getByAuctionId(auction.id);
+        final bids = await ref.read(bidRepositoryProvider).getByAuctionId(auction.id);
         if (bids.isNotEmpty) {
           for (final bid in bids) {
             await bidRepo.save(bid);

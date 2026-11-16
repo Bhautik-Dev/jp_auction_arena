@@ -6,10 +6,10 @@ import 'auction_repository.dart';
 import 'repository_factory.dart';
 
 abstract class BidRepository {
-  List<Bid> getAll();
-  List<Bid> getByAuctionId(String auctionId);
-  List<Bid> getByPlayerId(String playerId);
-  Bid? getById(String id);
+  Future<List<Bid>> getAll();
+  Future<List<Bid>> getByAuctionId(String auctionId);
+  Future<List<Bid>> getByPlayerId(String playerId);
+  Future<Bid?> getById(String id);
   Future<void> save(Bid bid);
   Future<void> delete(String id);
   Future<void> deleteByAuction(String auctionId);
@@ -20,10 +20,10 @@ class HiveBidRepository implements BidRepository {
   Box<Bid> get _box => Hive.box<Bid>(HiveBoxes.bids);
 
   @override
-  List<Bid> getAll() => _box.values.toList();
+  Future<List<Bid>> getAll() async => _box.values.toList();
 
   @override
-  List<Bid> getByAuctionId(String auctionId) {
+  Future<List<Bid>> getByAuctionId(String auctionId) async {
     return _box.values
         .where((b) => b.auctionId == auctionId)
         .toList()
@@ -31,7 +31,7 @@ class HiveBidRepository implements BidRepository {
   }
 
   @override
-  List<Bid> getByPlayerId(String playerId) {
+  Future<List<Bid>> getByPlayerId(String playerId) async {
     return _box.values
         .where((b) => b.playerId == playerId)
         .toList()
@@ -39,7 +39,7 @@ class HiveBidRepository implements BidRepository {
   }
 
   @override
-  Bid? getById(String id) {
+  Future<Bid?> getById(String id) async {
     try {
       return _box.values.firstWhere((b) => b.id == id);
     } catch (_) {
@@ -68,7 +68,7 @@ class HiveBidRepository implements BidRepository {
 
   @override
   Stream<List<Bid>> watchByAuction(String auctionId) {
-    return _box.watch().map((_) => getByAuctionId(auctionId));
+    return _box.watch().asyncMap((_) => getByAuctionId(auctionId));
   }
 }
 
@@ -83,12 +83,12 @@ final currentAuctionBidsProvider = StreamProvider<List<Bid>>((ref) async* {
     yield [];
     return;
   }
-  yield repo.getByAuctionId(activeAuction.id);
+  yield await repo.getByAuctionId(activeAuction.id);
   yield* repo.watchByAuction(activeAuction.id);
 });
 
 final allBidsListProvider = StreamProvider<List<Bid>>((ref) async* {
   final repo = ref.watch(bidRepositoryProvider);
-  yield repo.getAll();
+  yield await repo.getAll();
   yield* repo.watchByAuction('');
 });

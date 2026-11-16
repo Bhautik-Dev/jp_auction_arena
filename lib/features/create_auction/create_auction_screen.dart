@@ -107,10 +107,13 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     }
   }
 
-  void _loadExistingAuction() {
+  void _loadExistingAuction() async {
     final repo = ref.read(auctionRepositoryProvider);
-    final a = repo.getById(widget.editAuctionId!);
+    final a = await repo.getById(widget.editAuctionId!);
     if (a != null) {
+      // Load teams outside setState
+      final teamRepo = ref.read(teamRepositoryProvider);
+      final existingTeams = await teamRepo.getByAuctionId(a.id);
       setState(() {
         _nameController.text = a.name;
         _venueController.text = a.venue;
@@ -139,9 +142,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         _reservePurseRule = a.reservePurseRule;
         _smartBidSlabs = a.smartBidSlabs;
 
-        // Load existing teams
-        final teamRepo = ref.read(teamRepositoryProvider);
-        final existingTeams = teamRepo.getByAuctionId(a.id);
         if (existingTeams.isNotEmpty) {
           _draftTeams.clear();
           for (final t in existingTeams) {
@@ -454,7 +454,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     }
 
     // Check for duplicate auction name
-    final existingAuctions = ref.read(auctionRepositoryProvider).getAll();
+    final existingAuctions = await ref.read(auctionRepositoryProvider).getAll();
     if (existingAuctions.any((a) => a.name.trim().toLowerCase() == _nameController.text.trim().toLowerCase())) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1823,3 +1823,7 @@ class _TeamDraftItem {
     this.logoBase64,
   });
 }
+
+
+
+

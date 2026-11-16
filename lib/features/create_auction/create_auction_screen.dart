@@ -1767,7 +1767,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
   // Bottom Navigation Buttons (Back, Cancel, Next, Save)
   Widget _buildNavigationButtons() {
     final isLastStep = _currentStep == _totalSteps - 1;
-    final allStepsValid = _allStepsValid;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1798,7 +1797,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
               )
             else
               GradientButton(
-                onPressed: _isSaving || !allStepsValid ? null : _handleFinalizeAuction,
+                onPressed: _isSaving ? null : _handleFinalizeAuction,
                 isLoading: _isSaving,
                 icon: Icons.check_circle_rounded,
                 label: 'Save Auction',

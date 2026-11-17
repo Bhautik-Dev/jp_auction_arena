@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routing/route_names.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/image_picker_helper.dart';
 import '../../core/widgets/glass_card.dart';
@@ -477,7 +478,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        context.go('/auctions');
+        context.go(RouteNames.auctionsPath);
       }
     } catch (e) {
       if (mounted) {

@@ -23,6 +23,7 @@ class LiveScreen extends ConsumerStatefulWidget {
 
 class _LiveScreenState extends ConsumerState<LiveScreen> {
   Timer? _autoSellTimer;
+  bool _autoSellScheduled = false;
 
   @override
   void initState() {
@@ -82,9 +83,11 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       );
     }
 
-    if (isLive && !isPaused && secondsRemaining <= 0 && currentPlayerId != null && currentTeamId != null) {
+    if (isLive && !isPaused && secondsRemaining <= 0 && currentPlayerId != null && currentTeamId != null && !_autoSellScheduled) {
+      _autoSellScheduled = true;
       _startAutoSellTimer(activeAuction.id);
-    } else {
+    } else if (!isLive || isPaused || secondsRemaining > 0 || currentPlayerId == null || currentTeamId == null) {
+      _autoSellScheduled = false;
       _autoSellTimer?.cancel();
     }
 
@@ -743,6 +746,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final result = await notifier.callRpc(() => LiveAuctionClient.instance.sellPlayer(
       auctionId: auctionId,
     ));
+
+    _autoSellScheduled = false;
 
     if (!result.success && mounted) {
       AppToast.showError(

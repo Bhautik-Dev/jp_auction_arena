@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routing/route_names.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
@@ -25,7 +26,7 @@ class PlayersScreen extends ConsumerWidget {
           : 'Select an auction to view player pool',
       icon: Icons.person_search_rounded,
       actionButton: GradientButton(
-        onPressed: () => context.go('/registration'),
+        onPressed: () => context.go(RouteNames.registrationPath),
         icon: Icons.person_add_alt_1_rounded,
         label: 'Register Player',
       ),
@@ -51,7 +52,7 @@ class PlayersScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       GradientButton(
-                        onPressed: () => context.go('/registration'),
+                        onPressed: () => context.go(RouteNames.registrationPath),
                         icon: Icons.person_add_rounded,
                         label: 'Register First Player',
                       ),

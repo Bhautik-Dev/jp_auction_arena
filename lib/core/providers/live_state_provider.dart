@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/supabase/supabase_client.dart';
 import '../../core/supabase/live_auction_client.dart';
+import '../../data/models/player.dart';
+import '../../data/models/team.dart';
 
 class LiveAuctionState {
   const LiveAuctionState({
@@ -21,11 +23,11 @@ class LiveAuctionState {
 
   final String auctionId;
   final Map<String, dynamic>? auctionState;
-  final dynamic currentPlayer;
-  final dynamic leadingTeam;
-  final List<dynamic> players;
-  final List<dynamic> teams;
-  final List<dynamic> recentBids;
+  final Player? currentPlayer;
+  final Team? leadingTeam;
+  final List<Player> players;
+  final List<Team> teams;
+  final List<Map<String, dynamic>> recentBids;
   final int? serverTimeOffset;
   final bool isConnected;
   final String? lastError;
@@ -54,11 +56,11 @@ class LiveAuctionState {
   LiveAuctionState copyWith({
     String? auctionId,
     Map<String, dynamic>? auctionState,
-    dynamic currentPlayer,
-    dynamic leadingTeam,
-    List<dynamic>? players,
-    List<dynamic>? teams,
-    List<dynamic>? recentBids,
+    Player? currentPlayer,
+    Team? leadingTeam,
+    List<Player>? players,
+    List<Team>? teams,
+    List<Map<String, dynamic>>? recentBids,
     int? serverTimeOffset,
     bool? isConnected,
     String? lastError,
@@ -144,7 +146,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen((rows) {
       state = state.copyWith(
-        players: rows.cast<Map<String, dynamic>>(),
+        players: rows.map((row) => Player.fromMap(row)).toList(),
       );
     });
 
@@ -154,7 +156,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen((rows) {
       state = state.copyWith(
-        teams: rows.cast<Map<String, dynamic>>(),
+        teams: rows.map((row) => Team.fromMap(row)).toList(),
       );
     });
 

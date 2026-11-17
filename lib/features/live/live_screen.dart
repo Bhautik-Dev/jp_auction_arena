@@ -9,7 +9,6 @@ import '../../core/providers/live_state_provider.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
-import '../../data/models/enums.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
@@ -67,20 +66,16 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final secondsRemaining = liveState.secondsRemaining;
     final bidCount = (stateRow?['bid_count'] as num?)?.toInt() ?? 0;
 
-    dynamic currentPlayer;
+    Player? currentPlayer;
     if (currentPlayerId != null) {
-      currentPlayer = liveState.players.firstWhere(
-        (p) => (p as dynamic).id == currentPlayerId,
-        orElse: () => null,
-      );
+      final matchedPlayers = liveState.players.where((p) => p.id == currentPlayerId);
+      currentPlayer = matchedPlayers.isNotEmpty ? matchedPlayers.first : null;
     }
 
-    dynamic leadingTeam;
+    Team? leadingTeam;
     if (currentTeamId != null) {
-      leadingTeam = liveState.teams.firstWhere(
-        (t) => (t as dynamic).id == currentTeamId,
-        orElse: () => null,
-      );
+      final matchedTeams = liveState.teams.where((t) => t.id == currentTeamId);
+      leadingTeam = matchedTeams.isNotEmpty ? matchedTeams.first : null;
     }
 
     if (isLive && !isPaused && secondsRemaining <= 0 && currentPlayerId != null && currentTeamId != null && !_autoSellScheduled) {

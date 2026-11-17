@@ -72,6 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (role.canRunLiveAuction && !role.canManageEverything) {
           final allowedForOperator = [
             RouteNames.dashboardPath,
+            RouteNames.auctionsPath,
             RouteNames.livePath,
             RouteNames.projectorPath,
             RouteNames.resultsPath,

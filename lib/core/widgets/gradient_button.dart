@@ -58,7 +58,7 @@ class GradientButton extends StatelessWidget {
           onTap: isLoading ? null : onPressed,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: isLoading
                   ? const SizedBox(
                       width: 20,
@@ -69,28 +69,36 @@ class GradientButton extends StatelessWidget {
                       ),
                     )
                   : child ??
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (icon != null) ...[
-                            Icon(icon, size: 18, color: Colors.white),
-                            const SizedBox(width: 8),
-                          ],
-                          Flexible(
-                            child: Text(
-                              label!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.3,
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final availableWidth = constraints.maxWidth.clamp(0.0, double.infinity);
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (icon != null) ...[
+                                Icon(icon, size: 18, color: Colors.white),
+                                const SizedBox(width: 8),
+                              ],
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: (availableWidth - 26).clamp(0.0, double.infinity),
+                                ),
+                                child: Text(
+                                  label!,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
+                            ],
+                          );
+                        },
                       ),
             ),
           ),

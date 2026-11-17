@@ -65,6 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
 
       if (mounted) {
+        setState(() => _isLoading = false);
         context.go(RouteNames.dashboardPath);
       }
     } on AuthException catch (e) {
@@ -251,14 +252,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // If already authenticated, redirect is handled by router, but show loading
+    // If already authenticated, redirect to dashboard instead of showing spinner
     if (authState.isAuthenticated) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go(RouteNames.dashboardPath);
+      });
+      return const SizedBox.shrink();
     }
 
     return Scaffold(

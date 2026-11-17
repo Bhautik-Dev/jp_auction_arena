@@ -21,7 +21,7 @@ class TeamsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          bool _isSaving = false;
+          bool isSaving = false;
           return AlertDialog(
             title: const Text('Add Tournament Team'),
             content: SizedBox(
@@ -51,10 +51,10 @@ class TeamsScreen extends ConsumerWidget {
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
               GradientButton(
                 height: 40,
-                onPressed: _isSaving ? null : () async {
+                onPressed: () async {
                   final name = nameController.text.trim();
                   if (name.isEmpty) return;
-                  setDialogState(() => _isSaving = true);
+                  setDialogState(() => isSaving = true);
                   try {
                     final team = Team(
                       id: 'team_${DateTime.now().millisecondsSinceEpoch}',
@@ -66,17 +66,18 @@ class TeamsScreen extends ConsumerWidget {
                     await ref.read(teamRepositoryProvider).save(team);
                     if (ctx.mounted) Navigator.pop(ctx);
                   } finally {
-                    if (ctx.mounted) setDialogState(() => _isSaving = false);
+                    if (ctx.mounted) setDialogState(() => isSaving = false);
                   }
                 },
                 label: 'Add Team',
-                isLoading: _isSaving,
+                isLoading: isSaving,
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
-    }
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -190,12 +191,19 @@ class TeamsScreen extends ConsumerWidget {
                                      confirmText: 'Delete Team',
                                      isDestructive: true,
                                     );
-                                    if (confirm == true) {
-                                     await ref.read(teamRepositoryProvider).delete(team.id);
-                                     if (context.mounted) {
-                                       AppToast.showSuccess(context, 'Team "${team.name}" deleted.');
+                                     if (confirm == true) {
+                                      try {
+                                        await ref.read(teamRepositoryProvider).delete(team.id);
+                                        ref.invalidate(currentAuctionTeamsProvider);
+                                        if (context.mounted) {
+                                          AppToast.showSuccess(context, 'Team "${team.name}" deleted.');
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          AppToast.showError(context, 'Failed to delete team: $e');
+                                        }
+                                      }
                                      }
-                                    }
                                   },
                                 ),
                               ],

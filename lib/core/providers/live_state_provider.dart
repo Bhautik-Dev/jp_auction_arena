@@ -133,7 +133,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen((rows) {
       if (rows.isNotEmpty) {
-        final row = rows.first as Map<String, dynamic>;
+        final row = rows.first;
         state = state.copyWith(auctionState: row, lastError: null);
       }
     });

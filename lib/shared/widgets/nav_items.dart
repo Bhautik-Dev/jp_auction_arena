@@ -82,7 +82,7 @@ const List<NavItem> secondaryNavItems = [
     icon: Icons.add_circle_outline_rounded,
     activeIcon: Icons.add_circle_rounded,
     path: '/create-auction',
-    allowedRoles: [UserRole.admin],
+    allowedRoles: [UserRole.admin, UserRole.operator],
   ),
   NavItem(
     label: 'Player Register',

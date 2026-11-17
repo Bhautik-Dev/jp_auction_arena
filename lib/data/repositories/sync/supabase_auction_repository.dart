@@ -87,14 +87,14 @@ class SupabaseAuctionRepository implements AuctionRepository {
   @override
   Future<List<Auction>> getAll() async {
     final data = await _client.from('auctions').select().order('created_at', ascending: false);
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<Auction?> getById(String id) async {
     try {
       final data = await _client.from('auctions').select().eq('id', id).single();
-      return _fromSupabase(data as Map<String, dynamic>);
+      return _fromSupabase(data);
     } catch (_) {
       return null;
     }
@@ -116,7 +116,7 @@ class SupabaseAuctionRepository implements AuctionRepository {
         .from('auctions')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
-        .map((rows) => rows.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList());
+        .map((rows) => rows.map((r) => _fromSupabase(r)).toList());
   }
 
   /// Atomically create an auction and its teams using the

@@ -180,52 +180,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     super.dispose();
   }
 
-  // Auto-saves draft to Hive silently (optional offline cache)
-  Future<void> _saveDraftAutomatically() async {
-    final startDateTime = DateTime(
-      _startDate.year,
-      _startDate.month,
-      _startDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
-
-    final categoryBasePrices = <String, double>{};
-    for (final entry in _categoryBasePriceControllers.entries) {
-      categoryBasePrices[entry.key] = double.tryParse(entry.value.text.trim()) ??
-          (double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000);
-    }
-
-    final auction = Auction(
-      id: _auctionId,
-      name: _nameController.text.trim().isNotEmpty
-          ? _nameController.text.trim()
-          : 'Untitled Auction Draft',
-      logoBase64: _logoUrl,
-      venue: _venueController.text.trim(),
-      description: _descController.text.trim(),
-      startDateTime: startDateTime,
-      status: AuctionStatus.draft,
-      categories: _categories,
-      numberOfTeams: int.tryParse(_teamsCountController.text.trim()) ?? 8,
-      minSquad: int.tryParse(_minSquadController.text.trim()) ?? 11,
-      maxSquad: int.tryParse(_maxSquadController.text.trim()) ?? 15,
-      basePriceDefault: double.tryParse(_defaultBasePriceController.text.trim()) ?? 10000,
-      bidIncrement: double.tryParse(_bidIncrementController.text.trim()) ?? 2000,
-      teamPurse: double.tryParse(_teamPurseController.text.trim()) ?? 1000000,
-      countdownSeconds: int.tryParse(_countdownController.text.trim()) ?? 30,
-      mode: _selectedMode,
-      contactPhone: _phoneController.text.trim(),
-      contactEmail: _emailController.text.trim(),
-      categoryBasePrices: categoryBasePrices,
-      reservePurseRule: _reservePurseRule,
-      smartBidSlabs: _smartBidSlabs,
-    );
-
-    await ref.read(auctionRepositoryProvider).save(auction);
-    setState(() => _isAutoDraftSaved = true);
-  }
-
   // Step Validations
   bool _validateStep(int step) {
     switch (step) {
@@ -369,9 +323,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
     }
   }
 
-  /// Whether all steps are valid and ready to save
-  bool get _allStepsValid => _stepValid.every((v) => v);
-
   void _onPrevStep() {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
@@ -396,31 +347,6 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Logo upload failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  // Pick and upload team logo to Supabase Storage
-  Future<void> _pickAndUploadTeamLogo() async {
-    try {
-      final XFile? file = await ImagePickerHelper.pickImageFile();
-      if (file == null) return;
-
-      final bytes = await file.readAsBytes();
-      final repo = ref.read(teamRepositoryProvider) as SupabaseTeamRepository;
-      final url = await repo.uploadLogo(_auctionId, bytes);
-
-      if (mounted) {
-        setState(() => _teamLogoUrl = url);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Team logo upload failed: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -520,16 +446,31 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
         purseSpent: 0,
       )).toList();
 
-      // Use atomic RPC: creates auction + teams in one transaction
-      final repo = ref.read(auctionRepositoryProvider) as SupabaseAuctionRepository;
-      final createdAuction = await repo.createAuctionWithTeams(
-        auction: auction,
-        teams: teams,
-      );
+      // Use atomic RPC (Supabase) or individual saves (Hive fallback)
+      final auctionRepo = ref.read(auctionRepositoryProvider);
+      final teamRepo = ref.read(teamRepositoryProvider);
+      Auction createdAuction;
 
+      try {
+        final supabaseRepo = auctionRepo as SupabaseAuctionRepository;
+        createdAuction = await supabaseRepo.createAuctionWithTeams(
+          auction: auction,
+          teams: teams,
+        );
+      } catch (_) {
+        // Fallback: save auction and teams individually (Hive/offline mode)
+        await auctionRepo.save(auction);
+        for (final team in teams) {
+          await teamRepo.save(team);
+        }
+        createdAuction = auction;
+      }
+
+      ref.invalidate(auctionsListProvider);
       ref.read(activeAuctionIdProvider.notifier).setAuctionId(createdAuction.id);
 
       if (mounted) {
+        setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Auction "${createdAuction.name}" and ${teams.length} franchise teams created successfully!'),
@@ -712,7 +653,7 @@ class _CreateAuctionScreenState extends ConsumerState<CreateAuctionScreen> {
                             ),
                           ],
                           if (index < steps.length - 1)
-                            Expanded(
+                            Flexible(
                               child: Container(
                                 height: 2,
                                 margin: const EdgeInsets.symmetric(horizontal: 8),

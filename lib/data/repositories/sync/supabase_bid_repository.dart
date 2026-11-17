@@ -40,26 +40,26 @@ class SupabaseBidRepository implements BidRepository {
   @override
   Future<List<Bid>> getAll() async {
     final data = await _client.from('bids').select().order('timestamp', ascending: false);
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<List<Bid>> getByAuctionId(String auctionId) async {
     final data = await _client.from('bids').select().eq('auction_id', auctionId).order('timestamp', ascending: false);
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<List<Bid>> getByPlayerId(String playerId) async {
     final data = await _client.from('bids').select().eq('player_id', playerId).order('timestamp', ascending: false);
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<Bid?> getById(String id) async {
     try {
       final data = await _client.from('bids').select().eq('id', id).single();
-      return _fromSupabase(data as Map<String, dynamic>);
+      return _fromSupabase(data);
     } catch (_) {
       return null;
     }
@@ -87,7 +87,7 @@ class SupabaseBidRepository implements BidRepository {
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
         .order('timestamp', ascending: false)
-        .map((rows) => rows.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList());
+        .map((rows) => rows.map((r) => _fromSupabase(r)).toList());
   }
 }
 

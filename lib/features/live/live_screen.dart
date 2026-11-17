@@ -119,7 +119,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Operator Live Desk • ${activeAuction.venue ?? "Venue"}',
+                              'Operator Live Desk • ${activeAuction.venue}',
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
@@ -175,7 +175,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                                       border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
                                     ),
                                     child: Text(
-                                      liveError!,
+                                      liveError,
                                       style: const TextStyle(
                                         color: AppColors.error,
                                         fontSize: 11,
@@ -627,7 +627,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                 children: [
                   Flexible(
                     child: Text(
-                      (bid['team_name'] as String? ?? 'Team') ?? 'Unknown',
+                      (bid['team_name'] as String? ?? 'Team'),
                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -639,7 +639,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

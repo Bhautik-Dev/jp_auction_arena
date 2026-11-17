@@ -78,6 +78,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             RouteNames.teamsPath,
             RouteNames.playersPath,
             RouteNames.analyticsPath,
+            RouteNames.createAuctionPath,
           ];
           if (!allowedForOperator.any((p) => loc.startsWith(p))) {
             return RouteNames.livePath;

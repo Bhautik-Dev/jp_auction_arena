@@ -61,6 +61,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     final existingPlayers = await ref.read(playerRepositoryProvider).getByAuctionId(activeAuction.id);
     final isDuplicate = existingPlayers.any((p) => p.playerNo == inputPlayerNo);
     if (isDuplicate) {
+      if (!mounted) return;
       AppToast.showError(context, 'Player lot number #$inputPlayerNo is already assigned in this auction. Please choose a unique number.');
       return;
     }

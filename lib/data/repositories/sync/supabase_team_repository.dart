@@ -44,20 +44,20 @@ class SupabaseTeamRepository implements TeamRepository {
   @override
   Future<List<Team>> getAll() async {
     final data = await _client.from('teams').select().order('name');
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<List<Team>> getByAuctionId(String auctionId) async {
     final data = await _client.from('teams').select().eq('auction_id', auctionId).order('name');
-    return (data as List<Map<String, dynamic>>).map((r) => _fromSupabase(r)).toList();
+    return data.map((r) => _fromSupabase(r)).toList();
   }
 
   @override
   Future<Team?> getById(String id) async {
     try {
       final data = await _client.from('teams').select().eq('id', id).single();
-      return _fromSupabase(data as Map<String, dynamic>);
+      return _fromSupabase(data);
     } catch (_) {
       return null;
     }
@@ -85,7 +85,7 @@ class SupabaseTeamRepository implements TeamRepository {
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
         .order('name')
-        .map((rows) => rows.map((r) => _fromSupabase(r as Map<String, dynamic>)).toList());
+        .map((rows) => rows.map((r) => _fromSupabase(r)).toList());
   }
 
   Future<String?> uploadLogo(String teamId, Uint8List imageBytes) async {

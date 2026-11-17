@@ -944,6 +944,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   Future<void> _handleReopenAuction(Auction auction) async {
     final updated = auction.copyWith(status: AuctionStatus.live);
     await ref.read(auctionRepositoryProvider).save(updated);
+    ref.invalidate(auctionsListProvider);
     ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
 
     if (mounted) {
@@ -963,6 +964,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       teamRepo: ref.read(teamRepositoryProvider),
     );
 
+    ref.invalidate(auctionsListProvider);
     ref.read(activeAuctionIdProvider.notifier).setAuctionId(duplicated.id);
 
     if (mounted) {
@@ -983,6 +985,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
     final updated = auction.copyWith(status: newStatus);
     await ref.read(auctionRepositoryProvider).save(updated);
+    ref.invalidate(auctionsListProvider);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1049,6 +1052,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
       await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
       await ref.read(auctionRepositoryProvider).delete(auction.id);
+      ref.invalidate(auctionsListProvider);
 
       if (ref.read(activeAuctionIdProvider) == auction.id) {
         ref.read(activeAuctionIdProvider.notifier).setAuctionId(null);

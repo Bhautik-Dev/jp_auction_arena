@@ -1,8 +1,7 @@
-/// Image upload/compression service for Supabase Storage.
-///
-/// Compresses images before upload (max 800px, JPEG 80% quality) and
-/// stores them in Supabase Storage buckets with public-read access.
-/// Public URLs are returned for storage in database tables.
+// Image upload/compression service for Supabase Storage.
+// Compresses images before upload (max 800px, JPEG 80% quality) and
+// stores them in Supabase Storage buckets with public-read access.
+// Public URLs are returned for storage in database tables.
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;

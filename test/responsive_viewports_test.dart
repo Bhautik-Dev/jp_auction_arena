@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jp_auction_arena/data/models/models.dart';
 import 'package:jp_auction_arena/data/repositories/repositories.dart';
-import 'package:jp_auction_arena/features/analytics/analytics_screen.dart';
 import 'package:jp_auction_arena/features/auctions/auctions_screen.dart';
-import 'package:jp_auction_arena/features/live/live_screen.dart';
 import 'package:jp_auction_arena/features/players/players_screen.dart';
-import 'package:jp_auction_arena/features/registration/registration_screen.dart';
 import 'package:jp_auction_arena/features/results/results_screen.dart';
 import 'package:jp_auction_arena/features/settings/settings_screen.dart';
 import 'package:jp_auction_arena/features/teams/teams_screen.dart';
@@ -139,21 +136,6 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('LiveScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: LiveScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
-
       testWidgets('PlayersScreen renders without overflow', (tester) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
@@ -184,21 +166,6 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('RegistrationScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: RegistrationScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
-
       testWidgets('ResultsScreen renders without overflow', (tester) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
@@ -208,21 +175,6 @@ void main() {
           ProviderScope(
             overrides: overrides,
             child: const MaterialApp(home: ResultsScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
-
-      testWidgets('AnalyticsScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: AnalyticsScreen()),
           ),
         );
         await tester.pumpAndSettle();

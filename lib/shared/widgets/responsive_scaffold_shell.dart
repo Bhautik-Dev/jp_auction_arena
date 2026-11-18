@@ -132,7 +132,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                   onTap: () {
                     Navigator.pop(ctx);
                     ref.read(authProvider.notifier).logout();
-                    context.go(RouteNames.loginPath);
+                    context.go(RouteNames.auctionsPath);
                   },
                 ),
               ],
@@ -231,18 +231,12 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                 ),
               ),
               const ConnectionIndicator(compact: true),
-              if (userRole.canRunLiveAuction)
-                IconButton(
-                  tooltip: 'Live Auction',
-                  icon: const Icon(Icons.gavel_rounded, color: AppColors.accentPink),
-                  onPressed: () => context.go(RouteNames.livePath),
-                ),
               IconButton(
                 tooltip: 'Logout',
                 icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary, size: 20),
                 onPressed: () {
                   ref.read(authProvider.notifier).logout();
-                  context.go(RouteNames.loginPath);
+                  context.go(RouteNames.auctionsPath);
                 },
               ),
             ],

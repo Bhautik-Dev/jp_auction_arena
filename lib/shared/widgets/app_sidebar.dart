@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
-import '../../core/widgets/gradient_button.dart';
 import '../../data/models/enums.dart';
 import '../../data/repositories/auth_provider.dart';
 import 'connection_indicator.dart';
@@ -161,26 +160,13 @@ class AppSidebar extends ConsumerWidget {
                     tooltip: 'Logout',
                     onPressed: () {
                       ref.read(authProvider.notifier).logout();
-                      context.go(RouteNames.loginPath);
+                      context.go(RouteNames.auctionsPath);
                     },
                   ),
                 ],
               ),
             ),
           ),
-
-          // Live Arena Action Button (if allowed)
-          if (userRole.canRunLiveAuction)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: GradientButton(
-                onPressed: () => context.go(RouteNames.livePath),
-                icon: Icons.play_arrow_rounded,
-                label: 'Live Hammer Desk',
-              ),
-            ),
-
-          // Scrollable Nav List
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

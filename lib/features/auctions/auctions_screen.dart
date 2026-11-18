@@ -226,7 +226,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
         final actionBtn = GradientButton(
           width: isCompact ? double.infinity : null,
-          onPressed: () => context.go(RouteNames.createAuctionPath),
+          onPressed: null,
           icon: Icons.add_rounded,
           label: 'New Tournament',
         );
@@ -648,11 +648,10 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                       ),
                     )
-                  : GradientButton(
+                    : GradientButton(
                       height: 40,
                       onPressed: () {
                         ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-                        context.go(RouteNames.livePath);
                       },
                       icon: Icons.gavel_rounded,
                       label: 'Go Live',
@@ -807,11 +806,6 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           case 'registration':
             ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
             context.go(RouteNames.registrationPath);
-            break;
-
-          case 'edit_settings':
-            context.go(
-                '${RouteNames.createAuctionPath}?editId=${Uri.encodeComponent(auction.id)}');
             break;
 
           case 'duplicate':
@@ -1142,8 +1136,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               ),
               const SizedBox(height: 24),
               GradientButton(
-                onPressed: onButtonPressed ??
-                    () => context.go(RouteNames.createAuctionPath),
+                onPressed: null,
                 icon: Icons.add_rounded,
                 label: buttonLabel,
               ),

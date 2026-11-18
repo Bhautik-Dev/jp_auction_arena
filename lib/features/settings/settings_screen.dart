@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/routing/route_names.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
 import '../../data/repositories/repositories.dart';
@@ -634,16 +633,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: const Text('Email Address', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                   subtitle: Text(authState.email.isNotEmpty ? authState.email : 'No email',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.lock_outlined, color: AppColors.textSecondary, size: 20),
-                  title: const Text('Change Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Reset your Supabase password via email',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
-                  onTap: () => context.go(RouteNames.resetPasswordPath),
                 ),
                 const Divider(),
                 ListTile(

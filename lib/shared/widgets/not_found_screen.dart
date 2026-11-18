@@ -44,7 +44,7 @@ class NotFoundScreen extends StatelessWidget {
               AppButton(
                 label: AppStrings.goHome,
                 width: 180,
-                onPressed: () => context.go(RouteNames.dashboardPath),
+                onPressed: () => context.go(RouteNames.auctionsPath),
               ),
             ],
           ),

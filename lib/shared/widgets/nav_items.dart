@@ -19,20 +19,6 @@ class NavItem {
 
 const List<NavItem> primaryNavItems = [
   NavItem(
-    label: 'Dashboard',
-    icon: Icons.dashboard_outlined,
-    activeIcon: Icons.dashboard_rounded,
-    path: '/dashboard',
-    allowedRoles: [UserRole.admin, UserRole.operator, UserRole.viewer],
-  ),
-  NavItem(
-    label: 'Live Arena',
-    icon: Icons.gavel_outlined,
-    activeIcon: Icons.gavel_rounded,
-    path: '/live',
-    allowedRoles: [UserRole.admin, UserRole.operator],
-  ),
-  NavItem(
     label: 'Results',
     icon: Icons.checklist_outlined,
     activeIcon: Icons.checklist_rounded,
@@ -71,31 +57,10 @@ const List<NavItem> secondaryNavItems = [
     allowedRoles: [UserRole.admin, UserRole.operator, UserRole.viewer],
   ),
   NavItem(
-    label: 'Analytics',
-    icon: Icons.analytics_outlined,
-    activeIcon: Icons.analytics_rounded,
-    path: '/analytics',
-    allowedRoles: [UserRole.admin, UserRole.operator, UserRole.viewer],
-  ),
-  NavItem(
-    label: 'Create Auction',
-    icon: Icons.add_circle_outline_rounded,
-    activeIcon: Icons.add_circle_rounded,
-    path: '/create-auction',
-    allowedRoles: [UserRole.admin, UserRole.operator],
-  ),
-  NavItem(
     label: 'Player Register',
     icon: Icons.app_registration_outlined,
     activeIcon: Icons.app_registration_rounded,
     path: '/registration',
-    allowedRoles: [UserRole.admin],
-  ),
-  NavItem(
-    label: 'Access Controls',
-    icon: Icons.lock_outline_rounded,
-    activeIcon: Icons.lock_rounded,
-    path: '/access',
     allowedRoles: [UserRole.admin],
   ),
   NavItem(

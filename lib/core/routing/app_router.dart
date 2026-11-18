@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/features/auctions/auctions_screen.dart';
+import 'package:jp_auction_arena/features/create_auction/create_auction_screen.dart';
 import 'package:jp_auction_arena/features/operators/operators_screen.dart';
 import 'package:jp_auction_arena/features/players/players_screen.dart';
 import 'package:jp_auction_arena/features/projector/projector_screen.dart';
@@ -39,6 +40,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: RouteNames.auctions,
             pageBuilder: (context, state) => const NoTransitionPage(
               child: AuctionsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: RouteNames.createAuctionPath,
+            name: RouteNames.createAuction,
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: CreateAuctionScreen(),
             ),
           ),
           GoRoute(

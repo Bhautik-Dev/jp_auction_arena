@@ -33,29 +33,25 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   @override
   Widget build(BuildContext context) {
     final auctionsAsync = ref.watch(auctionsListProvider);
-    final activeAuction = ref.watch(activeAuctionProvider);
-    final allTeams = ref.watch(allTeamsListProvider).value ?? [];
-    final allPlayers = ref.watch(allPlayersListProvider).value ?? [];
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Page Title and Top Action
-            _buildHeader(context),
-            const SizedBox(height: 20),
-
-            // Search Bar & Status Filter Chips
-            _buildSearchAndFilters(),
+            // ============ HEADER SECTION ============
+            _buildHeader(),
             const SizedBox(height: 24),
 
-            // Main Content: Grid or Empty State
+            // ============ SEARCH & FILTERS ============
+            _buildSearchAndFilters(),
+            const SizedBox(height: 28),
+
+            // ============ AUCTION CARDS ============
             auctionsAsync.when(
               data: (auctions) {
-                // Filter by search query
                 var filtered = auctions.where((a) {
                   final matchesSearch = _searchQuery.isEmpty ||
                       a.name.toLowerCase().contains(_searchQuery) ||
@@ -73,7 +69,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     title: 'No Tournaments Created Yet',
                     subtitle:
                         'Create your first tournament auction to register teams, draft players, and enter the live hammer arena.',
-                    buttonLabel: 'Create your first auction',
+                    buttonLabel: 'Create Your First Auction',
+                    onButtonPressed: () => context.go(RouteNames.createAuctionPath),
                   );
                 }
 
@@ -95,65 +92,83 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
                 return LayoutBuilder(
                   builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth >= 1150
-                        ? 3
-                        : (constraints.maxWidth >= 720 ? 2 : 1);
+                    final isCompact = constraints.maxWidth < 900;
+                    final isDesktop = constraints.maxWidth >= 1200;
 
-                    final spacing = 18.0;
-                    final totalSpacing = (crossAxisCount - 1) * spacing;
-                    final cardWidth =
-                        (constraints.maxWidth - totalSpacing) / crossAxisCount;
-
-                    return Wrap(
-                      spacing: spacing,
-                      runSpacing: spacing,
-                      children: filtered.map((auction) {
-                        final isActive = activeAuction?.id == auction.id;
-                        final auctionTeams = allTeams
-                            .where((t) => t.auctionId == auction.id)
-                            .toList();
-                        final auctionPlayers = allPlayers
-                            .where((p) => p.auctionId == auction.id)
-                            .toList();
-                        final soldPlayersCount = auctionPlayers
-                            .where((p) => p.status == PlayerStatus.sold)
-                            .length;
-
-                        return SizedBox(
-                          width: cardWidth,
-                          child: _buildAuctionCard(
-                            context: context,
-                            auction: auction,
-                            isActive: isActive,
-                            teams: auctionTeams,
-                            players: auctionPlayers,
-                            soldCount: soldPlayersCount,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Active Auctions',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (filtered.isNotEmpty)
+                              GradientButton(
+                                onPressed: () => ref.invalidate(auctionsListProvider),
+                                icon: Icons.refresh_rounded,
+                                label: 'Refresh All',
+                                width: 120,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (isCompact)
+                          ...filtered.map((auction) => Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildAuctionCardCompact(context, auction),
+                          ))
+                        else
+                          Wrap(
+                            spacing: 20,
+                            runSpacing: 20,
+                            children: filtered.map((auction) {
+                              final cardWidth = isDesktop
+                                  ? (constraints.maxWidth - 40) / 2
+                                  : (constraints.maxWidth - 20);
+                              return SizedBox(
+                                width: cardWidth,
+                                child: _buildAuctionCard(context, auction),
+                              );
+                            }).toList(),
                           ),
-                        );
-                      }).toList(),
+                      ],
                     );
                   },
                 );
               },
               loading: () => LayoutBuilder(
                 builder: (context, constraints) {
-                  final crossAxisCount = constraints.maxWidth >= 1150
-                      ? 3
-                      : (constraints.maxWidth >= 720 ? 2 : 1);
-                  final spacing = 18.0;
-                  final totalSpacing = (crossAxisCount - 1) * spacing;
-                  final cardWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
-
-                  return Wrap(
-                    spacing: spacing,
-                    runSpacing: spacing,
-                    children: List.generate(
-                      crossAxisCount * 2,
-                      (_) => SizedBox(
-                        width: cardWidth,
-                        child: const AppSkeleton.card(height: 280),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Active Auctions',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 20,
+                        runSpacing: 20,
+                        children: List.generate(
+                          4,
+                          (_) => SizedBox(
+                            width: 340,
+                            child: const AppSkeleton.card(height: 320),
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -161,10 +176,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 icon: Icons.error_outline_rounded,
                 title: 'Error Loading Auctions',
                 description: e.toString(),
-                action: ElevatedButton.icon(
+                action: GradientButton(
                   onPressed: () => ref.invalidate(auctionsListProvider),
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Retry'),
+                  icon: Icons.refresh_rounded,
+                  label: 'Retry',
+                  width: 120,
                 ),
               ),
             ),
@@ -174,92 +190,88 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     );
   }
 
-  // 1. HEADER
-  Widget _buildHeader(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 620;
-
-        final titleRow = Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.3),
+  // ============ HEADER ============
+  Widget _buildHeader() {
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 16,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 30,
                 ),
               ),
-              child: const Icon(
-                Icons.emoji_events_rounded,
-                color: AppColors.primaryBlue,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'My Tournaments & Auctions',
+                  const Text(
+                    'My Auctions',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
-                    'Manage tournaments, duplicate setups, configure purse, and track results',
+                    'Manage all your cricket tournaments',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        );
-
-        final actionBtn = GradientButton(
-          width: isCompact ? double.infinity : null,
-          onPressed: null,
-          icon: Icons.add_rounded,
-          label: 'New Tournament',
-        );
-
-        return isCompact
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  titleRow,
-                  const SizedBox(height: 14),
-                  actionBtn,
+                  GradientButton(
+                    onPressed: () => ref.invalidate(auctionsListProvider),
+                    icon: Icons.refresh_rounded,
+                    label: 'Refresh',
+                    width: 100,
+                  ),
+                  GradientButton(
+                    onPressed: () => context.go(RouteNames.createAuctionPath),
+                    icon: Icons.add_rounded,
+                    label: 'Create Auction',
+                    width: 130,
+                  ),
                 ],
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(child: titleRow),
-                  const SizedBox(width: 16),
-                  actionBtn,
-                ],
-              );
-      },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  // 2. SEARCH & STATUS FILTERS
+  // ============ SEARCH & STATUS FILTERS ============
   Widget _buildSearchAndFilters() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            // Search Input Field
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -280,7 +292,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search by tournament name, venue, or details...',
+                    hintText: 'Search auctions by name, venue, or details',
                     prefixIcon: const Icon(Icons.search_rounded,
                         color: AppColors.primaryBlue),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -304,71 +316,67 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
         const SizedBox(height: 12),
 
         // Status Filter Chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              const Text(
-                'Status: ',
-                style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.start,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            const Text(
+              'Filter by Status:',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildFilterChip(
+                  label: 'All',
+                  isSelected: _selectedStatusFilter == null,
+                  onSelected: () => setState(() => _selectedStatusFilter = null),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'All',
-                isSelected: _selectedStatusFilter == null,
-                onSelected: () => setState(() => _selectedStatusFilter = null),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'Live',
-                status: AuctionStatus.live,
-                accentColor: AppColors.statusLive,
-                isSelected: _selectedStatusFilter == AuctionStatus.live,
-                onSelected: () => setState(
-                    () => _selectedStatusFilter = AuctionStatus.live),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'Draft',
-                status: AuctionStatus.draft,
-                accentColor: AppColors.primaryBlue,
-                isSelected: _selectedStatusFilter == AuctionStatus.draft,
-                onSelected: () => setState(
-                    () => _selectedStatusFilter = AuctionStatus.draft),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'Paused',
-                status: AuctionStatus.paused,
-                accentColor: AppColors.warning,
-                isSelected: _selectedStatusFilter == AuctionStatus.paused,
-                onSelected: () => setState(
-                    () => _selectedStatusFilter = AuctionStatus.paused),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'Completed',
-                status: AuctionStatus.completed,
-                accentColor: AppColors.success,
-                isSelected: _selectedStatusFilter == AuctionStatus.completed,
-                onSelected: () => setState(
-                    () => _selectedStatusFilter = AuctionStatus.completed),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: 'Archived',
-                status: AuctionStatus.archived,
-                accentColor: AppColors.textMuted,
-                isSelected: _selectedStatusFilter == AuctionStatus.archived,
-                onSelected: () => setState(
-                    () => _selectedStatusFilter = AuctionStatus.archived),
-              ),
-            ],
-          ),
+                _buildFilterChip(
+                  label: 'Draft',
+                  status: AuctionStatus.draft,
+                  accentColor: AppColors.primaryBlue,
+                  isSelected: _selectedStatusFilter == AuctionStatus.draft,
+                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.draft),
+                ),
+                _buildFilterChip(
+                  label: 'Live',
+                  status: AuctionStatus.live,
+                  accentColor: AppColors.statusLive,
+                  isSelected: _selectedStatusFilter == AuctionStatus.live,
+                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.live),
+                ),
+                _buildFilterChip(
+                  label: 'Paused',
+                  status: AuctionStatus.paused,
+                  accentColor: AppColors.warning,
+                  isSelected: _selectedStatusFilter == AuctionStatus.paused,
+                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.paused),
+                ),
+                _buildFilterChip(
+                  label: 'Completed',
+                  status: AuctionStatus.completed,
+                  accentColor: AppColors.success,
+                  isSelected: _selectedStatusFilter == AuctionStatus.completed,
+                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.completed),
+                ),
+                _buildFilterChip(
+                  label: 'Archived',
+                  status: AuctionStatus.archived,
+                  accentColor: AppColors.textMuted,
+                  isSelected: _selectedStatusFilter == AuctionStatus.archived,
+                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.archived),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     );
@@ -419,35 +427,23 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     );
   }
 
-  // 3. AUCTION CARD
-  Widget _buildAuctionCard({
-    required BuildContext context,
-    required Auction auction,
-    required bool isActive,
-    required List<Team> teams,
-    required List<Player> players,
-    required int soldCount,
-  }) {
+  // ============ COMPACT AUCTION CARD (mobile) ============
+  Widget _buildAuctionCardCompact(BuildContext context, Auction auction) {
     final statusColor = _getStatusColor(auction.status);
     final formattedDate =
         DateFormat('dd MMM yyyy, hh:mm a').format(auction.startDateTime);
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
-      borderColor: isActive ? AppColors.accentPink : AppColors.cardBorder,
-      hasGlow: isActive,
+      borderColor: AppColors.cardBorder,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Logo + Name + Status Chip + 3-Dot Popup Menu
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo / Avatar
               _buildAuctionLogo(auction),
-              const SizedBox(width: 14),
-
-              // Title, Venue & Active tag
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,35 +462,199 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isActive) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.accentPink.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.accentPink),
-                            ),
-                            child: const Text(
-                              'ACTIVE',
-                              style: TextStyle(
-                                color: AppColors.accentPink,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: statusColor),
+                          ),
+                          child: Text(
+                            auction.status.displayName.toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 12, color: AppColors.textMuted),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            auction.venue.isNotEmpty
+                                ? auction.venue
+                                : 'Venue Not Specified',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      children: [
+                        const Icon(Icons.event_rounded,
+                            size: 13, color: AppColors.primaryBlue),
+                        const SizedBox(width: 6),
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildThreeDotMenu(context, auction),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            children: [
+              _buildStatChip(
+                'Teams',
+                auction.numberOfTeams.toString(),
+                Icons.groups_rounded,
+                AppColors.primaryBlue,
+              ),
+              _buildStatChip(
+                'Purse',
+                formatShort(auction.teamPurse),
+                Icons.currency_rupee_rounded,
+                AppColors.gold,
+              ),
+              _buildStatChip(
+                'Players',
+                '0',
+                Icons.person_rounded,
+                AppColors.secondaryPurple,
+              ),
+              _buildStatChip(
+                'Sold',
+                '0',
+                Icons.how_to_reg_rounded,
+                AppColors.success,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: GradientButton(
+                  height: 40,
+                  onPressed: () {
+                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    context.go(RouteNames.resultsPath);
+                  },
+                  icon: Icons.assessment_outlined,
+                  label: 'View Results',
+                  width: double.infinity,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GradientButton(
+                  height: 40,
+                  onPressed: () {
+                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    context.go('/live');
+                  },
+                  icon: Icons.gavel_rounded,
+                  label: 'Go Live',
+                  width: double.infinity,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============ DESKTOP AUCTION CARD (wide) ============
+  Widget _buildAuctionCard(BuildContext context, Auction auction) {
+    final statusColor = _getStatusColor(auction.status);
+    final formattedDate =
+        DateFormat('dd MMM yyyy, hh:mm a').format(auction.startDateTime);
+
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
+      borderColor: AppColors.cardBorder,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAuctionLogo(auction),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            auction.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: statusColor),
+                          ),
+                          child: Text(
+                            auction.status.displayName.toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined,
                             size: 13, color: AppColors.textMuted),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             auction.venue.isNotEmpty
@@ -510,176 +670,131 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.event_rounded,
+                            size: 13, color: AppColors.primaryBlue),
+                        const SizedBox(width: 6),
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-
-              // Status chip
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: statusColor.withValues(alpha: 0.6), width: 1),
-                ),
-                child: Text(
-                  auction.status.displayName.toUpperCase(),
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-
-              // 3-Dot Popup Menu
-              _buildThreeDotMenu(context, auction, isActive),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Date & Time
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.event_rounded,
-                    size: 14, color: AppColors.primaryBlue),
-                const SizedBox(width: 6),
-                Text(
-                  formattedDate,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Mini Stats: Teams x/y, Players, Sold
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildMiniStat(
-                    label: 'Teams',
-                    value: '${teams.length}/${auction.numberOfTeams}',
-                    icon: Icons.groups_rounded,
-                    color: AppColors.primaryBlue,
-                  ),
                   Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      width: 1, height: 28, color: AppColors.cardBorder),
-                  _buildMiniStat(
-                    label: 'Players',
-                    value: '${players.length}',
-                    icon: Icons.person_rounded,
-                    color: AppColors.secondaryPurple,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          auction.numberOfTeams.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Teams',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 8),
                   Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      width: 1, height: 28, color: AppColors.cardBorder),
-                  _buildMiniStat(
-                    label: 'Sold',
-                    value: '$soldCount',
-                    icon: Icons.how_to_reg_rounded,
-                    color: AppColors.success,
-                  ),
-                  Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      width: 1, height: 28, color: AppColors.cardBorder),
-                  _buildMiniStat(
-                    label: 'Purse/Team',
-                    value: formatShort(auction.teamPurse),
-                    icon: Icons.currency_rupee_rounded,
-                    color: AppColors.gold,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatShort(auction.teamPurse),
+                          style: const TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Purse/Team',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(width: 12),
+              _buildThreeDotMenu(context, auction),
+            ],
           ),
-          const SizedBox(height: 18),
-
-          // Card Action Buttons
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isCompact = constraints.maxWidth < 280;
-
-              final resultsBtn = OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-                  context.go(RouteNames.resultsPath);
-                },
-                icon: const Icon(Icons.assessment_outlined, size: 16),
-                label: const Text('View Results', style: TextStyle(fontSize: 12)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          const SizedBox(height: 20),
+          Divider(color: AppColors.cardBorder),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GradientButton(
+                  height: 44,
+                  onPressed: () {
+                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    context.go(RouteNames.resultsPath);
+                  },
+                  icon: Icons.assessment_outlined,
+                  label: 'View Results',
+                  width: double.infinity,
                 ),
-              );
-
-              final primaryActionBtn = (auction.status == AuctionStatus.completed ||
-                      auction.status == AuctionStatus.archived)
-                  ? ElevatedButton.icon(
-                      onPressed: () => _handleReopenAuction(auction),
-                      icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                      label: const Text('Reopen', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondaryPurple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                      ),
-                    )
-                    : GradientButton(
-                      height: 40,
-                      onPressed: () {
-                        ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-                      },
-                      icon: Icons.gavel_rounded,
-                      label: 'Go Live',
-                    );
-
-              return isCompact
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        resultsBtn,
-                        const SizedBox(height: 8),
-                        primaryActionBtn,
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        Expanded(child: resultsBtn),
-                        const SizedBox(width: 10),
-                        Expanded(child: primaryActionBtn),
-                      ],
-                    );
-            },
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GradientButton(
+                  height: 44,
+                  onPressed: () {
+                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    context.go('/live');
+                  },
+                  icon: Icons.gavel_rounded,
+                  label: 'Go Live',
+                  width: double.infinity,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  // ============ AUCTION LOGO ============
   Widget _buildAuctionLogo(Auction auction) {
     if (auction.logoBase64 != null && auction.logoBase64!.isNotEmpty) {
       try {
@@ -688,8 +803,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           borderRadius: BorderRadius.circular(12),
           child: Image.memory(
             bytes,
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             fit: BoxFit.cover,
           ),
         );
@@ -697,8 +812,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     }
 
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -722,7 +837,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           auction.name.isNotEmpty ? auction.name[0].toUpperCase() : 'A',
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -730,45 +845,49 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     );
   }
 
-  Widget _buildMiniStat({
-    required String label,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
+  // ============ MINI STAT CHIP ============
+  Widget _buildStatChip(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
             ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textMuted,
-            fontSize: 10,
           ),
-        ),
-      ],
+          const SizedBox(width: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 9,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // 4. THREE-DOT POPUP MENU
+  // ============ THREE-DOT POPUP MENU ============
   Widget _buildThreeDotMenu(
-      BuildContext context, Auction auction, bool isActive) {
+      BuildContext context, Auction auction) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert_rounded,
           color: AppColors.textSecondary, size: 20),
@@ -779,61 +898,27 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       ),
       onSelected: (value) async {
         switch (value) {
-          case 'set_active':
-            ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('"${auction.name}" is now the active auction!'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-            break;
-
           case 'reopen':
             _handleReopenAuction(auction);
             break;
-
           case 'manage_teams':
             ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
             context.go(RouteNames.teamsPath);
             break;
-
           case 'manage_players':
             ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
             context.go(RouteNames.playersPath);
             break;
-
-          case 'registration':
+          case 'edit_settings':
             ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
-            context.go(RouteNames.registrationPath);
+            context.go(RouteNames.createAuctionPath);
             break;
-
-          case 'duplicate':
-            _handleDuplicateAuction(auction);
-            break;
-
-          case 'archive':
-            _handleArchiveAuction(auction);
-            break;
-
           case 'delete':
             _handleDeleteAuction(auction);
             break;
         }
       },
       itemBuilder: (ctx) => [
-        if (!isActive)
-          const PopupMenuItem(
-            value: 'set_active',
-            child: Row(
-              children: [
-                Icon(Icons.check_circle_outline_rounded,
-                    size: 18, color: AppColors.success),
-                SizedBox(width: 10),
-                Text('Set as Active Auction'),
-              ],
-            ),
-          ),
         const PopupMenuItem(
           value: 'reopen',
           child: Row(
@@ -867,17 +952,6 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
             ],
           ),
         ),
-        const PopupMenuItem(
-          value: 'registration',
-          child: Row(
-            children: [
-              Icon(Icons.app_registration_rounded,
-                  size: 18, color: AppColors.gold),
-              SizedBox(width: 10),
-              Text('Registration Desk'),
-            ],
-          ),
-        ),
         const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'edit_settings',
@@ -889,43 +963,15 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
             ],
           ),
         ),
-        const PopupMenuItem(
-          value: 'duplicate',
-          child: Row(
-            children: [
-              Icon(Icons.copy_rounded, size: 18, color: AppColors.primaryBlue),
-              SizedBox(width: 10),
-              Text('Duplicate Auction'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'archive',
-          child: Row(
-            children: [
-              Icon(
-                auction.status == AuctionStatus.archived
-                    ? Icons.unarchive_rounded
-                    : Icons.archive_outlined,
-                size: 18,
-                color: AppColors.warning,
-              ),
-              const SizedBox(width: 10),
-              Text(auction.status == AuctionStatus.archived
-                  ? 'Unarchive Auction'
-                  : 'Archive Auction'),
-            ],
-          ),
-        ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
               Icon(Icons.delete_outline_rounded,
                   size: 18, color: AppColors.error),
-              SizedBox(width: 10),
-              Text('Delete Tournament',
+              const SizedBox(width: 10),
+              Text('Delete Auction',
                   style: TextStyle(color: AppColors.error)),
             ],
           ),
@@ -934,62 +980,14 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     );
   }
 
-  // 5. ACTIONS: REOPEN, DUPLICATE, ARCHIVE, DELETE
+  // ============ ACTIONS ============
   Future<void> _handleReopenAuction(Auction auction) async {
     final updated = auction.copyWith(status: AuctionStatus.live);
     await ref.read(auctionRepositoryProvider).save(updated);
     ref.invalidate(auctionsListProvider);
-    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Auction "${auction.name}" is now Reopened and Live!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleDuplicateAuction(Auction auction) async {
-    final duplicated = await duplicateAuction(
-      sourceAuction: auction,
-      auctionRepo: ref.read(auctionRepositoryProvider),
-      teamRepo: ref.read(teamRepositoryProvider),
-    );
-
-    ref.invalidate(auctionsListProvider);
-    ref.read(activeAuctionIdProvider.notifier).setAuctionId(duplicated.id);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Tournament duplicated as "${duplicated.name}" with copied franchise teams!'),
-          backgroundColor: AppColors.info,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleArchiveAuction(Auction auction) async {
-    final isCurrentlyArchived = auction.status == AuctionStatus.archived;
-    final newStatus =
-        isCurrentlyArchived ? AuctionStatus.draft : AuctionStatus.archived;
-
-    final updated = auction.copyWith(status: newStatus);
-    await ref.read(auctionRepositoryProvider).save(updated);
-    ref.invalidate(auctionsListProvider);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isCurrentlyArchived
-              ? 'Auction restored from archive.'
-              : 'Auction moved to archive.'),
-          backgroundColor: AppColors.warning,
-        ),
-      );
+      AppToast.showSuccess(context, 'Auction "${auction.name}" is now Live!');
     }
   }
 
@@ -1006,7 +1004,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           children: [
             Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 26),
             SizedBox(width: 10),
-            Text('Delete Tournament?', style: TextStyle(color: Colors.white)),
+            Text('Delete Auction?', style: TextStyle(color: Colors.white)),
           ],
         ),
         content: Column(
@@ -1019,7 +1017,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'All corresponding franchise teams and auction bids stored in Hive will also be deleted.',
+              'All corresponding franchise teams and auction bids stored in Supabase will also be deleted.',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
@@ -1042,28 +1040,25 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     );
 
     if (confirm == true) {
-      await ref.read(teamRepositoryProvider).deleteByAuction(auction.id);
-      await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
-      await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
-      await ref.read(auctionRepositoryProvider).delete(auction.id);
-      ref.invalidate(auctionsListProvider);
+      try {
+        await ref.read(teamRepositoryProvider).deleteByAuction(auction.id);
+        await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
+        await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
+        await ref.read(auctionRepositoryProvider).delete(auction.id);
+        ref.invalidate(auctionsListProvider);
 
-      if (ref.read(activeAuctionIdProvider) == auction.id) {
-        ref.read(activeAuctionIdProvider.notifier).setAuctionId(null);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Tournament "${auction.name}" was deleted.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        if (mounted) {
+          AppToast.showSuccess(context, 'Tournament "${auction.name}" deleted.');
+        }
+      } catch (e) {
+        if (mounted) {
+          AppToast.showError(context, 'Failed to delete: $e');
+        }
       }
     }
   }
 
-  // 6. EMPTY STATE ILLUSTRATION
+  // ============ EMPTY STATE ============
   Widget _buildEmptyState({
     required String title,
     required String subtitle,
@@ -1071,17 +1066,16 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     VoidCallback? onButtonPressed,
   }) {
     return GlassCard(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 32),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
+          constraints: const BoxConstraints(maxWidth: 520),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Custom Cricket Stadium / Trophy Illustration
               Container(
-                width: 110,
-                height: 110,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -1108,37 +1102,38 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 child: const Center(
                   child: Icon(
                     Icons.emoji_events_outlined,
-                    size: 54,
+                    size: 56,
                     color: AppColors.gold,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 26),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 13,
+                  fontSize: 14,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               GradientButton(
-                onPressed: null,
+                onPressed: onButtonPressed ?? () => context.go(RouteNames.createAuctionPath),
                 icon: Icons.add_rounded,
                 label: buttonLabel,
+                width: 180,
               ),
             ],
           ),

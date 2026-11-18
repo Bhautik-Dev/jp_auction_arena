@@ -20,10 +20,10 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   String? _selectedAuctionId;
   String _searchQuery = '';
-  String? _selectedCategory;
-  String? _selectedStatus;
-  String _viewMode = 'all';
   String? _selectedTeamId;
+  String? _selectedCategory;
+  String? _selectedStatus; // 'sold', 'unsold', 'all'
+  String _viewMode = 'all'; // 'all', 'team-wise', 'all-teams', 'individual'
   bool _isLoading = false;
 
   List<Auction> _auctions = [];
@@ -126,12 +126,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     var result = _players.where((p) {
       final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.playerNo.toString().contains(_searchQuery);
+      final matchesTeam = _selectedTeamId == null || p.soldTeamId == _selectedTeamId;
       final matchesCategory = _selectedCategory == null || p.category == _selectedCategory;
       final matchesStatus = _selectedStatus == null ||
           _selectedStatus == 'all' ||
           (_selectedStatus == 'sold' && p.status == PlayerStatus.sold) ||
           (_selectedStatus == 'unsold' && p.status == PlayerStatus.unsold);
-      return matchesSearch && matchesCategory && matchesStatus;
+      return matchesSearch && matchesTeam && matchesCategory && matchesStatus;
     }).toList();
 
     if (_viewMode == 'individual' && _selectedTeamId != null) {
@@ -211,25 +212,29 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  // ============ TOP SECTION ============
   Widget _buildHeader() {
     return GlassCard(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.only(bottom: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
             spacing: 12,
-            runSpacing: 12,
+            runSpacing: 16,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: const Icon(Icons.checklist_rounded, color: AppColors.primaryBlue, size: 24),
+                child: const Icon(Icons.checklist_rounded, color: AppColors.primaryBlue, size: 30),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,8 +244,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     'Auction Results',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -251,7 +256,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         : 'Select an auction to view results',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 13,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -259,7 +264,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               _buildAuctionDropdown(),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -268,29 +273,29 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 onPressed: _refresh,
                 icon: Icons.refresh_rounded,
                 label: 'Refresh',
-                width: 100,
+                width: 110,
               ),
               GradientButton(
                 onPressed: _exportCSV,
                 icon: Icons.file_download_rounded,
                 label: 'Export CSV',
-                width: 110,
+                width: 120,
               ),
               GradientButton(
                 onPressed: _exportExcel,
                 icon: Icons.table_view_rounded,
                 label: 'Export Excel',
-                width: 110,
+                width: 120,
               ),
               GradientButton(
                 onPressed: _exportPDF,
                 icon: Icons.picture_as_pdf_rounded,
                 label: 'Download PDF',
-                width: 110,
+                width: 130,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -299,7 +304,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               const SizedBox(width: 8),
               Text(
                 'Category & Custom PDF',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
               DropdownButton<String?>(
                 value: _selectedCategory,
@@ -321,7 +326,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Widget _buildAuctionDropdown() {
     return SizedBox(
-      width: 220,
+      width: 230,
       child: DropdownButton<String?>(
         value: _selectedAuctionId,
         hint: const Text('Select Auction', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
@@ -344,12 +349,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  // ============ STATISTICS ============
   Widget _buildStats() {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 16,
+          runSpacing: 16,
           children: [
             _buildStatCard('Total Sold', '$_soldCount', AppColors.success, Icons.check_circle_rounded),
             _buildStatCard('Total Unsold', '$_unsoldCount', AppColors.error, Icons.cancel_rounded),
@@ -362,27 +368,27 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Widget _buildStatCard(String title, String value, Color color, IconData icon) {
     return SizedBox(
-      width: 200,
+      width: 210,
       child: GlassCard(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 26),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -392,46 +398,74 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  // ============ FILTERS ============
   Widget _buildFilters() {
     return GlassCard(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Filters', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 12,
+            runSpacing: 12,
             children: [
+              // Search
               SizedBox(
                 width: double.infinity,
-                child: TextField(
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search players by name or number',
-                    hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
-                    filled: true,
-                    fillColor: AppColors.surfaceLight,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.cardBorder),
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  child: TextField(
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search players by name or number',
+                      hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
+                      filled: true,
+                      fillColor: AppColors.surfaceLight,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
+              // Team Filter
+              SizedBox(
+                width: 170,
+                child: DropdownButton<String?>(
+                  value: _selectedTeamId,
+                  hint: const Text('Team', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  dropdownColor: AppColors.card,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  isExpanded: true,
+                  items: [
+                    const DropdownMenuItem<String?>(value: null, child: Text('All Teams')),
+                    ..._teams.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (v) => setState(() => _selectedTeamId = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Category Filter
               SizedBox(
                 width: 150,
                 child: DropdownButton<String?>(
@@ -447,6 +481,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   onChanged: (v) => setState(() => _selectedCategory = v),
                 ),
               ),
+              const SizedBox(width: 12),
+              // Status Filter
               SizedBox(
                 width: 130,
                 child: DropdownButton<String?>(
@@ -470,18 +506,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  // ============ VIEW MODE ============
   Widget _buildViewMode() {
     return GlassCard(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('View Mode', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: [
               _buildModeChip('all', 'All Players', Icons.list_rounded),
               _buildModeChip('team-wise', 'Team-Wise', Icons.groups_rounded),
@@ -490,11 +527,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ],
           ),
           if (_viewMode == 'individual') ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text('Select Team', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             const SizedBox(height: 8),
             SizedBox(
-              width: 250,
+              width: 260,
               child: DropdownButton<String?>(
                 value: _selectedTeamId,
                 hint: const Text('Select a team', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
@@ -530,7 +567,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       selectedColor: AppColors.primaryBlue,
       backgroundColor: AppColors.surfaceLight,
       labelStyle: const TextStyle(fontSize: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
@@ -540,6 +577,342 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  // ============ PLAYER TABLE (full-width, professional) ============
+  Widget _buildPlayerTable(List<Player> players) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tableWidth = constraints.maxWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: tableWidth),
+            child: DataTable(
+              columnSpacing: 24,
+              dataRowMinHeight: 64,
+              dataRowMaxHeight: 120,
+              headingRowHeight: 48,
+              headingRowColor: WidgetStateProperty.all(AppColors.surfaceLight),
+              headingTextStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700),
+              dataTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+              columns: [
+                DataColumn(label: Text('Photo')),
+                DataColumn(label: Text('Player Name')),
+                DataColumn(label: Text('Village')),
+                DataColumn(label: Text('Category')),
+                DataColumn(label: Text('Base Price'), numeric: true),
+                DataColumn(label: Text('Sold Price'), numeric: true),
+                DataColumn(label: Text('Team')),
+                DataColumn(label: Text('Status')),
+                DataColumn(label: Text('Actions')),
+              ],
+              rows: players.map((p) {
+                final teamName = _getTeamName(p.soldTeamId);
+                final isSold = p.status == PlayerStatus.sold;
+                return DataRow(
+                  color: WidgetStateProperty.all(AppColors.surfaceLight.withValues(alpha: 0.3)),
+                  cells: [
+                    DataCell(_buildPlayerAvatar(p)),
+                    DataCell(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          if (p.playerNo > 0)
+                            Text('#${p.playerNo}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    DataCell(Text(p.village.isEmpty ? '-' : p.village, style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(p.category, style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(formatRupee(p.basePrice), style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(
+                      p.soldPrice != null ? formatRupee(p.soldPrice!) : '-',
+                      style: TextStyle(
+                        color: isSold ? AppColors.success : AppColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )),
+                    DataCell(Text(teamName, style: const TextStyle(fontSize: 12))),
+                    DataCell(_buildStatusBadge(p.status)),
+                    DataCell(
+                      GradientButton(
+                        onPressed: () => _showPlayerDetails(p),
+                        icon: Icons.visibility_rounded,
+                        label: 'View',
+                        width: 76,
+                        height: 34,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ============ ALL PLAYERS VIEW ============
+  Widget _buildAllPlayersView(List<Player> players) {
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'All Players (${players.length})',
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildPlayerTable(players),
+        ],
+      ),
+    );
+  }
+
+  // ============ TEAM-WISE VIEW ============
+  Widget _buildTeamWiseView(List<Player> players) {
+    final Map<String, List<Player>> teamsGrouped = {};
+    for (final p in players) {
+      if (p.status == PlayerStatus.sold && p.soldTeamId != null) {
+        teamsGrouped.putIfAbsent(p.soldTeamId!, () => []).add(p);
+      }
+    }
+
+    final unsold = players.where((p) => p.status == PlayerStatus.unsold).toList();
+
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Team-Wise Results (${teamsGrouped.length} teams)',
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          ...teamsGrouped.entries.map((entry) {
+            final team = _teams.firstWhere((t) => t.id == entry.key, orElse: () => Team(id: '', auctionId: '', name: '-', purseTotal: 0, purseSpent: 0));
+            final teamPlayers = entry.value;
+            final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              team.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '${teamPlayers.length} players  •  Spent: ${formatRupee(teamSpend)}',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildPlayerTable(teamPlayers),
+                const SizedBox(height: 24),
+              ],
+            );
+          }),
+          if (unsold.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Unsold Players (${unsold.length})',
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildPlayerTable(unsold),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ============ ALL TEAMS OVERVIEW ============
+  Widget _buildAllTeamsOverview(List<Player> players) {
+    final Map<String, List<Player>> teamsGrouped = {};
+    for (final p in players) {
+      if (p.status == PlayerStatus.sold && p.soldTeamId != null) {
+        teamsGrouped.putIfAbsent(p.soldTeamId!, () => []).add(p);
+      }
+    }
+
+    final unsold = players.where((p) => p.status == PlayerStatus.unsold).toList();
+
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'All Teams Overview (${_teams.length} teams)',
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          ..._teams.map((t) {
+            final teamPlayers = teamsGrouped[t.id] ?? [];
+            final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '${teamPlayers.length} players  •  ${formatRupee(teamSpend)} spent',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${teamPlayers.length}',
+                          style: const TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                    if (teamPlayers.isEmpty)
+                        const Text('No players purchased.', style: TextStyle(color: AppColors.textMuted, fontSize: 12))
+                      else
+                        _buildPlayerTable(teamPlayers),
+                    ],
+                  ),
+                );
+              }),
+              if (unsold.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Unsold Players (${unsold.length})',
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildPlayerTable(unsold),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ============ INDIVIDUAL TEAM VIEW ============
+  Widget _buildIndividualTeamView(List<Player> players) {
+    if (_selectedTeamId == null) {
+      return Center(
+        child: AppEmptyState(
+          icon: Icons.person_rounded,
+          title: 'Select a Team',
+          description: 'Choose a team from the dropdown above to view its players.',
+        ),
+      );
+    }
+
+    final team = _teams.firstWhere((t) => t.id == _selectedTeamId, orElse: () => Team(id: '', auctionId: '', name: '-', purseTotal: 0, purseSpent: 0));
+    if (team.name == '-') {
+      return Center(
+        child: AppEmptyState(
+          icon: Icons.error_outline_rounded,
+          title: 'Team Not Found',
+          description: 'The selected team could not be found.',
+        ),
+      );
+    }
+
+    final teamPlayers = players.where((p) => p.soldTeamId == _selectedTeamId).toList();
+    final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
+
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 30),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      team.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${teamPlayers.length} players  •  Total Spent: ${formatRupee(teamSpend)}  •  Remaining: ${formatRupee(team.purseRemaining)}',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (teamPlayers.isEmpty)
+            const Text('No players purchased by this team.', style: TextStyle(color: AppColors.textMuted, fontSize: 12))
+          else
+            _buildPlayerTable(teamPlayers),
+        ],
+      ),
+    );
+  }
+
+  // ============ CONTENT SWITCH ============
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
@@ -584,6 +957,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           action: GradientButton(
             onPressed: () => setState(() {
               _searchQuery = '';
+              _selectedTeamId = null;
               _selectedCategory = null;
               _selectedStatus = null;
             }),
@@ -605,356 +979,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       default:
         return _buildAllPlayersView(filtered);
     }
-  }
-
-  Widget _buildAllPlayersView(List<Player> players) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 900;
-
-        return GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'All Players (${players.length})',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 14),
-              if (isCompact)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: _buildPlayerTable(players, isCompact: true),
-                )
-              else
-                _buildPlayerTable(players, isCompact: false),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPlayerTable(List<Player> players, {required bool isCompact}) {
-    final headers = [
-      'Photo', 'Player', 'Village', 'Category', 'Base Price', 'Sold Price', 'Team', 'Status', 'Actions',
-    ];
-
-    return DataTable(
-      columnSpacing: 16,
-      headingRowColor: WidgetStateProperty.all(AppColors.surfaceLight),
-      headingTextStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
-      dataTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
-      columns: headers.map((h) => DataColumn(label: Text(h))).toList(),
-      rows: players.map((p) {
-        final teamName = _getTeamName(p.soldTeamId);
-        final isSold = p.status == PlayerStatus.sold;
-        return DataRow(cells: [
-          DataCell(_buildPlayerAvatar(p)),
-          DataCell(Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-          DataCell(Text(p.village.isEmpty ? '-' : p.village, style: const TextStyle(fontSize: 11))),
-          DataCell(Text(p.category, style: const TextStyle(fontSize: 11))),
-          DataCell(Text(formatRupee(p.basePrice), style: const TextStyle(fontSize: 11))),
-          DataCell(Text(
-            p.soldPrice != null ? formatRupee(p.soldPrice!) : '-',
-            style: TextStyle(color: isSold ? AppColors.success : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
-          )),
-          DataCell(Text(teamName, style: const TextStyle(fontSize: 11))),
-          DataCell(_buildStatusBadge(p.status)),
-          DataCell(
-            isCompact
-                ? IconButton(
-                    icon: const Icon(Icons.visibility_rounded, color: AppColors.primaryBlue, size: 18),
-                    onPressed: () => _showPlayerDetails(p),
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                  )
-                : GradientButton(
-                    onPressed: () => _showPlayerDetails(p),
-                    icon: Icons.visibility_rounded,
-                    label: 'View',
-                    width: 70,
-                    height: 32,
-                  ),
-          ),
-        ]);
-      }).toList(),
-    );
-  }
-
-  Widget _buildTeamWiseView(List<Player> players) {
-    final Map<String, List<Player>> teamsGrouped = {};
-    for (final p in players) {
-      if (p.status == PlayerStatus.sold && p.soldTeamId != null) {
-        teamsGrouped.putIfAbsent(p.soldTeamId!, () => []).add(p);
-      }
-    }
-
-    final unsold = players.where((p) => p.status == PlayerStatus.unsold).toList();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 900;
-
-        return GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Team-Wise Results (${teamsGrouped.length} teams)',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 14),
-              ...teamsGrouped.entries.map((entry) {
-                final team = _teams.firstWhere((t) => t.id == entry.key, orElse: () => Team(id: '', auctionId: '', name: '-', purseTotal: 0, purseSpent: 0));
-                final teamPlayers = entry.value;
-                final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  team.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  '${teamPlayers.length} players  •  Spent: ${formatRupee(teamSpend)}',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isCompact)
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: _buildPlayerTable(teamPlayers, isCompact: true),
-                      )
-                    else
-                      _buildPlayerTable(teamPlayers, isCompact: false),
-                    const SizedBox(height: 20),
-                  ],
-                );
-              }),
-              if (unsold.isNotEmpty) ...[
-                Text(
-                  'Unsold Players (${unsold.length})',
-                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                if (isCompact)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: _buildPlayerTable(unsold, isCompact: true),
-                  )
-                else
-                  _buildPlayerTable(unsold, isCompact: false),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAllTeamsOverview(List<Player> players) {
-    final Map<String, List<Player>> teamsGrouped = {};
-    for (final p in players) {
-      if (p.status == PlayerStatus.sold && p.soldTeamId != null) {
-        teamsGrouped.putIfAbsent(p.soldTeamId!, () => []).add(p);
-      }
-    }
-
-    final unsold = players.where((p) => p.status == PlayerStatus.unsold).toList();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 900;
-
-        return GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'All Teams Overview (${_teams.length} teams)',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 14),
-              ..._teams.map((t) {
-                final teamPlayers = teamsGrouped[t.id] ?? [];
-                final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  t.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  '${teamPlayers.length} players  •  ₹${formatShort(teamSpend)} spent',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${teamPlayers.length}',
-                              style: const TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (teamPlayers.isEmpty)
-                        const Text('No players purchased.', style: TextStyle(color: AppColors.textMuted, fontSize: 11))
-                      else if (isCompact)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: _buildPlayerTable(teamPlayers, isCompact: true),
-                        )
-                      else
-                        _buildPlayerTable(teamPlayers, isCompact: false),
-                    ],
-                  ),
-                );
-              }),
-              if (unsold.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'Unsold Players (${unsold.length})',
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                if (isCompact)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: _buildPlayerTable(unsold, isCompact: true),
-                  )
-                else
-                  _buildPlayerTable(unsold, isCompact: false),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildIndividualTeamView(List<Player> players) {
-    if (_selectedTeamId == null) {
-      return Center(
-        child: AppEmptyState(
-          icon: Icons.person_rounded,
-          title: 'Select a Team',
-          description: 'Choose a team from the dropdown above to view its players.',
-        ),
-      );
-    }
-
-    final team = _teams.firstWhere((t) => t.id == _selectedTeamId, orElse: () => Team(id: '', auctionId: '', name: '-', purseTotal: 0, purseSpent: 0));
-    if (team.name == '-') {
-      return Center(
-        child: AppEmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Team Not Found',
-          description: 'The selected team could not be found.',
-        ),
-      );
-    }
-
-    final teamPlayers = players.where((p) => p.soldTeamId == _selectedTeamId).toList();
-    final teamSpend = teamPlayers.fold(0.0, (s, p) => s + (p.soldPrice ?? 0));
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 900;
-
-        return GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          team.name,
-                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          '${teamPlayers.length} players  •  Total Spent: ${formatRupee(teamSpend)}  •  Remaining: ${formatRupee(team.purseRemaining)}',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (teamPlayers.isEmpty)
-                const Text('No players purchased by this team.', style: TextStyle(color: AppColors.textMuted, fontSize: 12))
-              else if (isCompact)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: _buildPlayerTable(teamPlayers, isCompact: true),
-                )
-              else
-                _buildPlayerTable(teamPlayers, isCompact: false),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void _showPlayerDetails(Player player) {
@@ -1033,13 +1057,14 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
+            const SizedBox(height: 20),
             _buildStats(),
-            const SizedBox(height: 4),
+            const SizedBox(height: 20),
             _buildFilters(),
             _buildViewMode(),
             _buildContent(),

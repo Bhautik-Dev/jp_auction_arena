@@ -4,6 +4,9 @@ class RouteNames {
   static const String auctions = 'auctions';
   static const String auctionsPath = '/auctions';
 
+  static const String createAuction = 'create-auction';
+  static const String createAuctionPath = '/create-auction';
+
   static const String teams = 'teams';
   static const String teamsPath = '/teams';
 

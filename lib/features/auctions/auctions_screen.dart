@@ -119,9 +119,12 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                               ),
                               const SizedBox(height: 16),
                               if (isCompact)
-                                ...filtered.map((auction) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: _buildAuctionCardCompact(context, auction),
+                                ...filtered.map((auction) => SizedBox(
+                                  width: constraints.maxWidth,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _buildAuctionCardCompact(context, auction),
+                                  ),
                                 ))
                               else
                                 Wrap(
@@ -129,7 +132,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                                   runSpacing: 20,
                                   children: filtered.map((auction) {
                                     final cardWidth = isDesktop
-                                        ? (constraints.maxWidth - 40) / 2
+                                        ? (constraints.maxWidth - 24) / 2
                                         : (constraints.maxWidth - 20);
                                     return SizedBox(
                                       width: cardWidth,
@@ -169,7 +172,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                             ),
                           ],
                         );
-                    )                    },
+                      },
                     ),
                   error: (e, _) => AppEmptyState(
                       icon: Icons.error_outline_rounded,
@@ -220,7 +223,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
@@ -445,10 +448,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       padding: const EdgeInsets.all(20),
       borderColor: AppColors.cardBorder,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildAuctionLogo(auction),
               const SizedBox(width: 12),
@@ -486,6 +488,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -526,6 +530,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -690,6 +696,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                             color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

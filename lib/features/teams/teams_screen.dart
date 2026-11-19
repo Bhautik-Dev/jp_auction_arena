@@ -12,10 +12,16 @@ import '../../shared/widgets/feature_placeholder_screen.dart';
 class TeamsScreen extends ConsumerWidget {
   const TeamsScreen({super.key});
 
-  void _showAddTeamDialog(BuildContext context, WidgetRef ref, Auction? activeAuction) {
+  void _showAddTeamDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Auction? activeAuction,
+  ) {
     final nameController = TextEditingController();
     final ownerController = TextEditingController();
-    final purseController = TextEditingController(text: activeAuction?.teamPurse.toStringAsFixed(0) ?? '1000000');
+    final purseController = TextEditingController(
+      text: activeAuction?.teamPurse.toStringAsFixed(0) ?? '1000000',
+    );
 
     showDialog(
       context: context,
@@ -31,24 +37,34 @@ class TeamsScreen extends ConsumerWidget {
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Team Name', hintText: 'e.g. Royal Strikers'),
+                    decoration: const InputDecoration(
+                      labelText: 'Team Name',
+                      hintText: 'e.g. Royal Strikers',
+                    ),
                   ),
                   const SizedBox(height: 14),
                   TextField(
                     controller: ownerController,
-                    decoration: const InputDecoration(labelText: 'Owner / Captain Name'),
+                    decoration: const InputDecoration(
+                      labelText: 'Owner / Captain Name',
+                    ),
                   ),
                   const SizedBox(height: 14),
                   TextField(
                     controller: purseController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Purse Allocation (₹)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Purse Allocation (₹)',
+                    ),
                   ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
               GradientButton(
                 height: 40,
                 onPressed: () async {
@@ -61,7 +77,9 @@ class TeamsScreen extends ConsumerWidget {
                       auctionId: activeAuction?.id ?? '',
                       name: name,
                       ownerName: ownerController.text.trim(),
-                      purseTotal: double.tryParse(purseController.text.trim()) ?? (activeAuction?.teamPurse ?? 1000000),
+                      purseTotal:
+                          double.tryParse(purseController.text.trim()) ??
+                          (activeAuction?.teamPurse ?? 1000000),
                     );
                     await ref.read(teamRepositoryProvider).save(team);
                     if (ctx.mounted) Navigator.pop(ctx);
@@ -74,9 +92,10 @@ class TeamsScreen extends ConsumerWidget {
               ),
             ],
           );
-        })
-      );
-    }
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -103,20 +122,32 @@ class TeamsScreen extends ConsumerWidget {
                 child: Center(
                   child: Column(
                     children: [
-                      const Icon(Icons.groups_outlined, size: 54, color: AppColors.textSecondary),
+                      const Icon(
+                        Icons.groups_outlined,
+                        size: 54,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'No Teams Registered Yet',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'Add teams with their purse budgets to start bidding.',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       GradientButton(
-                        onPressed: () => _showAddTeamDialog(context, ref, activeAuction),
+                        onPressed: () =>
+                            _showAddTeamDialog(context, ref, activeAuction),
                         icon: Icons.group_add_rounded,
                         label: 'Register First Team',
                       ),
@@ -128,15 +159,21 @@ class TeamsScreen extends ConsumerWidget {
 
             return LayoutBuilder(
               builder: (context, constraints) {
-                final count = constraints.maxWidth >= 900 ? 3 : (constraints.maxWidth >= 600 ? 2 : 1);
-                final width = (constraints.maxWidth - ((count - 1) * 16)) / count;
+                final count = constraints.maxWidth >= 900
+                    ? 3
+                    : (constraints.maxWidth >= 600 ? 2 : 1);
+                final width =
+                    (constraints.maxWidth - ((count - 1) * 16)) / count;
 
                 return Wrap(
                   spacing: 16,
                   runSpacing: 16,
                   children: teams.map((team) {
                     final percent = team.purseTotal > 0
-                        ? (team.purseRemaining / team.purseTotal).clamp(0.0, 1.0)
+                        ? (team.purseRemaining / team.purseTotal).clamp(
+                            0.0,
+                            1.0,
+                          )
                         : 0.0;
 
                     return SizedBox(
@@ -150,9 +187,12 @@ class TeamsScreen extends ConsumerWidget {
                               children: [
                                 CircleAvatar(
                                   radius: 22,
-                                  backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.25),
+                                  backgroundColor: AppColors.primaryBlue
+                                      .withValues(alpha: 0.25),
                                   child: Text(
-                                    team.name.isNotEmpty ? team.name[0].toUpperCase() : 'T',
+                                    team.name.isNotEmpty
+                                        ? team.name[0].toUpperCase()
+                                        : 'T',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -163,7 +203,8 @@ class TeamsScreen extends ConsumerWidget {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         team.name,
@@ -174,35 +215,55 @@ class TeamsScreen extends ConsumerWidget {
                                         ),
                                       ),
                                       Text(
-                                        team.ownerName.isNotEmpty ? 'Owner: ${team.ownerName}' : 'Owner: N/A',
-                                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                        team.ownerName.isNotEmpty
+                                            ? 'Owner: ${team.ownerName}'
+                                            : 'Owner: N/A',
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: AppColors.error,
+                                    size: 18,
+                                  ),
                                   onPressed: () async {
                                     final confirm = await AppConfirmDialog.show(
-                                     context,
-                                     title: 'Delete Team',
-                                     content: 'Delete team "${team.name}"? Players assigned to this team will remain in the database.',
-                                     confirmText: 'Delete Team',
-                                     isDestructive: true,
+                                      context,
+                                      title: 'Delete Team',
+                                      content:
+                                          'Delete team "${team.name}"? Players assigned to this team will remain in the database.',
+                                      confirmText: 'Delete Team',
+                                      isDestructive: true,
                                     );
-                                     if (confirm == true) {
+                                    if (confirm == true) {
                                       try {
-                                        await ref.read(teamRepositoryProvider).delete(team.id);
-                                        ref.invalidate(currentAuctionTeamsProvider);
+                                        await ref
+                                            .read(teamRepositoryProvider)
+                                            .delete(team.id);
+                                        ref.invalidate(
+                                          currentAuctionTeamsProvider,
+                                        );
                                         if (context.mounted) {
-                                          AppToast.showSuccess(context, 'Team "${team.name}" deleted.');
+                                          AppToast.showSuccess(
+                                            context,
+                                            'Team "${team.name}" deleted.',
+                                          );
                                         }
                                       } catch (e) {
                                         if (context.mounted) {
-                                          AppToast.showError(context, 'Failed to delete team: $e');
+                                          AppToast.showError(
+                                            context,
+                                            'Failed to delete team: $e',
+                                          );
                                         }
                                       }
-                                     }
+                                    }
                                   },
                                 ),
                               ],
@@ -223,7 +284,10 @@ class TeamsScreen extends ConsumerWidget {
                                 ),
                                 Text(
                                   'Purse: ${formatShort(team.purseTotal)}',
-                                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -234,7 +298,9 @@ class TeamsScreen extends ConsumerWidget {
                                 value: percent,
                                 backgroundColor: AppColors.surfaceLight,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  percent > 0.3 ? AppColors.success : AppColors.error,
+                                  percent > 0.3
+                                      ? AppColors.success
+                                      : AppColors.error,
                                 ),
                                 minHeight: 6,
                               ),
@@ -247,11 +313,17 @@ class TeamsScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Players: ${team.squadCount}',
-                                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
                                 ),
                                 Text(
                                   'Spent: ${formatShort(team.purseSpent)}',
-                                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -266,8 +338,12 @@ class TeamsScreen extends ConsumerWidget {
           },
           loading: () => LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 580 ? 2 : 1);
-              final itemWidth = (constraints.maxWidth - ((crossAxisCount - 1) * 16)) / crossAxisCount;
+              final crossAxisCount = constraints.maxWidth > 900
+                  ? 3
+                  : (constraints.maxWidth > 580 ? 2 : 1);
+              final itemWidth =
+                  (constraints.maxWidth - ((crossAxisCount - 1) * 16)) /
+                  crossAxisCount;
               return Wrap(
                 spacing: 16,
                 runSpacing: 16,

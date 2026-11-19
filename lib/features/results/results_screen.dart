@@ -408,96 +408,83 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         children: [
           const Text('Filters', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Search
-              SizedBox(
-                width: double.infinity,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: TextField(
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Search players by name or number',
-                      hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
-                      filled: true,
-                      fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.cardBorder),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.cardBorder),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: TextField(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search players by name or number',
+                    hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
+                    filled: true,
+                    fillColor: AppColors.surfaceLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
-                    onChanged: (v) => setState(() => _searchQuery = v),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 12),
               // Team Filter
-              SizedBox(
-                width: 170,
-                child: DropdownButton<String?>(
-                  value: _selectedTeamId,
-                  hint: const Text('Team', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  dropdownColor: AppColors.card,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<String?>(value: null, child: Text('All Teams')),
-                    ..._teams.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis))),
-                  ],
-                  onChanged: (v) => setState(() => _selectedTeamId = v),
-                ),
+              DropdownButton<String?>(
+                value: _selectedTeamId,
+                hint: const Text('Team', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                dropdownColor: AppColors.card,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+                isExpanded: true,
+                items: [
+                  const DropdownMenuItem<String?>(value: null, child: Text('All Teams')),
+                  ..._teams.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis))),
+                ],
+                onChanged: (v) => setState(() => _selectedTeamId = v),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 12),
               // Category Filter
-              SizedBox(
-                width: 150,
-                child: DropdownButton<String?>(
-                  value: _selectedCategory,
-                  hint: const Text('Category', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  dropdownColor: AppColors.card,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<String?>(value: null, child: Text('All Categories')),
-                    ..._categories.map((c) => DropdownMenuItem<String?>(value: c, child: Text(c))),
-                  ],
-                  onChanged: (v) => setState(() => _selectedCategory = v),
-                ),
+              DropdownButton<String?>(
+                value: _selectedCategory,
+                hint: const Text('Category', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                dropdownColor: AppColors.card,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+                isExpanded: true,
+                items: [
+                  const DropdownMenuItem<String?>(value: null, child: Text('All Categories')),
+                  ..._categories.map((c) => DropdownMenuItem<String?>(value: c, child: Text(c))),
+                ],
+                onChanged: (v) => setState(() => _selectedCategory = v),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 12),
               // Status Filter
-              SizedBox(
-                width: 130,
-                child: DropdownButton<String?>(
-                  value: _selectedStatus,
-                  hint: const Text('Status', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  dropdownColor: AppColors.card,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<String?>(value: 'all', child: Text('All Status')),
-                    const DropdownMenuItem<String?>(value: 'sold', child: Text('Sold')),
-                    const DropdownMenuItem<String?>(value: 'unsold', child: Text('Unsold')),
-                  ],
-                  onChanged: (v) => setState(() => _selectedStatus = v),
-                ),
+              DropdownButton<String?>(
+                value: _selectedStatus,
+                hint: const Text('Status', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                dropdownColor: AppColors.card,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+                isExpanded: true,
+                items: [
+                  const DropdownMenuItem<String?>(value: 'all', child: Text('All Status')),
+                  const DropdownMenuItem<String?>(value: 'sold', child: Text('Sold')),
+                  const DropdownMenuItem<String?>(value: 'unsold', child: Text('Unsold')),
+                ],
+                onChanged: (v) => setState(() => _selectedStatus = v),
               ),
             ],
           ),
@@ -559,7 +546,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         children: [
           Icon(icon, size: 16, color: isSelected ? Colors.white : AppColors.textSecondary),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.textSecondary, fontSize: 12)),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
       selected: isSelected,
@@ -1058,18 +1055,21 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildStats(),
-            const SizedBox(height: 20),
-            _buildFilters(),
-            _buildViewMode(),
-            _buildContent(),
-            const SizedBox(height: 40),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 20),
+              _buildStats(),
+              const SizedBox(height: 20),
+              _buildFilters(),
+              _buildViewMode(),
+              _buildContent(),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

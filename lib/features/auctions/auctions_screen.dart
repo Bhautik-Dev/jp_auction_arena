@@ -38,153 +38,155 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ============ HEADER SECTION ============
-            _buildHeader(),
-            const SizedBox(height: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              width: constraints.maxWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildSearchAndFilters(),
+                  const SizedBox(height: 28),
+                  auctionsAsync.when(
+                    data: (auctions) {
+                      var filtered = auctions.where((a) {
+                        final matchesSearch = _searchQuery.isEmpty ||
+                            a.name.toLowerCase().contains(_searchQuery) ||
+                            a.venue.toLowerCase().contains(_searchQuery) ||
+                            a.description.toLowerCase().contains(_searchQuery);
 
-            // ============ SEARCH & FILTERS ============
-            _buildSearchAndFilters(),
-            const SizedBox(height: 28),
+                        final matchesStatus = _selectedStatusFilter == null ||
+                            a.status == _selectedStatusFilter;
 
-            // ============ AUCTION CARDS ============
-            auctionsAsync.when(
-              data: (auctions) {
-                var filtered = auctions.where((a) {
-                  final matchesSearch = _searchQuery.isEmpty ||
-                      a.name.toLowerCase().contains(_searchQuery) ||
-                      a.venue.toLowerCase().contains(_searchQuery) ||
-                      a.description.toLowerCase().contains(_searchQuery);
+                        return matchesSearch && matchesStatus;
+                      }).toList();
 
-                  final matchesStatus = _selectedStatusFilter == null ||
-                      a.status == _selectedStatusFilter;
+                      if (auctions.isEmpty) {
+                        return _buildEmptyState(
+                          title: 'No Tournaments Created Yet',
+                          subtitle:
+                              'Create your first tournament auction to register teams, draft players, and enter the live hammer arena.',
+                          buttonLabel: 'Create Your First Auction',
+                          onButtonPressed: () => context.go(RouteNames.createAuctionPath),
+                        );
+                      }
 
-                  return matchesSearch && matchesStatus;
-                }).toList();
+                      if (filtered.isEmpty) {
+                        return _buildEmptyState(
+                          title: 'No Matching Tournaments Found',
+                          subtitle:
+                              'No auctions match the search "$_searchQuery" with selected status filter. Try clearing filters.',
+                          buttonLabel: 'Clear Search & Filters',
+                          onButtonPressed: () {
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                              _selectedStatusFilter = null;
+                            });
+                          },
+                        );
+                      }
 
-                if (auctions.isEmpty) {
-                  return _buildEmptyState(
-                    title: 'No Tournaments Created Yet',
-                    subtitle:
-                        'Create your first tournament auction to register teams, draft players, and enter the live hammer arena.',
-                    buttonLabel: 'Create Your First Auction',
-                    onButtonPressed: () => context.go(RouteNames.createAuctionPath),
-                  );
-                }
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isCompact = constraints.maxWidth < 900;
+                          final isDesktop = constraints.maxWidth >= 1200;
 
-                if (filtered.isEmpty) {
-                  return _buildEmptyState(
-                    title: 'No Matching Tournaments Found',
-                    subtitle:
-                        'No auctions match the search "$_searchQuery" with selected status filter. Try clearing filters.',
-                    buttonLabel: 'Clear Search & Filters',
-                    onButtonPressed: () {
-                      setState(() {
-                        _searchController.clear();
-                        _searchQuery = '';
-                        _selectedStatusFilter = null;
-                      });
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Active Auctions',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  if (filtered.isNotEmpty)
+                                    GradientButton(
+                                      onPressed: () => ref.invalidate(auctionsListProvider),
+                                      icon: Icons.refresh_rounded,
+                                      label: 'Refresh All',
+                                      width: 120,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              if (isCompact)
+                                ...filtered.map((auction) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildAuctionCardCompact(context, auction),
+                                ))
+                              else
+                                Wrap(
+                                  spacing: 20,
+                                  runSpacing: 20,
+                                  children: filtered.map((auction) {
+                                    final cardWidth = isDesktop
+                                        ? (constraints.maxWidth - 40) / 2
+                                        : (constraints.maxWidth - 20);
+                                    return SizedBox(
+                                      width: cardWidth,
+                                      child: _buildAuctionCard(context, auction),
+                                    );
+                                  }).toList(),
+                                ),
+                            ],
+                          );
+                        },
+                      );
                     },
-                  );
-                }
-
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isCompact = constraints.maxWidth < 900;
-                    final isDesktop = constraints.maxWidth >= 1200;
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    loading: () => LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Active Auctions',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            if (filtered.isNotEmpty)
-                              GradientButton(
-                                onPressed: () => ref.invalidate(auctionsListProvider),
-                                icon: Icons.refresh_rounded,
-                                label: 'Refresh All',
-                                width: 120,
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 20,
+                              runSpacing: 20,
+                              children: List.generate(
+                                4,
+                                (_) => SizedBox(
+                                  width: 340,
+                                  child: const AppSkeleton.card(height: 320),
+                                ),
                               ),
+                            ),
                           ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (isCompact)
-                          ...filtered.map((auction) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildAuctionCardCompact(context, auction),
-                          ))
-                        else
-                          Wrap(
-                            spacing: 20,
-                            runSpacing: 20,
-                            children: filtered.map((auction) {
-                              final cardWidth = isDesktop
-                                  ? (constraints.maxWidth - 40) / 2
-                                  : (constraints.maxWidth - 20);
-                              return SizedBox(
-                                width: cardWidth,
-                                child: _buildAuctionCard(context, auction),
-                              );
-                            }).toList(),
-                          ),
-                      ],
-                    );
-                  },
-                );
-              },
-              loading: () => LayoutBuilder(
-                builder: (context, constraints) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Active Auctions',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        );
+                    )                    },
+                    ),
+                  error: (e, _) => AppEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Error Loading Auctions',
+                      description: e.toString(),
+                      action: GradientButton(
+                        onPressed: () => ref.invalidate(auctionsListProvider),
+                        icon: Icons.refresh_rounded,
+                        label: 'Retry',
+                        width: 120,
                       ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 20,
-                        runSpacing: 20,
-                        children: List.generate(
-                          4,
-                          (_) => SizedBox(
-                            width: 340,
-                            child: const AppSkeleton.card(height: 320),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                ],
               ),
-              error: (e, _) => AppEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Error Loading Auctions',
-                description: e.toString(),
-                action: GradientButton(
-                  onPressed: () => ref.invalidate(auctionsListProvider),
-                  icon: Icons.refresh_rounded,
-                  label: 'Retry',
-                  width: 120,
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -193,14 +195,12 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   // ============ HEADER ============
   Widget _buildHeader() {
     return GlassCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 16,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
@@ -217,46 +217,54 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                   size: 30,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'My Auctions',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'My Auctions',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage all your cricket tournaments',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage all your cricket tournaments',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  GradientButton(
-                    onPressed: () => ref.invalidate(auctionsListProvider),
-                    icon: Icons.refresh_rounded,
-                    label: 'Refresh',
-                    width: 100,
-                  ),
-                  GradientButton(
-                    onPressed: () => context.go(RouteNames.createAuctionPath),
-                    icon: Icons.add_rounded,
-                    label: 'Create Auction',
-                    width: 130,
-                  ),
-                ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GradientButton(
+                onPressed: () => ref.invalidate(auctionsListProvider),
+                icon: Icons.refresh_rounded,
+                label: 'Refresh',
+                width: double.infinity,
+              ),
+              const SizedBox(height: 12),
+              GradientButton(
+                onPressed: () => context.go(RouteNames.createAuctionPath),
+                icon: Icons.add_rounded,
+                label: 'Create Auction',
+                width: double.infinity,
               ),
             ],
           ),

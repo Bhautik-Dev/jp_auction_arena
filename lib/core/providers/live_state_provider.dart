@@ -133,43 +133,71 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .from('auction_state')
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
-        .listen((rows) {
-      if (rows.isNotEmpty) {
-        final row = rows.first;
-        state = state.copyWith(auctionState: row, lastError: null);
-      }
-    });
+        .listen(
+          (rows) {
+            if (rows.isNotEmpty) {
+              final row = rows.first;
+              state = state.copyWith(auctionState: row, lastError: null);
+            }
+          },
+          onError: (e) {
+            state = state.copyWith(
+              lastError: 'Realtime error: ${e.toString()}',
+            );
+          },
+        );
 
     _playersSubscription = client
         .from('players')
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
-        .listen((rows) {
-      state = state.copyWith(
-        players: rows.map((row) => Player.fromMap(row)).toList(),
-      );
-    });
+        .listen(
+          (rows) {
+            state = state.copyWith(
+              players: rows.map((row) => Player.fromMap(row)).toList(),
+            );
+          },
+          onError: (e) {
+            state = state.copyWith(
+              lastError: 'Realtime error: ${e.toString()}',
+            );
+          },
+        );
 
     _teamsSubscription = client
         .from('teams')
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
-        .listen((rows) {
-      state = state.copyWith(
-        teams: rows.map((row) => Team.fromMap(row)).toList(),
-      );
-    });
+        .listen(
+          (rows) {
+            state = state.copyWith(
+              teams: rows.map((row) => Team.fromMap(row)).toList(),
+            );
+          },
+          onError: (e) {
+            state = state.copyWith(
+              lastError: 'Realtime error: ${e.toString()}',
+            );
+          },
+        );
 
     _bidsSubscription = client
         .from('bids')
         .stream(primaryKey: ['id'])
         .eq('auction_id', auctionId)
         .order('timestamp', ascending: false)
-        .listen((rows) {
-      state = state.copyWith(
-        recentBids: rows.cast<Map<String, dynamic>>().take(10).toList(),
-      );
-    });
+        .listen(
+          (rows) {
+            state = state.copyWith(
+              recentBids: rows.cast<Map<String, dynamic>>().take(10).toList(),
+            );
+          },
+          onError: (e) {
+            state = state.copyWith(
+              lastError: 'Realtime error: ${e.toString()}',
+            );
+          },
+        );
 
     _timerSubscription = Timer.periodic(const Duration(seconds: 1), (_) {
       state = state.copyWith();

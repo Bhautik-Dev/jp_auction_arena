@@ -133,7 +133,7 @@ class Auction extends HiveObject {
 
   factory Auction.fromMap(Map<String, dynamic> map) {
     return Auction(
-      id: map['id'] as String,
+      id: map['id'] as String? ?? '',
       name: map['name'] as String? ?? 'Untitled Auction',
       logoBase64: map['logoBase64'] as String?,
       venue: map['venue'] as String? ?? '',

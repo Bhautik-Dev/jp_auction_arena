@@ -118,6 +118,14 @@ ALTER TABLE players ADD COLUMN IF NOT EXISTS cric_heroes_url TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS batting_average DOUBLE PRECISION DEFAULT 0.0;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS mobile TEXT;
 ALTER TABLE auction_state ADD COLUMN IF NOT EXISTS controlling_operator_id TEXT;
+ALTER TABLE auctions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Enable Realtime replication for live auction sync across screens
+ALTER PUBLICATION supabase_realtime ADD TABLE public.auctions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.auction_state;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.players;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.teams;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.bids;
 
 -- ----------------------------------------------------------------------------
 -- 6. bids — Individual bid records

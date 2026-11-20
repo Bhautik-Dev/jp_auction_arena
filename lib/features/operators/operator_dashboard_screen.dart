@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -24,40 +23,16 @@ class OperatorDashboardScreen extends ConsumerStatefulWidget {
 
 class _OperatorDashboardScreenState
     extends ConsumerState<OperatorDashboardScreen> {
-  StreamSubscription<List<Map<String, dynamic>>>? _liveAuctionsSub;
   bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadLiveAuctions();
-  }
-
-  @override
-  void dispose() {
-    _liveAuctionsSub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadLiveAuctions() async {
-    _liveAuctionsSub?.cancel();
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-
-    _liveAuctionsSub = client
-        .from('auctions')
-        .stream(primaryKey: ['id'])
-        .eq('status', 'live')
-        .order('updated_at', ascending: false)
-        .listen((rows) {
-      if (!mounted) return;
-      setState(() {});
-    });
   }
 
   Future<void> _refresh() async {
     setState(() => _isRefreshing = true);
-    await _loadLiveAuctions();
+    // StreamBuilder will auto-refresh on rebuild
     if (mounted) setState(() => _isRefreshing = false);
   }
 
@@ -172,10 +147,40 @@ class _OperatorDashboardScreenState
         ],
       ),
       body: client == null
-          ? const Center(
-              child: Text(
-                'Supabase not connected.',
-                style: TextStyle(color: AppColors.textSecondary),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    size: 64,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Supabase Not Connected',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please initialize Supabase and restart the app.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  GradientButton(
+                    onPressed: _refresh,
+                    icon: Icons.refresh_rounded,
+                    label: 'Retry',
+                    width: 140,
+                  ),
+                ],
               ),
             )
           : StreamBuilder<List<Map<String, dynamic>>>(
@@ -183,14 +188,72 @@ class _OperatorDashboardScreenState
                   .from('auctions')
                   .stream(primaryKey: ['id'])
                   .eq('status', 'live')
-                  .order('updated_at', ascending: false),
+                  .order('created_at', ascending: false),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  final error = snapshot.error.toString();
+                  final isRealtimeError = error.contains('Realtime') ||
+                      error.contains('channelError') ||
+                      error.contains('supabase_realtime');
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 64,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          isRealtimeError
+                              ? 'Live feed unavailable'
+                              : 'Failed to load live auctions',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isRealtimeError
+                              ? 'Realtime is not enabled for the auctions table. '
+                                  'Ask your administrator to run the Realtime migration.'
+                              : error,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        GradientButton(
+                          onPressed: _refresh,
+                          icon: Icons.refresh_rounded,
+                          label: 'Retry',
+                          width: 140,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 final auctions = snapshot.data ?? [];
 
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     auctions.isEmpty) {
                   return const Center(
-                    child: AppSkeleton.card(height: 320),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AppSkeleton.card(height: 100),
+                        SizedBox(height: 16),
+                        AppSkeleton.card(height: 100),
+                        SizedBox(height: 16),
+                        AppSkeleton.card(height: 100),
+                      ],
+                    ),
                   );
                 }
 
@@ -274,18 +337,20 @@ class _OperatorDashboardScreenState
                                             null;
 
                                 return GlassCard(
-                                  margin: const EdgeInsets.only(bottom: 16),
+                                  margin: const EdgeInsets.only(bottom: 10),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(20),
+                                    padding: const EdgeInsets.all(12),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            _buildAuctionLogo(auction),
-                                            const SizedBox(width: 12),
-                                            Expanded(
+                                            Row(
+                                              children: [
+                                                _buildAuctionLogo(auction),
+                                                const SizedBox(width: 8),
+                                                _buildPendingBadge('Pending API'),
+                                                const SizedBox(width: 8),
+                                                Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -297,9 +362,9 @@ class _OperatorDashboardScreenState
                                                           auction.name,
                                                           style: const TextStyle(
                                                             color: Colors.white,
-                                                            fontSize: 18,
+                                                            fontSize: 15,
                                                             fontWeight:
-                                                                FontWeight.w900,
+                                                                FontWeight.w800,
                                                           ),
                                                         ),
                                                       ),
@@ -345,11 +410,11 @@ class _OperatorDashboardScreenState
                                                       const Icon(
                                                         Icons
                                                             .location_on_outlined,
-                                                        size: 13,
+                                                        size: 11,
                                                         color: AppColors
                                                             .textMuted,
                                                       ),
-                                                      const SizedBox(width: 6),
+                                                      const SizedBox(width: 4),
                                                       Expanded(
                                                         child: Text(
                                                           auction
@@ -360,7 +425,7 @@ class _OperatorDashboardScreenState
                                                           style: const TextStyle(
                                                             color: AppColors
                                                                 .textSecondary,
-                                                            fontSize: 12,
+                                                            fontSize: 11,
                                                           ),
                                                         ),
                                                       ),
@@ -407,34 +472,34 @@ class _OperatorDashboardScreenState
                                                   CrossAxisAlignment.end,
                                               children: [
                                                 _buildControlStatus(state),
-                                                const SizedBox(height: 12),
-                                                SizedBox(
+                                                const SizedBox(height: 8),
+                                                GradientButton(
+                                                  height: 36,
+                                                  onPressed:
+                                                      isControlling
+                                                          ? () =>
+                                                              _takeControl(
+                                                            auction.id,
+                                                            auction.name,
+                                                          )
+                                                          : null,
+                                                  icon: Icons
+                                                      .supervised_user_circle_rounded,
+                                                  label: 'Control',
                                                   width: double.infinity,
-                                                  child: GradientButton(
-                                                    height: 40,
-                                                    onPressed:
-                                                        isControlling
-                                                            ? () =>
-                                                                _takeControl(
-                                                                  auction.id,
-                                                                  auction.name,
-                                                                )
-                                                            : null,
-                                                    icon: Icons
-                                                        .supervised_user_circle_rounded,
-                                                    label: 'Control',
-                                                    width: double.infinity,
-                                                    isLoading: false,
-                                                  ),
+                                                  isLoading: false,
                                                 ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                                const SizedBox(height: 8),
+                                                _buildPendingBadge('Pending API'),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  )
+                                ;
                               },
                             );
                           },
@@ -456,8 +521,8 @@ class _OperatorDashboardScreenState
           borderRadius: BorderRadius.circular(12),
           child: Image.memory(
             bytes,
-            width: 48,
-            height: 48,
+            width: 36,
+            height: 36,
             fit: BoxFit.cover,
           ),
         );
@@ -465,8 +530,8 @@ class _OperatorDashboardScreenState
     }
 
     return Container(
-      width: 48,
-      height: 48,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -502,25 +567,29 @@ class _OperatorDashboardScreenState
     String label,
     String value,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    bool isCompact = false,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 8 : 10,
+        vertical: isCompact ? 6 : 8,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(isCompact ? 8 : 10),
         border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: isCompact ? 10 : 12, color: color),
+          const SizedBox(width: 3),
           Text(
             value,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: isCompact ? 10 : 12,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -528,6 +597,37 @@ class _OperatorDashboardScreenState
           Text(
             label,
             style: TextStyle(color: AppColors.textMuted, fontSize: 9),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.pending_actions_rounded,
+            size: 10,
+            color: AppColors.warning,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.warning,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),

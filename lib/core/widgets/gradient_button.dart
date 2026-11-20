@@ -36,7 +36,7 @@ class GradientButton extends StatelessWidget {
         : (gradient ?? AppColors.buttonGradient);
 
     return Container(
-      width: width,
+      width: width == double.infinity ? null : width,
       height: height,
       decoration: BoxDecoration(
         gradient: effectiveGradient,

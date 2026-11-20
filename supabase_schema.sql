@@ -113,6 +113,11 @@ CREATE TABLE IF NOT EXISTS players (
   created_by     TEXT
 );
 
+-- Safe idempotent column additions for existing databases
+ALTER TABLE players ADD COLUMN IF NOT EXISTS cric_heroes_url TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS batting_average DOUBLE PRECISION DEFAULT 0.0;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS mobile TEXT;
+
 -- ----------------------------------------------------------------------------
 -- 6. bids — Individual bid records
 -- ----------------------------------------------------------------------------

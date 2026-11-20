@@ -9,6 +9,19 @@ import '../../data/repositories/repositories.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
 import '../../shared/widgets/feature_placeholder_screen.dart';
 
+class TeamsRefreshNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setRefreshing(bool value) {
+    state = value;
+  }
+}
+
+final teamsRefreshProvider = NotifierProvider<TeamsRefreshNotifier, bool>(
+  TeamsRefreshNotifier.new,
+);
+
 class TeamsScreen extends ConsumerWidget {
   const TeamsScreen({super.key});
 
@@ -34,6 +47,7 @@ class TeamsScreen extends ConsumerWidget {
               width: 400,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextField(
                     controller: nameController,
@@ -67,6 +81,7 @@ class TeamsScreen extends ConsumerWidget {
               ),
               GradientButton(
                 height: 40,
+                width: 120,
                 onPressed: () async {
                   final name = nameController.text.trim();
                   if (name.isEmpty) return;
@@ -101,6 +116,24 @@ class TeamsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeAuction = ref.watch(activeAuctionProvider);
     final teamsAsync = ref.watch(currentAuctionTeamsProvider);
+    final isRefreshing = ref.watch(teamsRefreshProvider);
+
+    Future<void> handleTeamsRefresh() async {
+      if (isRefreshing) return;
+      ref.read(teamsRefreshProvider.notifier).setRefreshing(true);
+      try {
+        ref.invalidate(currentAuctionTeamsProvider);
+        await ref.read(currentAuctionTeamsProvider.future);
+      } catch (e) {
+        if (context.mounted) {
+          AppToast.showError(context, 'Refresh failed: $e');
+        }
+      } finally {
+        if (context.mounted) {
+          ref.read(teamsRefreshProvider.notifier).setRefreshing(false);
+        }
+      }
+    }
 
     return FeaturePlaceholderScreen(
       title: 'Teams Management',
@@ -108,10 +141,23 @@ class TeamsScreen extends ConsumerWidget {
           ? 'Registered teams for "${activeAuction.name}"'
           : 'Create or select an auction to manage teams',
       icon: Icons.groups_rounded,
-      actionButton: GradientButton(
-        onPressed: () => _showAddTeamDialog(context, ref, activeAuction),
-        icon: Icons.group_add_rounded,
-        label: 'Add Team',
+      actionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GradientButton(
+            onPressed: () => _showAddTeamDialog(context, ref, activeAuction),
+            icon: Icons.group_add_rounded,
+            label: 'Add Team',
+          ),
+          const SizedBox(width: 12),
+          GradientButton(
+            onPressed: handleTeamsRefresh,
+            icon: Icons.refresh_rounded,
+            label: 'Refresh',
+            width: 100,
+            isLoading: isRefreshing,
+          ),
+        ],
       ),
       children: [
         teamsAsync.when(
@@ -246,9 +292,6 @@ class TeamsScreen extends ConsumerWidget {
                                         await ref
                                             .read(teamRepositoryProvider)
                                             .delete(team.id);
-                                        ref.invalidate(
-                                          currentAuctionTeamsProvider,
-                                        );
                                         if (context.mounted) {
                                           AppToast.showSuccess(
                                             context,
@@ -361,10 +404,12 @@ class TeamsScreen extends ConsumerWidget {
             icon: Icons.error_outline_rounded,
             title: 'Unable to Load Teams',
             description: e.toString(),
-            action: ElevatedButton.icon(
-              onPressed: () => ref.invalidate(currentAuctionTeamsProvider),
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Retry'),
+            action: GradientButton(
+              onPressed: handleTeamsRefresh,
+              icon: Icons.refresh_rounded,
+              label: 'Retry',
+              width: 120,
+              isLoading: isRefreshing,
             ),
           ),
         ),

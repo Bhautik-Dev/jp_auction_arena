@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jp_auction_arena/core/constants/app_colors.dart';
 import 'package:jp_auction_arena/core/constants/app_dimensions.dart';
 
 class AppTextField extends StatelessWidget {
@@ -7,6 +8,7 @@ class AppTextField extends StatelessWidget {
     this.controller,
     this.initialValue,
     this.label,
+    this.required = false,
     this.hintText,
     this.errorText,
     this.obscureText = false,
@@ -24,6 +26,7 @@ class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? initialValue;
   final String? label;
+  final bool required;
   final String? hintText;
   final String? errorText;
   final bool obscureText;
@@ -46,10 +49,27 @@ class AppTextField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (label != null) ...[
-          Text(
-            label!,
-            style: theme.textTheme.titleMedium,
-          ),
+          if (required)
+            RichText(
+              text: TextSpan(
+                text: label,
+                style: theme.textTheme.titleMedium,
+                children: const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Text(
+              label!,
+              style: theme.textTheme.titleMedium,
+            ),
           const SizedBox(height: AppDimensions.spaceXs),
         ],
         TextFormField(

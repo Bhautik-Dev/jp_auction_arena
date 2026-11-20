@@ -51,10 +51,9 @@ final auctionRepositoryProvider = Provider<AuctionRepository>((ref) {
   return ref.watch(repositoryFactoryProvider).auction;
 });
 
-final auctionsListProvider = StreamProvider<List<Auction>>((ref) async* {
+final auctionsListProvider = FutureProvider<List<Auction>>((ref) async {
   final repo = ref.watch(auctionRepositoryProvider);
-  yield await repo.getAll();
-  yield* repo.watchAll();
+  return await repo.getAll();
 });
 
 class ActiveAuctionIdNotifier extends Notifier<String?> {
@@ -66,9 +65,10 @@ class ActiveAuctionIdNotifier extends Notifier<String?> {
   }
 }
 
-final activeAuctionIdProvider = NotifierProvider<ActiveAuctionIdNotifier, String?>(
-  ActiveAuctionIdNotifier.new,
-);
+final activeAuctionIdProvider =
+    NotifierProvider<ActiveAuctionIdNotifier, String?>(
+      ActiveAuctionIdNotifier.new,
+    );
 
 final activeAuctionProvider = Provider<Auction?>((ref) {
   final activeId = ref.watch(activeAuctionIdProvider);
@@ -102,7 +102,8 @@ Future<Auction> duplicateAuction({
   // Copy teams for this auction without bids / spent purse
   final existingTeams = await teamRepo.getByAuctionId(sourceAuction.id);
   for (final oldTeam in existingTeams) {
-    final newTeamId = 'team_${DateTime.now().microsecondsSinceEpoch}_${oldTeam.id.hashCode.abs() % 10000}';
+    final newTeamId =
+        'team_${DateTime.now().microsecondsSinceEpoch}_${oldTeam.id.hashCode.abs() % 10000}';
     final duplicatedTeam = oldTeam.copyWith(
       id: newTeamId,
       auctionId: newAuctionId,

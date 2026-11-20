@@ -19,9 +19,6 @@ class RouteNames {
   static const String projector = 'projector';
   static const String projectorPath = '/projector';
 
-  static const String registration = 'registration';
-  static const String registrationPath = '/registration';
-
   static const String settings = 'settings';
   static const String settingsPath = '/settings';
 

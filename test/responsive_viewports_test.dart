@@ -40,7 +40,8 @@ class FakeSettingsRepository implements SettingsRepository {
 
 class FakeDataBackupService implements DataBackupService {
   @override
-  Future<String> createBackupJson() async => '{"version":"1.0","auctions":[],"teams":[],"players":[],"bids":[]}';
+  Future<String> createBackupJson() async =>
+      '{"version":"1.0","auctions":[],"teams":[],"players":[],"bids":[]}';
 
   @override
   Future<Map<String, int>> restoreFromJson(String jsonString) async => {
@@ -104,97 +105,100 @@ void main() {
   final overrides = [
     settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
     dataBackupServiceProvider.overrideWithValue(FakeDataBackupService()),
-    auctionsListProvider.overrideWith((ref) => Stream.value([sampleAuction])),
+    auctionsListProvider.overrideWith((ref) async => [sampleAuction]),
     activeAuctionProvider.overrideWithValue(sampleAuction),
-    currentAuctionTeamsProvider.overrideWith((ref) => Stream.value(sampleTeams)),
-    currentAuctionPlayersProvider.overrideWith((ref) => Stream.value(samplePlayers)),
+    currentAuctionTeamsProvider.overrideWith((ref) async => sampleTeams),
+    currentAuctionPlayersProvider.overrideWith((ref) async => samplePlayers),
     currentAuctionBidsProvider.overrideWith((ref) => Stream.value(sampleBids)),
     allTeamsListProvider.overrideWith((ref) => Stream.value(sampleTeams)),
     allPlayersListProvider.overrideWith((ref) => Stream.value(samplePlayers)),
   ];
 
   const testViewports = [
-    Size(360, 640),   // Compact Phone
-    Size(768, 1024),  // Tablet
-    Size(1280, 800),  // Desktop
+    Size(360, 640), // Compact Phone
+    Size(768, 1024), // Tablet
+    Size(1280, 800), // Desktop
   ];
 
   for (final size in testViewports) {
-    group('Viewport ${size.width.toInt()}x${size.height.toInt()} Responsive Tests', () {
-      testWidgets('AuctionsScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    group(
+      'Viewport ${size.width.toInt()}x${size.height.toInt()} Responsive Tests',
+      () {
+        testWidgets('AuctionsScreen renders without overflow', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: AuctionsScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: overrides,
+              child: const MaterialApp(home: AuctionsScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
 
-      testWidgets('PlayersScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+        testWidgets('PlayersScreen renders without overflow', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: PlayersScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: overrides,
+              child: const MaterialApp(home: PlayersScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
 
-      testWidgets('TeamsScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+        testWidgets('TeamsScreen renders without overflow', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: TeamsScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: overrides,
+              child: const MaterialApp(home: TeamsScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
 
-      testWidgets('ResultsScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+        testWidgets('ResultsScreen renders without overflow', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: ResultsScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: overrides,
+              child: const MaterialApp(home: ResultsScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
 
-      testWidgets('SettingsScreen renders without overflow', (tester) async {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+        testWidgets('SettingsScreen renders without overflow', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: overrides,
-            child: const MaterialApp(home: SettingsScreen()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
-    });
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: overrides,
+              child: const MaterialApp(home: SettingsScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
+      },
+    );
   }
 }

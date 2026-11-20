@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:typed_data';
 import '../models/models.dart';
 import 'hive_service.dart';
 import 'auction_repository.dart';
@@ -14,6 +15,7 @@ abstract class PlayerRepository {
   Future<void> delete(String id);
   Future<void> deleteByAuction(String auctionId);
   Stream<List<Player>> watchByAuction(String auctionId);
+  Future<String?> uploadPhoto(String auctionId, String playerId, Uint8List imageBytes);
 }
 
 class HivePlayerRepository implements PlayerRepository {
@@ -24,9 +26,7 @@ class HivePlayerRepository implements PlayerRepository {
 
   @override
   Future<List<Player>> getByAuctionId(String auctionId) async {
-    return _box.values
-        .where((p) => p.auctionId == auctionId)
-        .toList()
+    return _box.values.where((p) => p.auctionId == auctionId).toList()
       ..sort((a, b) => a.playerNo.compareTo(b.playerNo));
   }
 
@@ -68,21 +68,25 @@ class HivePlayerRepository implements PlayerRepository {
   Stream<List<Player>> watchByAuction(String auctionId) {
     return _box.watch().asyncMap((_) => getByAuctionId(auctionId));
   }
+
+  @override
+  Future<String?> uploadPhoto(String auctionId, String playerId, Uint8List imageBytes) async {
+    // Hive fallback: store base64 in photoBase64 field; caller handles URL
+    return null;
+  }
 }
 
 final playerRepositoryProvider = Provider<PlayerRepository>((ref) {
   return ref.watch(repositoryFactoryProvider).player;
 });
 
-final currentAuctionPlayersProvider = StreamProvider<List<Player>>((ref) async* {
+final currentAuctionPlayersProvider = FutureProvider<List<Player>>((ref) async {
   final repo = ref.watch(playerRepositoryProvider);
   final activeAuction = ref.watch(activeAuctionProvider);
   if (activeAuction == null) {
-    yield [];
-    return;
+    return [];
   }
-  yield await repo.getByAuctionId(activeAuction.id);
-  yield* repo.watchByAuction(activeAuction.id);
+  return await repo.getByAuctionId(activeAuction.id);
 });
 
 final allPlayersListProvider = StreamProvider<List<Player>>((ref) async* {

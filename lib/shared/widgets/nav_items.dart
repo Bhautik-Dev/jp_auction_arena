@@ -60,7 +60,7 @@ const List<NavItem> secondaryNavItems = [
     label: 'Player Register',
     icon: Icons.app_registration_outlined,
     activeIcon: Icons.app_registration_rounded,
-    path: '/registration',
+    path: '/players',
     allowedRoles: [UserRole.admin],
   ),
   NavItem(

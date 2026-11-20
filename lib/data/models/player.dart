@@ -6,17 +6,20 @@ class Player extends HiveObject {
   String auctionId;
   int playerNo;
   String name;
+  String? mobile;
   String? photoBase64;
   int age;
   String village;
   String category;
   String battingStyle;
   String bowlingStyle;
+  String? cricHeroesUrl;
   int matches;
   int runs;
   int wickets;
   int highScore;
   double strikeRate;
+  double battingAverage;
   double economy;
   double basePrice;
   bool isIcon;
@@ -32,17 +35,20 @@ class Player extends HiveObject {
     required this.auctionId,
     required this.playerNo,
     required this.name,
+    this.mobile,
     this.photoBase64,
     this.age = 20,
     this.village = '',
     this.category = 'All-Rounder',
     this.battingStyle = 'Right Hand Bat',
     this.bowlingStyle = 'Right Arm Medium',
+    this.cricHeroesUrl,
     this.matches = 0,
     this.runs = 0,
     this.wickets = 0,
     this.highScore = 0,
     this.strikeRate = 0.0,
+    this.battingAverage = 0.0,
     this.economy = 0.0,
     this.basePrice = 10000.0,
     this.isIcon = false,
@@ -59,17 +65,20 @@ class Player extends HiveObject {
     String? auctionId,
     int? playerNo,
     String? name,
+    String? mobile,
     String? photoBase64,
     int? age,
     String? village,
     String? category,
     String? battingStyle,
     String? bowlingStyle,
+    String? cricHeroesUrl,
     int? matches,
     int? runs,
     int? wickets,
     int? highScore,
     double? strikeRate,
+    double? battingAverage,
     double? economy,
     double? basePrice,
     bool? isIcon,
@@ -85,17 +94,20 @@ class Player extends HiveObject {
       auctionId: auctionId ?? this.auctionId,
       playerNo: playerNo ?? this.playerNo,
       name: name ?? this.name,
+      mobile: mobile ?? this.mobile,
       photoBase64: photoBase64 ?? this.photoBase64,
       age: age ?? this.age,
       village: village ?? this.village,
       category: category ?? this.category,
       battingStyle: battingStyle ?? this.battingStyle,
       bowlingStyle: bowlingStyle ?? this.bowlingStyle,
+      cricHeroesUrl: cricHeroesUrl ?? this.cricHeroesUrl,
       matches: matches ?? this.matches,
       runs: runs ?? this.runs,
       wickets: wickets ?? this.wickets,
       highScore: highScore ?? this.highScore,
       strikeRate: strikeRate ?? this.strikeRate,
+      battingAverage: battingAverage ?? this.battingAverage,
       economy: economy ?? this.economy,
       basePrice: basePrice ?? this.basePrice,
       isIcon: isIcon ?? this.isIcon,
@@ -114,17 +126,20 @@ class Player extends HiveObject {
       'auctionId': auctionId,
       'playerNo': playerNo,
       'name': name,
+      'mobile': mobile,
       'photoBase64': photoBase64,
       'age': age,
       'village': village,
       'category': category,
       'battingStyle': battingStyle,
       'bowlingStyle': bowlingStyle,
+      'cric_heroes_url': cricHeroesUrl,
       'matches': matches,
       'runs': runs,
       'wickets': wickets,
       'highScore': highScore,
       'strikeRate': strikeRate,
+      'battingAverage': battingAverage,
       'economy': economy,
       'basePrice': basePrice,
       'isIcon': isIcon,
@@ -143,17 +158,20 @@ class Player extends HiveObject {
       auctionId: map['auctionId'] as String? ?? '',
       playerNo: (map['playerNo'] as num?)?.toInt() ?? 1,
       name: map['name'] as String? ?? 'Player',
+      mobile: map['mobile'] as String?,
       photoBase64: map['photoBase64'] as String?,
       age: (map['age'] as num?)?.toInt() ?? 20,
       village: map['village'] as String? ?? '',
       category: map['category'] as String? ?? 'All-Rounder',
       battingStyle: map['battingStyle'] as String? ?? 'Right Hand Bat',
       bowlingStyle: map['bowlingStyle'] as String? ?? 'Right Arm Medium',
+      cricHeroesUrl: map['cric_heroes_url'] as String?,
       matches: (map['matches'] as num?)?.toInt() ?? 0,
       runs: (map['runs'] as num?)?.toInt() ?? 0,
       wickets: (map['wickets'] as num?)?.toInt() ?? 0,
       highScore: (map['highScore'] as num?)?.toInt() ?? 0,
       strikeRate: (map['strikeRate'] as num?)?.toDouble() ?? 0.0,
+      battingAverage: (map['battingAverage'] as num?)?.toDouble() ?? 0.0,
       economy: (map['economy'] as num?)?.toDouble() ?? 0.0,
       basePrice: (map['basePrice'] as num?)?.toDouble() ?? 10000.0,
       isIcon: map['isIcon'] as bool? ?? false,

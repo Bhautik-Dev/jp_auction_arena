@@ -23,11 +23,33 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   AuctionStatus? _selectedStatusFilter;
+  bool _isRefreshing = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+    });
+    try {
+      ref.invalidate(auctionsListProvider);
+      await ref.read(auctionsListProvider.future);
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Refresh failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -52,12 +74,14 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                   auctionsAsync.when(
                     data: (auctions) {
                       var filtered = auctions.where((a) {
-                        final matchesSearch = _searchQuery.isEmpty ||
+                        final matchesSearch =
+                            _searchQuery.isEmpty ||
                             a.name.toLowerCase().contains(_searchQuery) ||
                             a.venue.toLowerCase().contains(_searchQuery) ||
                             a.description.toLowerCase().contains(_searchQuery);
 
-                        final matchesStatus = _selectedStatusFilter == null ||
+                        final matchesStatus =
+                            _selectedStatusFilter == null ||
                             a.status == _selectedStatusFilter;
 
                         return matchesSearch && matchesStatus;
@@ -69,7 +93,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                           subtitle:
                               'Create your first tournament auction to register teams, draft players, and enter the live hammer arena.',
                           buttonLabel: 'Create Your First Auction',
-                          onButtonPressed: () => context.go(RouteNames.createAuctionPath),
+                          onButtonPressed: () =>
+                              context.go(RouteNames.createAuctionPath),
                         );
                       }
 
@@ -98,7 +123,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Active Auctions',
@@ -110,22 +136,30 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                                   ),
                                   if (filtered.isNotEmpty)
                                     GradientButton(
-                                      onPressed: () => ref.invalidate(auctionsListProvider),
+                                      onPressed: _handleRefresh,
                                       icon: Icons.refresh_rounded,
                                       label: 'Refresh All',
                                       width: 120,
+                                      isLoading: _isRefreshing,
                                     ),
                                 ],
                               ),
                               const SizedBox(height: 16),
                               if (isCompact)
-                                ...filtered.map((auction) => SizedBox(
-                                  width: constraints.maxWidth,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: _buildAuctionCardCompact(context, auction),
+                                ...filtered.map(
+                                  (auction) => SizedBox(
+                                    width: constraints.maxWidth,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
+                                      child: _buildAuctionCardCompact(
+                                        context,
+                                        auction,
+                                      ),
+                                    ),
                                   ),
-                                ))
+                                )
                               else
                                 Wrap(
                                   spacing: 20,
@@ -136,7 +170,10 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                                         : (constraints.maxWidth - 20);
                                     return SizedBox(
                                       width: cardWidth,
-                                      child: _buildAuctionCard(context, auction),
+                                      child: _buildAuctionCard(
+                                        context,
+                                        auction,
+                                      ),
                                     );
                                   }).toList(),
                                 ),
@@ -174,15 +211,16 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                         );
                       },
                     ),
-                  error: (e, _) => AppEmptyState(
+                    error: (e, _) => AppEmptyState(
                       icon: Icons.error_outline_rounded,
                       title: 'Error Loading Auctions',
                       description: e.toString(),
                       action: GradientButton(
-                        onPressed: () => ref.invalidate(auctionsListProvider),
+                        onPressed: _handleRefresh,
                         icon: Icons.refresh_rounded,
                         label: 'Retry',
                         width: 120,
+                        isLoading: _isRefreshing,
                       ),
                     ),
                   ),
@@ -257,10 +295,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GradientButton(
-                onPressed: () => ref.invalidate(auctionsListProvider),
+                onPressed: _handleRefresh,
                 icon: Icons.refresh_rounded,
                 label: 'Refresh',
                 width: double.infinity,
+                isLoading: _isRefreshing,
               ),
               const SizedBox(height: 12),
               GradientButton(
@@ -304,12 +343,16 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Search auctions by name, venue, or details',
-                    prefixIcon: const Icon(Icons.search_rounded,
-                        color: AppColors.primaryBlue),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primaryBlue,
+                    ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded,
-                                color: AppColors.textMuted),
+                            icon: const Icon(
+                              Icons.clear_rounded,
+                              color: AppColors.textMuted,
+                            ),
                             onPressed: () {
                               setState(() {
                                 _searchController.clear();
@@ -348,42 +391,53 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 _buildFilterChip(
                   label: 'All',
                   isSelected: _selectedStatusFilter == null,
-                  onSelected: () => setState(() => _selectedStatusFilter = null),
+                  onSelected: () =>
+                      setState(() => _selectedStatusFilter = null),
                 ),
                 _buildFilterChip(
                   label: 'Draft',
                   status: AuctionStatus.draft,
                   accentColor: AppColors.primaryBlue,
                   isSelected: _selectedStatusFilter == AuctionStatus.draft,
-                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.draft),
+                  onSelected: () => setState(
+                    () => _selectedStatusFilter = AuctionStatus.draft,
+                  ),
                 ),
                 _buildFilterChip(
                   label: 'Live',
                   status: AuctionStatus.live,
                   accentColor: AppColors.statusLive,
                   isSelected: _selectedStatusFilter == AuctionStatus.live,
-                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.live),
+                  onSelected: () => setState(
+                    () => _selectedStatusFilter = AuctionStatus.live,
+                  ),
                 ),
                 _buildFilterChip(
                   label: 'Paused',
                   status: AuctionStatus.paused,
                   accentColor: AppColors.warning,
                   isSelected: _selectedStatusFilter == AuctionStatus.paused,
-                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.paused),
+                  onSelected: () => setState(
+                    () => _selectedStatusFilter = AuctionStatus.paused,
+                  ),
                 ),
                 _buildFilterChip(
                   label: 'Completed',
                   status: AuctionStatus.completed,
                   accentColor: AppColors.success,
                   isSelected: _selectedStatusFilter == AuctionStatus.completed,
-                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.completed),
+                  onSelected: () => setState(
+                    () => _selectedStatusFilter = AuctionStatus.completed,
+                  ),
                 ),
                 _buildFilterChip(
                   label: 'Archived',
                   status: AuctionStatus.archived,
                   accentColor: AppColors.textMuted,
                   isSelected: _selectedStatusFilter == AuctionStatus.archived,
-                  onSelected: () => setState(() => _selectedStatusFilter = AuctionStatus.archived),
+                  onSelected: () => setState(
+                    () => _selectedStatusFilter = AuctionStatus.archived,
+                  ),
                 ),
               ],
             ),
@@ -441,8 +495,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   // ============ COMPACT AUCTION CARD (mobile) ============
   Widget _buildAuctionCardCompact(BuildContext context, Auction auction) {
     final statusColor = _getStatusColor(auction.status);
-    final formattedDate =
-        DateFormat('dd MMM yyyy, hh:mm a').format(auction.startDateTime);
+    final formattedDate = DateFormat(
+      'dd MMM yyyy, hh:mm a',
+    ).format(auction.startDateTime);
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -474,7 +529,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
@@ -497,8 +554,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 12, color: AppColors.textMuted),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: AppColors.textMuted,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -520,8 +580,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 6,
                       children: [
-                        const Icon(Icons.event_rounded,
-                            size: 13, color: AppColors.primaryBlue),
+                        const Icon(
+                          Icons.event_rounded,
+                          size: 13,
+                          color: AppColors.primaryBlue,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           formattedDate,
@@ -580,7 +643,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 child: GradientButton(
                   height: 40,
                   onPressed: () {
-                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    ref
+                        .read(activeAuctionIdProvider.notifier)
+                        .setAuctionId(auction.id);
                     context.go(RouteNames.resultsPath);
                   },
                   icon: Icons.assessment_outlined,
@@ -593,7 +658,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 child: GradientButton(
                   height: 40,
                   onPressed: () {
-                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    ref
+                        .read(activeAuctionIdProvider.notifier)
+                        .setAuctionId(auction.id);
                     context.go('/live');
                   },
                   icon: Icons.gavel_rounded,
@@ -611,8 +678,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   // ============ DESKTOP AUCTION CARD (wide) ============
   Widget _buildAuctionCard(BuildContext context, Auction auction) {
     final statusColor = _getStatusColor(auction.status);
-    final formattedDate =
-        DateFormat('dd MMM yyyy, hh:mm a').format(auction.startDateTime);
+    final formattedDate = DateFormat(
+      'dd MMM yyyy, hh:mm a',
+    ).format(auction.startDateTime);
 
     return GlassCard(
       padding: const EdgeInsets.all(24),
@@ -645,7 +713,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
@@ -666,8 +736,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 13, color: AppColors.textMuted),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 13,
+                          color: AppColors.textMuted,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -687,8 +760,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.event_rounded,
-                            size: 13, color: AppColors.primaryBlue),
+                        const Icon(
+                          Icons.event_rounded,
+                          size: 13,
+                          color: AppColors.primaryBlue,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           formattedDate,
@@ -709,7 +785,10 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(10),
@@ -739,7 +818,10 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(10),
@@ -782,7 +864,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 child: GradientButton(
                   height: 44,
                   onPressed: () {
-                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    ref
+                        .read(activeAuctionIdProvider.notifier)
+                        .setAuctionId(auction.id);
                     context.go(RouteNames.resultsPath);
                   },
                   icon: Icons.assessment_outlined,
@@ -795,7 +879,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                 child: GradientButton(
                   height: 44,
                   onPressed: () {
-                    ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+                    ref
+                        .read(activeAuctionIdProvider.notifier)
+                        .setAuctionId(auction.id);
                     context.go('/live');
                   },
                   icon: Icons.gavel_rounded,
@@ -817,12 +903,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
         final bytes = base64Decode(auction.logoBase64!);
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            bytes,
-            width: 48,
-            height: 48,
-            fit: BoxFit.cover,
-          ),
+          child: Image.memory(bytes, width: 48, height: 48, fit: BoxFit.cover),
         );
       } catch (_) {}
     }
@@ -891,10 +972,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           const SizedBox(width: 2),
           Text(
             label,
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 9,
-            ),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 9),
           ),
         ],
       ),
@@ -902,11 +980,13 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   }
 
   // ============ THREE-DOT POPUP MENU ============
-  Widget _buildThreeDotMenu(
-      BuildContext context, Auction auction) {
+  Widget _buildThreeDotMenu(BuildContext context, Auction auction) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert_rounded,
-          color: AppColors.textSecondary, size: 20),
+      icon: const Icon(
+        Icons.more_vert_rounded,
+        color: AppColors.textSecondary,
+        size: 20,
+      ),
       color: AppColors.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -939,8 +1019,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           value: 'reopen',
           child: Row(
             children: [
-              Icon(Icons.restart_alt_rounded,
-                  size: 18, color: AppColors.secondaryPurple),
+              Icon(
+                Icons.restart_alt_rounded,
+                size: 18,
+                color: AppColors.secondaryPurple,
+              ),
               SizedBox(width: 10),
               Text('Reopen Auction'),
             ],
@@ -950,8 +1033,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           value: 'manage_teams',
           child: Row(
             children: [
-              Icon(Icons.groups_rounded,
-                  size: 18, color: AppColors.primaryBlue),
+              Icon(
+                Icons.groups_rounded,
+                size: 18,
+                color: AppColors.primaryBlue,
+              ),
               SizedBox(width: 10),
               Text('Manage Teams'),
             ],
@@ -961,8 +1047,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           value: 'manage_players',
           child: Row(
             children: [
-              Icon(Icons.person_search_rounded,
-                  size: 18, color: AppColors.accentPink),
+              Icon(
+                Icons.person_search_rounded,
+                size: 18,
+                color: AppColors.accentPink,
+              ),
               SizedBox(width: 10),
               Text('Manage Players'),
             ],
@@ -984,11 +1073,13 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline_rounded,
-                  size: 18, color: AppColors.error),
+              Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
               const SizedBox(width: 10),
-              Text('Delete Auction',
-                  style: TextStyle(color: AppColors.error)),
+              Text('Delete Auction', style: TextStyle(color: AppColors.error)),
             ],
           ),
         ),
@@ -1000,7 +1091,6 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   Future<void> _handleReopenAuction(Auction auction) async {
     final updated = auction.copyWith(status: AuctionStatus.live);
     await ref.read(auctionRepositoryProvider).save(updated);
-    ref.invalidate(auctionsListProvider);
 
     if (mounted) {
       AppToast.showSuccess(context, 'Auction "${auction.name}" is now Live!');
@@ -1018,7 +1108,11 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
         ),
         title: const Row(
           children: [
-            Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 26),
+            Icon(
+              Icons.delete_forever_rounded,
+              color: AppColors.error,
+              size: 26,
+            ),
             SizedBox(width: 10),
             Text('Delete Auction?', style: TextStyle(color: Colors.white)),
           ],
@@ -1061,10 +1155,12 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
         await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
         await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
         await ref.read(auctionRepositoryProvider).delete(auction.id);
-        ref.invalidate(auctionsListProvider);
 
         if (mounted) {
-          AppToast.showSuccess(context, 'Tournament "${auction.name}" deleted.');
+          AppToast.showSuccess(
+            context,
+            'Tournament "${auction.name}" deleted.',
+          );
         }
       } catch (e) {
         if (mounted) {
@@ -1103,10 +1199,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  border: Border.all(
-                    color: AppColors.cardBorder,
-                    width: 2,
-                  ),
+                  border: Border.all(color: AppColors.cardBorder, width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.secondaryPurple.withValues(alpha: 0.2),
@@ -1146,7 +1239,9 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               ),
               const SizedBox(height: 28),
               GradientButton(
-                onPressed: onButtonPressed ?? () => context.go(RouteNames.createAuctionPath),
+                onPressed:
+                    onButtonPressed ??
+                    () => context.go(RouteNames.createAuctionPath),
                 icon: Icons.add_rounded,
                 label: buttonLabel,
                 width: 180,

@@ -54,14 +54,21 @@ class _OperatorDashboardScreenState
     }
 
     try {
-      // Set controlling_operator_id to claim control
-      await client.from('auction_state').upsert({
-        'id': 'state_$auctionId',
+      // Claim control via RPC (validates operator permission server-side)
+      final result = await client.rpc('claim_auction_control', params: {
         'auction_id': auctionId,
-        'controlling_operator_id': userId.toString(),
-        'updated_at': DateTime.now().toIso8601String(),
-        'updated_by': userId.toString(),
-      });
+        'operator_id': userId.toString(),
+      }).single();
+
+      final success = result['success'] as bool? ?? false;
+      final errorMessage = result['error_message'] as String?;
+
+      if (!success) {
+        if (mounted) {
+          AppToast.showError(context, errorMessage ?? 'Failed to take control');
+        }
+        return;
+      }
 
       if (mounted) {
         AppToast.showSuccess(

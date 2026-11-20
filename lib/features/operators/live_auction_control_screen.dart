@@ -60,14 +60,14 @@ class _LiveAuctionControlScreenState
     setState(() => _isClaiming = true);
 
     try {
-      await client.from('auction_state').upsert({
-        'id': 'state_${widget.auctionId}',
+      // Claim control via RPC (validates operator permission server-side)
+      final result = await client.rpc('claim_auction_control', params: {
         'auction_id': widget.auctionId,
-        'controlling_operator_id': userId.toString(),
-        'updated_at': DateTime.now().toIso8601String(),
-        'updated_by': userId.toString(),
-      });
-      if (mounted) setState(() => _hasControl = true);
+        'operator_id': userId.toString(),
+      }).single();
+
+      final success = result['success'] as bool? ?? false;
+      if (mounted) setState(() => _hasControl = success);
     } catch (_) {
       if (mounted) setState(() => _hasControl = false);
     } finally {
@@ -84,11 +84,10 @@ class _LiveAuctionControlScreenState
     if (userId == null) return;
 
     try {
-      await client.from('auction_state').update({
-        'controlling_operator_id': null,
-        'updated_at': DateTime.now().toIso8601String(),
-        'updated_by': userId.toString(),
-      }).eq('auction_id', widget.auctionId);
+      // Release control via RPC (validates operator permission server-side)
+      await client.rpc('release_auction_control', params: {
+        'auction_id': widget.auctionId,
+      });
     } catch (_) {
       // Ignore release errors
     }

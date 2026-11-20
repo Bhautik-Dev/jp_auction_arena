@@ -121,11 +121,54 @@ ALTER TABLE auction_state ADD COLUMN IF NOT EXISTS controlling_operator_id TEXT;
 ALTER TABLE auctions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Enable Realtime replication for live auction sync across screens
-ALTER PUBLICATION supabase_realtime ADD TABLE public.auctions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.auction_state;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.players;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.teams;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.bids;
+-- Idempotent: checks pg_publication_tables before adding each table
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'auctions'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.auctions';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'auction_state'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.auction_state';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'players'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.players';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'teams'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.teams';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'bids'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.bids';
+  END IF;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- 6. bids — Individual bid records
@@ -394,6 +437,95 @@ BEGIN
   ) INTO v_is_member;
 
   RETURN v_is_member;
+END;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- RPC: claim_auction_control(auction_id, operator_id)
+-- Security definer: runs with function owner privileges (bypasses RLS)
+-- Only callable by the auction operator (validated via _is_auction_operator)
+-- Sets controlling_operator_id in auction_state
+-- ============================================================================
+CREATE OR REPLACE FUNCTION claim_auction_control(
+  p_auction_id TEXT,
+  p_operator_id TEXT
+)
+RETURNS TABLE (
+  success BOOLEAN,
+  error_code TEXT,
+  error_message TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+BEGIN
+  -- Only authenticated users can call
+  IF v_user_id IS NULL THEN
+    RETURN QUERY SELECT FALSE, 'auth_required', 'Authentication required';
+  END IF;
+
+  -- Validate operator permission
+  IF NOT _is_auction_operator(p_auction_id, v_user_id) THEN
+    RETURN QUERY SELECT FALSE, 'not_authorized', 'Only the auction operator can claim control';
+  END IF;
+
+  -- Ensure auction_state row exists
+  INSERT INTO auction_state (id, auction_id, is_live, updated_at, updated_by)
+    VALUES ('state_' || p_auction_id, p_auction_id, true, now(), v_user_id::text)
+    ON CONFLICT (id) DO UPDATE SET
+      updated_at = now(),
+      updated_by = v_user_id::text;
+
+  -- Claim control
+  UPDATE auction_state
+    SET controlling_operator_id = p_operator_id,
+        updated_at = now(),
+        updated_by = v_user_id::text
+  WHERE auction_id = p_auction_id;
+
+  RETURN QUERY SELECT TRUE, NULL, NULL;
+END;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- RPC: release_auction_control(auction_id)
+-- Security definer: runs with function owner privileges (bypasses RLS)
+-- Clears controlling_operator_id in auction_state
+-- ============================================================================
+CREATE OR REPLACE FUNCTION release_auction_control(
+  p_auction_id TEXT
+)
+RETURNS TABLE (
+  success BOOLEAN,
+  error_code TEXT,
+  error_message TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+BEGIN
+  -- Only authenticated users can call
+  IF v_user_id IS NULL THEN
+    RETURN QUERY SELECT FALSE, 'auth_required', 'Authentication required';
+  END IF;
+
+  -- Validate operator permission
+  IF NOT _is_auction_operator(p_auction_id, v_user_id) THEN
+    RETURN QUERY SELECT FALSE, 'not_authorized', 'Only the auction operator can release control';
+  END IF;
+
+  -- Release control
+  UPDATE auction_state
+    SET controlling_operator_id = NULL,
+        updated_at = now(),
+        updated_by = v_user_id::text
+  WHERE auction_id = p_auction_id;
+
+  RETURN QUERY SELECT TRUE, NULL, NULL;
 END;
 $$;
 

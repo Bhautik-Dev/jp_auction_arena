@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
+import '../../core/supabase/supabase_client.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/gradient_button.dart';
@@ -657,12 +658,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               Expanded(
                 child: GradientButton(
                   height: 40,
-                  onPressed: () {
-                    ref
-                        .read(activeAuctionIdProvider.notifier)
-                        .setAuctionId(auction.id);
-                    context.go('/live');
-                  },
+                  onPressed: () => _handleGoLive(auction),
                   icon: Icons.gavel_rounded,
                   label: 'Go Live',
                   width: double.infinity,
@@ -878,12 +874,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               Expanded(
                 child: GradientButton(
                   height: 44,
-                  onPressed: () {
-                    ref
-                        .read(activeAuctionIdProvider.notifier)
-                        .setAuctionId(auction.id);
-                    context.go('/live');
-                  },
+                  onPressed: () => _handleGoLive(auction),
                   icon: Icons.gavel_rounded,
                   label: 'Go Live',
                   width: double.infinity,
@@ -1149,23 +1140,78 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       ),
     );
 
-    if (confirm == true) {
-      try {
-        await ref.read(teamRepositoryProvider).deleteByAuction(auction.id);
-        await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
-        await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
-        await ref.read(auctionRepositoryProvider).delete(auction.id);
+      if (confirm == true) {
+        try {
+          await ref.read(teamRepositoryProvider).deleteByAuction(auction.id);
+          await ref.read(playerRepositoryProvider).deleteByAuction(auction.id);
+          await ref.read(bidRepositoryProvider).deleteByAuction(auction.id);
+          await ref.read(auctionRepositoryProvider).delete(auction.id);
 
-        if (mounted) {
-          AppToast.showSuccess(
-            context,
-            'Tournament "${auction.name}" deleted.',
-          );
+          if (mounted) {
+            AppToast.showSuccess(
+              context,
+              'Tournament "${auction.name}" deleted.',
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            AppToast.showError(context, 'Failed to delete: $e');
+          }
         }
-      } catch (e) {
-        if (mounted) {
-          AppToast.showError(context, 'Failed to delete: $e');
-        }
+      }
+    }
+
+  // ============ GO LIVE ============
+  Future<void> _handleGoLive(Auction auction) async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Go Live?',
+      content:
+          'Are you sure you want to start the auction "${auction.name}"? This will make it available for live bidding.',
+      confirmText: 'Go Live',
+    );
+    if (confirm != true) return;
+
+    try {
+      // Update auction status to live in Supabase
+      final updated = auction.copyWith(status: AuctionStatus.live);
+      await ref.read(auctionRepositoryProvider).save(updated);
+
+      // Initialize auction_state row
+      final client = SupabaseClientService.instance.client;
+      if (client != null) {
+        await client.from('auction_state').upsert({
+          'id': 'state_${auction.id}',
+          'auction_id': auction.id,
+          'current_player_id': null,
+          'current_bid_amount': null,
+          'current_team_id': null,
+          'timer_seconds_remaining': auction.countdownSeconds,
+          'is_paused': false,
+          'is_live': true,
+          'last_hammered_player_id': null,
+          'last_sold_team_id': null,
+          'last_sold_price': null,
+          'bid_count': 0,
+          'updated_at': DateTime.now().toIso8601String(),
+          'updated_by': client.auth.currentUser?.id,
+          'controlling_operator_id': null,
+        });
+      }
+
+      if (mounted) {
+        AppToast.showSuccess(
+          context,
+          'Auction "${auction.name}" is now Live!',
+        );
+        ref
+            .read(activeAuctionIdProvider.notifier)
+            .setAuctionId(auction.id);
+        context.go(RouteNames.operatorDashboardPath);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Failed to go live: $e');
       }
     }
   }

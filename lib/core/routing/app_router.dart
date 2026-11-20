@@ -5,6 +5,8 @@ import 'package:jp_auction_arena/core/routing/route_names.dart';
 import 'package:jp_auction_arena/features/auctions/auctions_screen.dart';
 import 'package:jp_auction_arena/features/create_auction/create_auction_screen.dart';
 import 'package:jp_auction_arena/features/operators/operators_screen.dart';
+import 'package:jp_auction_arena/features/operators/operator_dashboard_screen.dart';
+import 'package:jp_auction_arena/features/operators/live_auction_control_screen.dart';
 import 'package:jp_auction_arena/features/players/players_screen.dart';
 import 'package:jp_auction_arena/features/projector/projector_screen.dart';
 import 'package:jp_auction_arena/features/results/results_screen.dart';
@@ -90,6 +92,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: OperatorsScreen(),
             ),
+          ),
+          GoRoute(
+            path: RouteNames.operatorDashboardPath,
+            name: RouteNames.operatorDashboard,
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: OperatorDashboardScreen(),
+            ),
+          ),
+          GoRoute(
+            path: RouteNames.liveAuctionPath,
+            name: RouteNames.liveAuction,
+            pageBuilder: (context, state) {
+              final auctionId = state.pathParameters['auctionId'] ?? '';
+              return NoTransitionPage(
+                child: LiveAuctionControlScreen(auctionId: auctionId),
+              );
+            },
           ),
         ],
       ),

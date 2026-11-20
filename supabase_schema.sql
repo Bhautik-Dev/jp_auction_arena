@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS players (
 ALTER TABLE players ADD COLUMN IF NOT EXISTS cric_heroes_url TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS batting_average DOUBLE PRECISION DEFAULT 0.0;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS mobile TEXT;
+ALTER TABLE auction_state ADD COLUMN IF NOT EXISTS controlling_operator_id TEXT;
 
 -- ----------------------------------------------------------------------------
 -- 6. bids — Individual bid records

@@ -25,6 +25,12 @@ class RouteNames {
   static const String operators = 'operators';
   static const String operatorsPath = '/operators';
 
+  static const String operatorDashboard = 'operator-dashboard';
+  static const String operatorDashboardPath = '/operator-dashboard';
+
+  static const String liveAuction = 'live-auction';
+  static const String liveAuctionPath = '/live-auction/:auctionId';
+
   static const String notFound = 'not-found';
   static const String notFoundPath = '/404';
 }

@@ -26,6 +26,13 @@ const List<NavItem> primaryNavItems = [
     allowedRoles: [UserRole.admin, UserRole.operator, UserRole.viewer],
   ),
   NavItem(
+    label: 'Operator Dashboard',
+    icon: Icons.dashboard_outlined,
+    activeIcon: Icons.dashboard_rounded,
+    path: '/operator-dashboard',
+    allowedRoles: [UserRole.admin, UserRole.operator],
+  ),
+  NavItem(
     label: 'Auctions',
     icon: Icons.emoji_events_outlined,
     activeIcon: Icons.emoji_events_rounded,

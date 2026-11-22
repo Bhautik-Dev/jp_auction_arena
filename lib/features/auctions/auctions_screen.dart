@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
+import '../../core/supabase/live_auction_client.dart';
 import '../../core/supabase/supabase_client.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/widgets/glass_card.dart';
@@ -656,13 +657,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: GradientButton(
-                  height: 40,
-                  onPressed: () => _handleGoLive(auction),
-                  icon: Icons.gavel_rounded,
-                  label: 'Go Live',
-                  width: double.infinity,
-                ),
+                child: _buildAuctionActionButton(auction),
               ),
             ],
           ),
@@ -872,13 +867,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: GradientButton(
-                  height: 44,
-                  onPressed: () => _handleGoLive(auction),
-                  icon: Icons.gavel_rounded,
-                  label: 'Go Live',
-                  width: double.infinity,
-                ),
+                child: _buildAuctionActionButton(auction),
               ),
             ],
           ),
@@ -1212,6 +1201,162 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
     } catch (e) {
       if (mounted) {
         AppToast.showError(context, 'Failed to go live: $e');
+      }
+    }
+  }
+
+  // ============ AUCTION ACTION BUTTON ============
+  Widget _buildAuctionActionButton(Auction auction) {
+    switch (auction.status) {
+      case AuctionStatus.draft:
+        return GradientButton(
+          height: 40,
+          onPressed: () => _handleGoLive(auction),
+          icon: Icons.gavel_rounded,
+          label: 'Go Live',
+          width: double.infinity,
+        );
+      case AuctionStatus.live:
+        return GradientButton(
+          height: 40,
+          onPressed: () => _handleStopAuction(auction),
+          icon: Icons.pause_rounded,
+          label: 'Stop',
+          width: double.infinity,
+          gradient: const LinearGradient(
+            colors: [AppColors.warning, AppColors.warning],
+          ),
+        );
+      case AuctionStatus.paused:
+        return GradientButton(
+          height: 40,
+          onPressed: () => _handleResumeAuction(auction),
+          icon: Icons.play_circle_rounded,
+          label: 'Resume',
+          width: double.infinity,
+          gradient: const LinearGradient(
+            colors: [AppColors.statusLive, AppColors.statusLive],
+          ),
+        );
+      case AuctionStatus.completed:
+        return GradientButton(
+          height: 40,
+          onPressed: () => _handleRestartAuction(auction),
+          icon: Icons.restart_alt_rounded,
+          label: 'Restart',
+          width: double.infinity,
+          gradient: const LinearGradient(
+            colors: [AppColors.secondaryPurple, AppColors.secondaryPurple],
+          ),
+        );
+      case AuctionStatus.archived:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // ============ STOP AUCTION ============
+  Future<void> _handleStopAuction(Auction auction) async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Stop Auction?',
+      content:
+          'Are you sure you want to stop/pause the auction "${auction.name}"? The auction will be paused and removed from active controls.',
+      confirmText: 'Stop',
+      isDestructive: false,
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(liveAuctionClientProvider).pauseAuction(
+        auctionId: auction.id,
+      );
+
+      if (mounted) {
+        AppToast.showSuccess(context, 'Auction "${auction.name}" paused.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Failed to pause: $e');
+      }
+    }
+  }
+
+  // ============ RESUME AUCTION ============
+  Future<void> _handleResumeAuction(Auction auction) async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Resume Auction?',
+      content:
+          'Are you sure you want to resume the auction "${auction.name}"? Bidding will continue from where it stopped.',
+      confirmText: 'Resume',
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(liveAuctionClientProvider).resumeAuction(
+        auctionId: auction.id,
+      );
+
+      if (mounted) {
+        AppToast.showSuccess(context, 'Auction "${auction.name}" resumed.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Failed to resume: $e');
+      }
+    }
+  }
+
+  // ============ RESTART AUCTION ============
+  Future<void> _handleRestartAuction(Auction auction) async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Restart Auction?',
+      content:
+          'Are you sure you want to restart the auction "${auction.name}"? All bids will be cleared and players will be reset to available. Previous results are preserved in the activity log.',
+      confirmText: 'Restart',
+      isDestructive: false,
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(liveAuctionClientProvider).restartAuction(
+        auctionId: auction.id,
+      );
+
+      if (mounted) {
+        AppToast.showSuccess(context, 'Auction "${auction.name}" restarted.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Failed to restart: $e');
+      }
+    }
+  }
+
+  // ============ END AUCTION ============
+  Future<void> _handleEndAuction(Auction auction) async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'End Auction?',
+      content:
+          'Are you sure you want to end the auction "${auction.name}" permanently? No further bidding will be possible.',
+      confirmText: 'End',
+      isDestructive: true,
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(liveAuctionClientProvider).completeAuction(
+        auctionId: auction.id,
+      );
+
+      if (mounted) {
+        AppToast.showSuccess(context, 'Auction "${auction.name}" ended.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.showError(context, 'Failed to end: $e');
       }
     }
   }

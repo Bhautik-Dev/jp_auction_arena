@@ -10,10 +10,6 @@ import '../../core/supabase/supabase_client.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../data/models/models.dart';
 
-/// Professional full-screen 16:9 cricket auction broadcast projector.
-///
-/// Read-only: displays live auction state updated via Supabase Realtime.
-/// No controls — only the Operator can modify auction data.
 class ProjectorScreen extends ConsumerStatefulWidget {
   const ProjectorScreen({super.key});
 
@@ -76,10 +72,10 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     final secondsRemaining = state.secondsRemaining;
     final isLive = auctionState['is_live'] == true;
     final isPaused = auctionState['is_paused'] == true;
+    final auctionStatus = auctionState['status'] as String?;
     final currentBid = auctionState['current_bid_amount'] as double?;
     final bidCount = auctionState['bid_count'] as int? ?? 0;
 
-    // Check if current player just sold/unsold
     if (currentPlayer != null && currentPlayer.id != _lastPlayerId) {
       if (currentPlayer.status == PlayerStatus.sold) {
         _triggerSoldUnsoldBanner(currentPlayer.id, 'sold');
@@ -88,12 +84,6 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
       }
       _lastPlayerId = currentPlayer.id;
     }
-
-    // Next player in queue (first available player after current)
-    final availableAfterCurrent = players.where(
-      (p) => p.status == PlayerStatus.available && p.id != currentPlayer?.id,
-    ).toList();
-    final nextPlayer = availableAfterCurrent.isNotEmpty ? availableAfterCurrent.first : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFF050A1A),
@@ -123,7 +113,7 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
                   isPaused,
                   currentBid,
                   bidCount,
-                  nextPlayer,
+                  auctionStatus,
                 )
               : _buildPortraitLayout(
                   context,
@@ -139,7 +129,7 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
                   isPaused,
                   currentBid,
                   bidCount,
-                  nextPlayer,
+                  auctionStatus,
                 ),
         ),
       ),
@@ -149,9 +139,6 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
   bool _isLandscape(BuildContext context) =>
       MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
 
-  // ========================================================================
-  // LANDSCAPE (16:9 PROJECTOR) LAYOUT
-  // ========================================================================
   Widget _buildLandscapeLayout(
     BuildContext context,
     LiveAuctionState state,
@@ -166,11 +153,10 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     bool isPaused,
     double? currentBid,
     int bidCount,
-    Player? nextPlayer,
+    String? auctionStatus,
   ) {
     return Row(
       children: [
-        // LEFT: Main player spotlight (60%)
         Expanded(
           flex: 3,
           child: _buildMainSpotlight(
@@ -182,18 +168,16 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
             isLive: isLive,
             isPaused: isPaused,
             bidCount: bidCount,
+            auctionStatus: auctionStatus,
           ),
         ),
         const VerticalDivider(width: 1, color: AppColors.cardBorder),
-        // RIGHT: Info column (40%)
         Expanded(
           flex: 2,
           child: Column(
             children: [
-              // Auction header
               _buildProjectorHeader(auctionState),
               const SizedBox(height: 20),
-              // Current bid info
               _buildBidInfoCard(
                 currentBid: currentBid,
                 leadingTeam: leadingTeam,
@@ -201,16 +185,12 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
                 bidCount: bidCount,
               ),
               const SizedBox(height: 20),
-              // Team purses
               _buildTeamPursesCard(teams),
               const SizedBox(height: 20),
-              // Bid history
               _buildBidHistoryCard(recentBids, teams),
               const SizedBox(height: 20),
-              // Next player
-              _buildNextPlayerCard(nextPlayer),
+              _buildNextPlayerCard(currentPlayer, teams),
               const Spacer(),
-              // Connection status
               _buildConnectionStatusCard(),
             ],
           ),
@@ -219,9 +199,6 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     );
   }
 
-  // ========================================================================
-  // PORTRAIT LAYOUT (fallback)
-  // ========================================================================
   Widget _buildPortraitLayout(
     BuildContext context,
     LiveAuctionState state,
@@ -236,7 +213,7 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     bool isPaused,
     double? currentBid,
     int bidCount,
-    Player? nextPlayer,
+    String? auctionStatus,
   ) {
     return Column(
       children: [
@@ -252,6 +229,7 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
             isLive: isLive,
             isPaused: isPaused,
             bidCount: bidCount,
+            auctionStatus: auctionStatus,
           ),
         ),
         const SizedBox(height: 20),
@@ -266,16 +244,12 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
         const SizedBox(height: 10),
         _buildBidHistoryCard(recentBids, teams),
         const SizedBox(height: 10),
-        _buildNextPlayerCard(nextPlayer),
+        _buildNextPlayerCard(currentPlayer, teams),
         const SizedBox(height: 10),
         _buildConnectionStatusCard(),
       ],
     );
   }
-
-  // ========================================================================
-  // COMPONENTS
-  // ========================================================================
 
   Widget _buildProjectorHeader(Map<String, dynamic> auctionState) {
     final isLive = auctionState['is_live'] == true;
@@ -352,13 +326,13 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     required bool isLive,
     required bool isPaused,
     required int bidCount,
+    required String? auctionStatus,
   }) {
     return Container(
       padding: const EdgeInsets.all(40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // SOLD/UNSOLD Banner
           if (_showSoldUnsoldBanner)
             ScaleTransition(
               scale: _scaleAnim,
@@ -409,170 +383,279 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
               ),
             ),
           if (_showSoldUnsoldBanner) const SizedBox(height: 40),
-          // Player photo + number
-          if (currentPlayer == null) ...[
-            const Text(
-              'NO PLAYER ON STAGE',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 3,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Waiting for operator to select a player',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
-            ),
-          ] else ...[
-            Row(
+          if (!isLive && auctionStatus == 'completed') _buildEndedState(),
+          if (isPaused) _buildPausedState(),
+          if (currentPlayer != null) ...[
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.6),
-                      width: 4,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.gold.withValues(alpha: 0.4),
-                        blurRadius: 25,
-                        spreadRadius: 3,
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: currentPlayer.photoBase64 != null &&
-                            currentPlayer.photoBase64!.isNotEmpty
-                        ? _buildMemoryImage(currentPlayer.photoBase64!)
-                        : _buildPlaceholderAvatar(currentPlayer.name),
-                  ),
-                ),
-                const SizedBox(width: 40),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryBlue.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(30),
+                        shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.primaryBlue.withValues(alpha: 0.5),
+                          color: AppColors.gold.withValues(alpha: 0.6),
+                          width: 4,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        '#${currentPlayer.playerNo}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      child: _buildPlaceholderAvatar(currentPlayer.name),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      currentPlayer.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 52,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${currentPlayer.category.toUpperCase()}  •  ${currentPlayer.battingStyle.toUpperCase()}  •  ${currentPlayer.bowlingStyle.toUpperCase()}',
-                      style: TextStyle(
-                        color: AppColors.accentPink.withValues(alpha: 0.9),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
+                    const SizedBox(width: 40),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSpotlightStat('MATCHES', '${currentPlayer.matches}'),
-                        const SizedBox(width: 32),
-                        _buildSpotlightStat('RUNS', '${currentPlayer.runs}'),
-                        const SizedBox(width: 32),
-                        _buildSpotlightStat('WICKETS', '${currentPlayer.wickets}'),
-                        const SizedBox(width: 32),
-                        _buildSpotlightStat('S.R.', currentPlayer.strikeRate.toStringAsFixed(0)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: AppColors.primaryBlue.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            '#${currentPlayer.playerNo}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          currentPlayer.name.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 52,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${currentPlayer.category.toUpperCase()}  •  ${currentPlayer.battingStyle.toUpperCase()}  •  ${currentPlayer.bowlingStyle.toUpperCase()}',
+                          style: TextStyle(
+                            color: AppColors.accentPink.withValues(alpha: 0.9),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            _buildSpotlightStat('MATCHES', '${currentPlayer.matches}'),
+                            const SizedBox(width: 32),
+                            _buildSpotlightStat('RUNS', '${currentPlayer.runs}'),
+                            const SizedBox(width: 32),
+                            _buildSpotlightStat('WICKETS', '${currentPlayer.wickets}'),
+                            const SizedBox(width: 32),
+                            _buildSpotlightStat('S.R.', currentPlayer.strikeRate.toStringAsFixed(0)),
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
+                const SizedBox(height: 60),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusLive.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.statusLive,
+                      width: 2,
+                    ),
+                  ),
+                  child: Text(
+                    '${secondsRemaining}s',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 56,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  'CURRENT BID',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  currentBid != null ? formatRupee(currentBid) : '--',
+                  style: TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 64,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (leadingTeam != null) ...[
+                  Text(
+                    'Leading: ${leadingTeam.name.toUpperCase()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 60),
-            // Timer
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-              decoration: BoxDecoration(
-                color: (isPaused ? AppColors.warning : AppColors.statusLive)
-                    .withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isPaused ? AppColors.warning : AppColors.statusLive,
-                  width: 2,
+          ],
+          if (currentPlayer == null) ...[
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.buttonGradient,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryBlue.withValues(alpha: 0.4),
+                        blurRadius: 25,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.sports_cricket_rounded,
+                      color: Colors.white,
+                      size: 48,
+                    ),
+                  ),
                 ),
-              ),
-              child: Text(
-                isPaused
-                    ? 'PAUSED'
-                    : (isLive ? '${secondsRemaining}s' : '--:--'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 56,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -2,
+                const SizedBox(height: 24),
+                Text(
+                  'JP AUCTION ARENA',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            // Current bid
-            Text(
-              'CURRENT BID',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              currentBid != null ? formatRupee(currentBid) : '--',
-              style: TextStyle(
-                color: AppColors.gold,
-                fontSize: 64,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (leadingTeam != null)
-              Text(
-                'Leading: ${leadingTeam.name.toUpperCase()}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                const SizedBox(height: 8),
+                Text(
+                  'Auction is not currently live.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
+              ],
+            ),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildEndedState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(
+          Icons.stop_rounded,
+          size: 80,
+          color: AppColors.error,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'AUCTION COMPLETED',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'No further bidding is possible.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPausedState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            gradient: AppColors.buttonGradient,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryBlue.withValues(alpha: 0.4),
+                blurRadius: 25,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.pause_rounded,
+              color: Colors.white,
+              size: 48,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'PAUSED',
+          style: const TextStyle(
+            color: AppColors.warning,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Auction is temporarily paused.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 16,
+          ),
+        ),
+      ],
     );
   }
 
@@ -763,7 +846,7 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
     );
   }
 
-  Widget _buildNextPlayerCard(Player? nextPlayer) {
+  Widget _buildNextPlayerCard(Player? nextPlayer, List<Team> teams) {
     if (nextPlayer == null) {
       return Container(
         padding: const EdgeInsets.all(24),

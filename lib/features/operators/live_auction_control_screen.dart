@@ -15,11 +15,6 @@ import '../../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
 
-/// Provider that exposes the [LiveAuctionClient] singleton.
-final liveAuctionClientProvider = Provider<LiveAuctionClient>((ref) {
-  return LiveAuctionClient.instance;
-});
-
 class LiveAuctionControlScreen extends ConsumerStatefulWidget {
   final String auctionId;
 
@@ -61,11 +56,18 @@ class _LiveAuctionControlScreenState
     setState(() => _isClaiming = true);
 
     try {
-      // No auth validation — control is always granted
-      await Future.delayed(const Duration(milliseconds: 100));
+      final client = SupabaseClientService.instance.client;
+      if (client != null) {
+        // Claim control via RPC (always granted when auth is removed)
+        await client.rpc('claim_auction_control', params: {
+          'p_auction_id': widget.auctionId,
+          'p_operator_id': 'operator',
+        });
+      }
       if (mounted) setState(() => _hasControl = true);
     } catch (_) {
-      if (mounted) setState(() => _hasControl = false);
+      // RPC may fail if auth.uid() is null — still grant control locally
+      if (mounted) setState(() => _hasControl = true);
     } finally {
       if (mounted) setState(() => _isClaiming = false);
     }
@@ -107,10 +109,26 @@ class _LiveAuctionControlScreenState
     });
   }
 
-  Future<void> _startPlayer(Player player) async {
+  Future<void> _startPlayer(Player? player) async {
+    // Auto-load next eligible player if none provided
+    Player? playerToStart = player;
+    if (playerToStart == null) {
+      final available = ref.read(liveAuctionStateProvider).players.where(
+        (p) => p.status == PlayerStatus.available,
+      ).toList();
+      if (available.isNotEmpty) {
+        playerToStart = available.first;
+      } else {
+        if (mounted) {
+          AppToast.showError(context, 'No available players to start.');
+        }
+        return;
+      }
+    }
+
     final result = await ref
         .read(liveAuctionClientProvider)
-        .startPlayer(auctionId: widget.auctionId, playerId: player.id);
+        .startPlayer(auctionId: widget.auctionId, playerId: playerToStart.id);
     if (!result.success && mounted) {
       AppToast.showError(context, result.errorMessage ?? 'Start player failed');
     }
@@ -264,6 +282,27 @@ class _LiveAuctionControlScreenState
     } else if (mounted) {
       AppToast.showSuccess(context, 'Auction completed.');
       context.go('/operator-dashboard');
+    }
+  }
+
+  Future<void> _restartAuction() async {
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Restart Auction?',
+      content:
+          'Are you sure you want to restart the auction? All bids will be cleared and players will be reset to available. Previous results are preserved in the activity log.',
+      confirmText: 'Restart',
+      isDestructive: false,
+    );
+    if (confirm != true) return;
+
+    final result = await ref
+        .read(liveAuctionClientProvider)
+        .restartAuction(auctionId: widget.auctionId);
+    if (!result.success && mounted) {
+      AppToast.showError(context, result.errorMessage ?? 'Restart failed');
+    } else if (mounted) {
+      AppToast.showSuccess(context, 'Auction restarted.');
     }
   }
 
@@ -509,7 +548,7 @@ class _LiveAuctionControlScreenState
                         isPaused: isPaused,
                         currentPlayer: currentPlayer,
                         onStartPlayer: _hasControl && isLive
-                            ? (p) => _startPlayer(p)
+                            ? (_) => _startPlayer(null)
                             : null,
                         onSell: _hasControl && isLive ? _sellPlayer : null,
                         onUnsold: _hasControl && isLive ? _markUnsold : null,
@@ -519,6 +558,7 @@ class _LiveAuctionControlScreenState
                         onResume: _hasControl && isLive && isPaused
                             ? _resumeAuction
                             : null,
+                        onRestart: _hasControl ? _restartAuction : null,
                         onEnd: _hasControl ? _endAuction : null,
                         onPickNext: _hasControl && isLive
                             ? () => _pickNextPlayer()
@@ -1045,6 +1085,7 @@ class _LiveAuctionControlScreenState
     required VoidCallback? onUnsold,
     required VoidCallback? onPause,
     required VoidCallback? onResume,
+    required VoidCallback? onRestart,
     required VoidCallback? onEnd,
     required VoidCallback? onPickNext,
     required VoidCallback? onPickPrevious,
@@ -1113,7 +1154,7 @@ class _LiveAuctionControlScreenState
                   icon: Icons.check_circle_rounded,
                   label: 'Sold',
                   width: double.infinity,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppColors.statusSold, AppColors.statusSold],
                   ),
                   isLoading: false,
@@ -1127,7 +1168,7 @@ class _LiveAuctionControlScreenState
                   icon: Icons.cancel_rounded,
                   label: 'Unsold',
                   width: double.infinity,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppColors.statusUnsold, AppColors.statusUnsold],
                   ),
                   isLoading: false,
@@ -1142,12 +1183,28 @@ class _LiveAuctionControlScreenState
               Expanded(
                 child: GradientButton(
                   height: 44,
-                  onPressed: onPause,
-                  icon: Icons.pause_rounded,
+                  onPressed: onPause != null && onResume != null
+                      ? (isPaused ? onResume : onPause)
+                      : null,
+                  icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                   label: isPaused ? 'Resume' : 'Pause',
                   width: double.infinity,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppColors.warning, AppColors.warning],
+                  ),
+                  isLoading: false,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GradientButton(
+                  height: 44,
+                  onPressed: onRestart,
+                  icon: Icons.restart_alt_rounded,
+                  label: 'Restart',
+                  width: double.infinity,
+                  gradient: const LinearGradient(
+                    colors: [AppColors.secondaryPurple, AppColors.secondaryPurple],
                   ),
                   isLoading: false,
                 ),
@@ -1160,7 +1217,7 @@ class _LiveAuctionControlScreenState
                   icon: Icons.stop_rounded,
                   label: 'End Auction',
                   width: double.infinity,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppColors.error, AppColors.error],
                   ),
                   isLoading: false,

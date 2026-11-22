@@ -1,5 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
+
+/// Provider that exposes the [LiveAuctionClient] singleton.
+final liveAuctionClientProvider = Provider<LiveAuctionClient>((ref) {
+  return LiveAuctionClient.instance;
+});
 
 /// Result of a live auction RPC call.
 class LiveAuctionResult {
@@ -446,6 +452,40 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('complete_auction', params: {
+        'p_auction_id': auctionId,
+      }).single();
+
+      return LiveAuctionResult(
+        success: result['success'] as bool? ?? false,
+        errorCode: result['error_code'] as String?,
+        errorMessage: result['error_message'] as String?,
+        data: result as Map<String, dynamic>?,
+      );
+    } on PostgrestException catch (e) {
+      return LiveAuctionResult(
+        success: false,
+        errorCode: 'postgrest_error',
+        errorMessage: e.message,
+      );
+    } catch (e) {
+      return LiveAuctionResult(
+        success: false,
+        errorCode: 'unexpected_error',
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<LiveAuctionResult> restartAuction({
+    required String auctionId,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      return const LiveAuctionResult(success: false, errorCode: 'not_connected', errorMessage: 'Supabase client not initialized');
+    }
+
+    try {
+      final result = await client.rpc('restart_auction', params: {
         'p_auction_id': auctionId,
       }).single();
 

@@ -14,6 +14,28 @@ import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
 
+/// Debug logging helper for auction operations.
+void _logAuction(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[AUCTION]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
+
+/// Debug logging helper for Supabase operations.
+void _logSupabase(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[SUPABASE]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
+
+/// Debug logging helper for errors.
+void _logError(String tag, Object error, [StackTrace? stackTrace]) {
+  final prefix = '[ERROR]';
+  debugPrint('$prefix $tag: $error${stackTrace != null ? '\n$stackTrace' : ''}');
+}
+
 class AuctionsScreen extends ConsumerStatefulWidget {
   const AuctionsScreen({super.key});
 
@@ -26,6 +48,22 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
   String _searchQuery = '';
   AuctionStatus? _selectedStatusFilter;
   bool _isRefreshing = false;
+  final Set<String> _processingAuctions = {};
+
+  bool _isProcessing(String auctionId) => _processingAuctions.contains(auctionId);
+
+  Future<void> _withProcessing(String auctionId, Future<void> Function() action) async {
+    if (_isProcessing(auctionId)) {
+      _logAuction('BLOCKED', 'Duplicate click blocked for auction $auctionId');
+      return;
+    }
+    setState(() => _processingAuctions.add(auctionId));
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _processingAuctions.remove(auctionId));
+    }
+  }
 
   @override
   void dispose() {
@@ -1188,6 +1226,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
   // ============ GO LIVE ============
   Future<void> _handleGoLive(Auction auction) async {
+    _logAuction('Go Live clicked', 'auctionId=${auction.id}, name="${auction.name}", currentStatus=${auction.status.name}');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Go Live?',
@@ -1195,95 +1235,122 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           'Are you sure you want to start the auction "${auction.name}"? This will make it available for live bidding.',
       confirmText: 'Go Live',
     );
-    if (confirm != true) return;
-
-    try {
-      // Update auction status to live in Supabase
-      final updated = auction.copyWith(status: AuctionStatus.live);
-      await ref.read(auctionRepositoryProvider).save(updated);
-
-      // Initialize auction_state row
-      final client = SupabaseClientService.instance.client;
-      if (client != null) {
-        await client.from('auction_state').upsert({
-          'id': 'state_${auction.id}',
-          'auction_id': auction.id,
-          'current_player_id': null,
-          'current_bid_amount': null,
-          'current_team_id': null,
-          'timer_seconds_remaining': auction.countdownSeconds,
-          'is_paused': false,
-          'is_live': true,
-          'last_hammered_player_id': null,
-          'last_sold_team_id': null,
-          'last_sold_price': null,
-          'bid_count': 0,
-          'updated_at': DateTime.now().toIso8601String(),
-          'updated_by': '',
-          'controlling_operator_id': null,
-        });
-      }
-
-      if (mounted) {
-        AppToast.showSuccess(
-          context,
-          'Auction "${auction.name}" is now Live!',
-        );
-        ref
-            .read(activeAuctionIdProvider.notifier)
-            .setAuctionId(auction.id);
-        context.go(RouteNames.operatorDashboardPath);
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to go live: $e');
-      }
+    if (confirm != true) {
+      _logAuction('Go Live cancelled', 'auctionId=${auction.id}');
+      return;
     }
+
+    await _withProcessing(auction.id, () async {
+      try {
+        _logSupabase('Request started', 'auctions.upsert status=live auctionId=${auction.id}');
+
+        // Update auction status to live in Supabase
+        final updated = auction.copyWith(status: AuctionStatus.live);
+        await ref.read(auctionRepositoryProvider).save(updated);
+
+        _logSupabase('Response received', 'auctions.upsert success auctionId=${auction.id}');
+
+        // Initialize auction_state row
+        final client = SupabaseClientService.instance.client;
+        if (client != null) {
+          _logSupabase('Request started', 'auction_state.upsert auctionId=${auction.id}');
+          await client.from('auction_state').upsert({
+            'id': 'state_${auction.id}',
+            'auction_id': auction.id,
+            'current_player_id': null,
+            'current_bid_amount': null,
+            'current_team_id': null,
+            'timer_seconds_remaining': auction.countdownSeconds,
+            'is_paused': false,
+            'is_live': true,
+            'last_hammered_player_id': null,
+            'last_sold_team_id': null,
+            'last_sold_price': null,
+            'bid_count': 0,
+            'updated_at': DateTime.now().toIso8601String(),
+            'updated_by': '',
+            'controlling_operator_id': null,
+          });
+          _logSupabase('Response received', 'auction_state.upsert success auctionId=${auction.id}');
+        }
+
+        if (mounted) {
+          AppToast.showSuccess(
+            context,
+            'Auction "${auction.name}" is now Live!',
+          );
+          _logAuction('Go Live success', 'auctionId=${auction.id}');
+
+          // Refresh so the button changes from Go Live to Stop immediately
+          await _handleRefresh();
+          _logAuction('Refresh triggered', 'auctionId=${auction.id}');
+        }
+      } catch (e, st) {
+        _logError('Go Live failed', e, st);
+        if (mounted) {
+          AppToast.showError(context, 'Failed to go live: $e');
+        }
+      }
+    });
   }
 
   // ============ AUCTION ACTION BUTTON ============
   Widget _buildAuctionActionButton(Auction auction) {
+    final isLoading = _isProcessing(auction.id);
     switch (auction.status) {
       case AuctionStatus.draft:
         return GradientButton(
           height: 40,
-          onPressed: () => _handleGoLive(auction),
+          onPressed: isLoading
+              ? null
+              : () => _withProcessing(auction.id, () => _handleGoLive(auction)),
           icon: Icons.gavel_rounded,
           label: 'Go Live',
           width: double.infinity,
+          isLoading: isLoading,
         );
       case AuctionStatus.live:
         return GradientButton(
           height: 40,
-          onPressed: () => _handleStopAuction(auction),
+          onPressed: isLoading
+              ? null
+              : () => _withProcessing(auction.id, () => _handleStopAuction(auction)),
           icon: Icons.pause_rounded,
           label: 'Stop',
           width: double.infinity,
           gradient: const LinearGradient(
             colors: [AppColors.warning, AppColors.warning],
           ),
+          isLoading: isLoading,
         );
       case AuctionStatus.paused:
         return GradientButton(
           height: 40,
-          onPressed: () => _handleResumeAuction(auction),
+          onPressed: isLoading
+              ? null
+              : () => _withProcessing(auction.id, () => _handleResumeAuction(auction)),
           icon: Icons.play_circle_rounded,
           label: 'Resume',
           width: double.infinity,
           gradient: const LinearGradient(
             colors: [AppColors.statusLive, AppColors.statusLive],
           ),
+          isLoading: isLoading,
         );
       case AuctionStatus.completed:
         return GradientButton(
           height: 40,
-          onPressed: () => _handleRestartAuction(auction),
+          onPressed: isLoading
+              ? null
+              : () => _withProcessing(
+                  auction.id, () => _handleRestartAuction(auction)),
           icon: Icons.restart_alt_rounded,
           label: 'Restart',
           width: double.infinity,
           gradient: const LinearGradient(
             colors: [AppColors.secondaryPurple, AppColors.secondaryPurple],
           ),
+          isLoading: isLoading,
         );
       case AuctionStatus.archived:
         return const SizedBox.shrink();
@@ -1292,6 +1359,8 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
   // ============ STOP AUCTION ============
   Future<void> _handleStopAuction(Auction auction) async {
+    _logAuction('Stop clicked', 'auctionId=${auction.id}, name="${auction.name}"');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Stop Auction?',
@@ -1300,26 +1369,47 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       confirmText: 'Stop',
       isDestructive: false,
     );
-    if (confirm != true) return;
-
-    try {
-      await ref.read(liveAuctionClientProvider).pauseAuction(
-        auctionId: auction.id,
-      );
-
-      if (mounted) {
-        AppToast.showSuccess(context, 'Auction "${auction.name}" paused.');
-        await _handleRefresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to pause: $e');
-      }
+    if (confirm != true) {
+      _logAuction('Stop cancelled', 'auctionId=${auction.id}');
+      return;
     }
+
+    await _withProcessing(auction.id, () async {
+      try {
+        _logSupabase('Request started', 'pause_auction RPC auctionId=${auction.id}');
+
+        await ref.read(liveAuctionClientProvider).pauseAuction(
+          auctionId: auction.id,
+        );
+
+        _logSupabase('Response received', 'pause_auction success auctionId=${auction.id}');
+
+        // Also update auctions.status to 'paused' so the button changes to Resume immediately
+        final updated = auction.copyWith(status: AuctionStatus.paused);
+        await ref.read(auctionRepositoryProvider).save(updated);
+
+        _logSupabase('Response received', 'auctions.upsert status=paused auctionId=${auction.id}');
+
+        if (mounted) {
+          AppToast.showSuccess(context, 'Auction "${auction.name}" paused.');
+          _logAuction('Stop success', 'auctionId=${auction.id}');
+
+          await _handleRefresh();
+          _logAuction('Refresh triggered', 'auctionId=${auction.id}');
+        }
+      } catch (e, st) {
+        _logError('Stop failed', e, st);
+        if (mounted) {
+          AppToast.showError(context, 'Failed to pause: $e');
+        }
+      }
+    });
   }
 
   // ============ RESUME AUCTION ============
   Future<void> _handleResumeAuction(Auction auction) async {
+    _logAuction('Resume clicked', 'auctionId=${auction.id}, name="${auction.name}"');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Resume Auction?',
@@ -1327,26 +1417,47 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           'Are you sure you want to resume the auction "${auction.name}"? Bidding will continue from where it stopped.',
       confirmText: 'Resume',
     );
-    if (confirm != true) return;
-
-    try {
-      await ref.read(liveAuctionClientProvider).resumeAuction(
-        auctionId: auction.id,
-      );
-
-      if (mounted) {
-        AppToast.showSuccess(context, 'Auction "${auction.name}" resumed.');
-        await _handleRefresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to resume: $e');
-      }
+    if (confirm != true) {
+      _logAuction('Resume cancelled', 'auctionId=${auction.id}');
+      return;
     }
+
+    await _withProcessing(auction.id, () async {
+      try {
+        _logSupabase('Request started', 'resume_auction RPC auctionId=${auction.id}');
+
+        await ref.read(liveAuctionClientProvider).resumeAuction(
+          auctionId: auction.id,
+        );
+
+        _logSupabase('Response received', 'resume_auction success auctionId=${auction.id}');
+
+        // Also update auctions.status to 'live' so the button changes to Stop immediately
+        final updated = auction.copyWith(status: AuctionStatus.live);
+        await ref.read(auctionRepositoryProvider).save(updated);
+
+        _logSupabase('Response received', 'auctions.upsert status=live auctionId=${auction.id}');
+
+        if (mounted) {
+          AppToast.showSuccess(context, 'Auction "${auction.name}" resumed.');
+          _logAuction('Resume success', 'auctionId=${auction.id}');
+
+          await _handleRefresh();
+          _logAuction('Refresh triggered', 'auctionId=${auction.id}');
+        }
+      } catch (e, st) {
+        _logError('Resume failed', e, st);
+        if (mounted) {
+          AppToast.showError(context, 'Failed to resume: $e');
+        }
+      }
+    });
   }
 
   // ============ RESTART AUCTION ============
   Future<void> _handleRestartAuction(Auction auction) async {
+    _logAuction('Restart clicked', 'auctionId=${auction.id}, name="${auction.name}"');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Restart Auction?',
@@ -1355,26 +1466,41 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       confirmText: 'Restart',
       isDestructive: false,
     );
-    if (confirm != true) return;
-
-    try {
-      await ref.read(liveAuctionClientProvider).restartAuction(
-        auctionId: auction.id,
-      );
-
-      if (mounted) {
-        AppToast.showSuccess(context, 'Auction "${auction.name}" restarted.');
-        await _handleRefresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to restart: $e');
-      }
+    if (confirm != true) {
+      _logAuction('Restart cancelled', 'auctionId=${auction.id}');
+      return;
     }
+
+    await _withProcessing(auction.id, () async {
+      try {
+        _logSupabase('Request started', 'restart_auction RPC auctionId=${auction.id}');
+
+        await ref.read(liveAuctionClientProvider).restartAuction(
+          auctionId: auction.id,
+        );
+
+        _logSupabase('Response received', 'restart_auction success auctionId=${auction.id}');
+
+        if (mounted) {
+          AppToast.showSuccess(context, 'Auction "${auction.name}" restarted.');
+          _logAuction('Restart success', 'auctionId=${auction.id}');
+
+          await _handleRefresh();
+          _logAuction('Refresh triggered', 'auctionId=${auction.id}');
+        }
+      } catch (e, st) {
+        _logError('Restart failed', e, st);
+        if (mounted) {
+          AppToast.showError(context, 'Failed to restart: $e');
+        }
+      }
+    });
   }
 
   // ============ END AUCTION ============
   Future<void> _handleEndAuction(Auction auction) async {
+    _logAuction('End clicked', 'auctionId=${auction.id}, name="${auction.name}"');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'End Auction?',
@@ -1383,22 +1509,35 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       confirmText: 'End',
       isDestructive: true,
     );
-    if (confirm != true) return;
-
-    try {
-      await ref.read(liveAuctionClientProvider).completeAuction(
-        auctionId: auction.id,
-      );
-
-      if (mounted) {
-        AppToast.showSuccess(context, 'Auction "${auction.name}" ended.');
-        await _handleRefresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to end: $e');
-      }
+    if (confirm != true) {
+      _logAuction('End cancelled', 'auctionId=${auction.id}');
+      return;
     }
+
+    await _withProcessing(auction.id, () async {
+      try {
+        _logSupabase('Request started', 'complete_auction RPC auctionId=${auction.id}');
+
+        await ref.read(liveAuctionClientProvider).completeAuction(
+          auctionId: auction.id,
+        );
+
+        _logSupabase('Response received', 'complete_auction success auctionId=${auction.id}');
+
+        if (mounted) {
+          AppToast.showSuccess(context, 'Auction "${auction.name}" ended.');
+          _logAuction('End success', 'auctionId=${auction.id}');
+
+          await _handleRefresh();
+          _logAuction('Refresh triggered', 'auctionId=${auction.id}');
+        }
+      } catch (e, st) {
+        _logError('End failed', e, st);
+        if (mounted) {
+          AppToast.showError(context, 'Failed to end: $e');
+        }
+      }
+    });
   }
 
   // ============ EMPTY STATE ============

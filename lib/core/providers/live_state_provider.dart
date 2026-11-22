@@ -1,11 +1,20 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/supabase/supabase_client.dart';
 import '../../core/supabase/live_auction_client.dart';
 import '../../data/models/player.dart';
 import '../../data/models/team.dart';
+
+/// Debug logging helper for realtime events.
+void _logRealtime(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[REALTIME]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
 
 class LiveAuctionState {
   const LiveAuctionState({
@@ -118,6 +127,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
   }
 
   Future<void> start(String auctionId) async {
+    _logRealtime('Subscription connected', 'auctionId=$auctionId');
     stop();
 
     state = state.copyWith(auctionId: auctionId, isConnected: true, lastError: null);
@@ -135,12 +145,14 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen(
           (rows) {
+            _logRealtime('Auction update received', 'auctionId=$auctionId rows=${rows.length}');
             if (rows.isNotEmpty) {
               final row = rows.first;
               state = state.copyWith(auctionState: row, lastError: null);
             }
           },
           onError: (e) {
+            _logRealtime('Realtime error', 'auctionId=$auctionId', error: e);
             state = state.copyWith(
               lastError: 'Realtime error: ${e.toString()}',
             );
@@ -153,11 +165,13 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen(
           (rows) {
+            _logRealtime('Players update received', 'auctionId=$auctionId rows=${rows.length}');
             state = state.copyWith(
               players: rows.map((row) => Player.fromMap(row)).toList(),
             );
           },
           onError: (e) {
+            _logRealtime('Realtime error', 'auctionId=$auctionId', error: e);
             state = state.copyWith(
               lastError: 'Realtime error: ${e.toString()}',
             );
@@ -170,11 +184,13 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .eq('auction_id', auctionId)
         .listen(
           (rows) {
+            _logRealtime('Teams update received', 'auctionId=$auctionId rows=${rows.length}');
             state = state.copyWith(
               teams: rows.map((row) => Team.fromMap(row)).toList(),
             );
           },
           onError: (e) {
+            _logRealtime('Realtime error', 'auctionId=$auctionId', error: e);
             state = state.copyWith(
               lastError: 'Realtime error: ${e.toString()}',
             );
@@ -188,11 +204,13 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
         .order('timestamp', ascending: false)
         .listen(
           (rows) {
+            _logRealtime('Bids update received', 'auctionId=$auctionId rows=${rows.length}');
             state = state.copyWith(
               recentBids: rows.cast<Map<String, dynamic>>().take(10).toList(),
             );
           },
           onError: (e) {
+            _logRealtime('Realtime error', 'auctionId=$auctionId', error: e);
             state = state.copyWith(
               lastError: 'Realtime error: ${e.toString()}',
             );
@@ -209,6 +227,7 @@ class LiveAuctionNotifier extends Notifier<LiveAuctionState> {
   }
 
   void stop() {
+    _logRealtime('Subscription disconnected', 'auctionId=${state.auctionId}');
     _stateSubscription?.cancel();
     _playersSubscription?.cancel();
     _teamsSubscription?.cancel();

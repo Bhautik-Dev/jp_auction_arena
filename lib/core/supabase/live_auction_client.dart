@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
@@ -6,6 +7,14 @@ import 'package:jp_auction_arena/core/supabase/supabase_client.dart';
 final liveAuctionClientProvider = Provider<LiveAuctionClient>((ref) {
   return LiveAuctionClient.instance;
 });
+
+/// Debug logging helper for Supabase RPC operations.
+void _logSupabaseRpc(String method, String auctionId, bool started, {Object? error}) {
+  final prefix = '[SUPABASE]';
+  final status = started ? 'Request started' : 'Response received';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  debugPrint('$prefix $status: $method auctionId=$auctionId$suffix');
+}
 
 /// Result of a live auction RPC call.
 class LiveAuctionResult {
@@ -106,6 +115,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('start_player', auctionId, true);
       final result = await client.rpc('start_player', params: {
         'p_auction_id': auctionId,
         'p_player_id': playerId,
@@ -118,12 +128,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('start_player', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('start_player', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -143,6 +155,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('place_bid', auctionId, true);
       final result = await client.rpc('place_bid', params: {
         'p_auction_id': auctionId,
         'p_team_id': teamId,
@@ -156,12 +169,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('place_bid', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('place_bid', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -179,6 +194,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('undo_last_bid', auctionId, true);
       final result = await client.rpc('undo_last_bid', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -190,12 +206,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('undo_last_bid', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('undo_last_bid', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -213,6 +231,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('pause_auction', auctionId, true);
       final result = await client.rpc('pause_auction', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -224,12 +243,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('pause_auction', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('pause_auction', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -247,6 +268,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('resume_auction', auctionId, true);
       final result = await client.rpc('resume_auction', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -258,12 +280,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('resume_auction', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('resume_auction', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -281,6 +305,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('sell_player', auctionId, true);
       final result = await client.rpc('sell_player', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -292,12 +317,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('sell_player', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('sell_player', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -315,6 +342,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('mark_unsold', auctionId, true);
       final result = await client.rpc('mark_unsold', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -326,12 +354,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('mark_unsold', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('mark_unsold', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -349,6 +379,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('reset_player', auctionId, true);
       final result = await client.rpc('reset_player', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -360,12 +391,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('reset_player', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('reset_player', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -383,6 +416,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('reauction_unsold', auctionId, true);
       final result = await client.rpc('reauction_unsold', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -394,12 +428,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('reauction_unsold', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('reauction_unsold', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -417,6 +453,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('release_player', playerId, true);
       final result = await client.rpc('release_player', params: {
         'p_player_id': playerId,
       }).single();
@@ -428,12 +465,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('release_player', playerId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('release_player', playerId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -451,6 +490,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('complete_auction', auctionId, true);
       final result = await client.rpc('complete_auction', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -462,12 +502,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('complete_auction', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('complete_auction', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -485,6 +527,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('restart_auction', auctionId, true);
       final result = await client.rpc('restart_auction', params: {
         'p_auction_id': auctionId,
       }).single();
@@ -496,12 +539,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('restart_auction', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('restart_auction', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',
@@ -521,6 +566,7 @@ class LiveAuctionClient {
     }
 
     try {
+      _logSupabaseRpc('pick_next_player', auctionId, true);
       final result = await client.rpc('pick_next_player', params: {
         'p_auction_id': auctionId,
         'p_mode': mode,
@@ -534,12 +580,14 @@ class LiveAuctionClient {
         data: result as Map<String, dynamic>?,
       );
     } on PostgrestException catch (e) {
+      _logSupabaseRpc('pick_next_player', auctionId, false, error: e.message);
       return LiveAuctionResult(
         success: false,
         errorCode: 'postgrest_error',
         errorMessage: e.message,
       );
     } catch (e) {
+      _logSupabaseRpc('pick_next_player', auctionId, false, error: e);
       return LiveAuctionResult(
         success: false,
         errorCode: 'unexpected_error',

@@ -15,6 +15,20 @@ import '../../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
 
+/// Debug logging helper for control page operations.
+void _logControl(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[CONTROL]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
+
+/// Debug logging helper for errors.
+void _logControlError(String tag, Object error, [StackTrace? stackTrace]) {
+  final prefix = '[CONTROL ERROR]';
+  debugPrint('$prefix $tag: $error${stackTrace != null ? '\n$stackTrace' : ''}');
+}
+
 class LiveAuctionControlScreen extends ConsumerStatefulWidget {
   final String auctionId;
 
@@ -39,7 +53,13 @@ class _LiveAuctionControlScreenState
   void initState() {
     super.initState();
     _customBidController = TextEditingController();
-    ref.read(liveAuctionNotifierProvider.notifier).start(widget.auctionId);
+    // Delay provider modification until after build cycle to avoid
+    // "Tried to modify a provider while the widget tree was building" error
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(liveAuctionNotifierProvider.notifier).start(widget.auctionId);
+      }
+    });
     _claimControl();
     _watchControl();
   }
@@ -53,24 +73,34 @@ class _LiveAuctionControlScreenState
   }
 
   /// Claim control of this auction — no auth required, always granted.
-  Future<void> _claimControl() async {
+  void _claimControl() {
+    _logControl('Claim control', 'auctionId=${widget.auctionId}');
+
     setState(() => _isClaiming = true);
 
-    try {
-      final client = SupabaseClientService.instance.client;
-      if (client != null) {
-        // Claim control via RPC (always granted when auth is removed)
-        await client.rpc('claim_auction_control', params: {
-          'p_auction_id': widget.auctionId,
-          'p_operator_id': 'operator',
+    final client = SupabaseClientService.instance.client;
+    if (client != null) {
+      // Claim control via RPC — fire and forget, don't block UI
+      client.rpc('claim_auction_control', params: {
+        'p_auction_id': widget.auctionId,
+        'p_operator_id': 'operator',
+      }).then((_) {
+        _logControl('Control claimed', 'auctionId=${widget.auctionId}');
+        if (mounted) setState(() => _hasControl = true);
+      }).catchError((_) {
+        // RPC may fail if auth.uid() is null — still grant control locally
+        _logControlError('Claim control RPC failed', 'auth may be null');
+        if (mounted) setState(() => _hasControl = true);
+      }).whenComplete(() {
+        if (mounted) setState(() => _isClaiming = false);
+      });
+    } else {
+      if (mounted) {
+        setState(() {
+          _hasControl = true;
+          _isClaiming = false;
         });
       }
-      if (mounted) setState(() => _hasControl = true);
-    } catch (_) {
-      // RPC may fail if auth.uid() is null — still grant control locally
-      if (mounted) setState(() => _hasControl = true);
-    } finally {
-      if (mounted) setState(() => _isClaiming = false);
     }
   }
 
@@ -91,6 +121,8 @@ class _LiveAuctionControlScreenState
 
   /// Watch control changes from other operators.
   void _watchControl() {
+    _logControl('Watch control started', 'auctionId=${widget.auctionId}');
+
     final client = SupabaseClientService.instance.client;
     if (client == null) return;
 
@@ -111,6 +143,8 @@ class _LiveAuctionControlScreenState
   }
 
   Future<void> _startPlayer(Player? player) async {
+    _logControl('Start player called', 'auctionId=${widget.auctionId}, player=${player?.name ?? 'null'}');
+
     // Auto-load next eligible player if none provided
     Player? playerToStart = player;
     if (playerToStart == null) {
@@ -119,7 +153,9 @@ class _LiveAuctionControlScreenState
       ).toList();
       if (available.isNotEmpty) {
         playerToStart = available.first;
+        _logControl('Auto-selected player', 'name=${playerToStart.name}, id=${playerToStart.id}');
       } else {
+        _logControl('No available players', 'auctionId=${widget.auctionId}');
         if (mounted) {
           AppToast.showError(context, 'No available players to start.');
         }
@@ -127,28 +163,40 @@ class _LiveAuctionControlScreenState
       }
     }
 
+    _logControl('Start player RPC', 'auctionId=${widget.auctionId}, playerId=${playerToStart.id}');
     final result = await ref
         .read(liveAuctionClientProvider)
         .startPlayer(auctionId: widget.auctionId, playerId: playerToStart.id);
     if (!result.success && mounted) {
+      _logControlError('Start player failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Start player failed');
+    } else {
+      _logControl('Start player success', 'auctionId=${widget.auctionId}, playerId=${playerToStart.id}');
     }
   }
 
   Future<void> _placeBid(Team team, double amount) async {
+    _logControl('Place bid', 'auctionId=${widget.auctionId}, team=${team.name}, amount=$amount');
+
     final result = await ref.read(liveAuctionClientProvider).placeBid(
       auctionId: widget.auctionId,
       teamId: team.id,
       amount: amount,
     );
     if (!result.success && mounted) {
+      _logControlError('Place bid failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Bid failed');
+    } else {
+      _logControl('Place bid success', 'auctionId=${widget.auctionId}, team=${team.name}, amount=$amount');
     }
   }
 
   Future<void> _placeCustomBid() async {
+    _logControl('Custom bid called', 'auctionId=${widget.auctionId}');
+
     final team = _selectedBidTeam;
     if (team == null) {
+      _logControl('Custom bid failed', 'No team selected');
       if (mounted) {
         AppToast.showError(context, 'Please select a team first.');
       }
@@ -157,6 +205,7 @@ class _LiveAuctionControlScreenState
     final amountText = _customBidController?.text.trim() ?? '';
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
+      _logControl('Custom bid failed', 'Invalid amount: $amountText');
       if (mounted) {
         AppToast.showError(context, 'Please enter a valid bid amount.');
       }
@@ -164,6 +213,7 @@ class _LiveAuctionControlScreenState
     }
     setState(() => _isPlacingCustomBid = true);
     try {
+      _logControl('Custom bid RPC', 'auctionId=${widget.auctionId}, team=${team.name}, amount=$amount');
       final result = await ref
           .read(liveAuctionClientProvider)
           .placeBid(
@@ -172,11 +222,13 @@ class _LiveAuctionControlScreenState
             amount: amount,
           );
       if (!result.success && mounted) {
+        _logControlError('Custom bid failed', result.errorMessage ?? 'Unknown error');
         AppToast.showError(context, result.errorMessage ?? 'Custom bid failed');
       } else if (mounted) {
         _customBidController?.clear();
         _customBidController?.text = '';
         AppToast.showSuccess(context, 'Custom bid placed successfully.');
+        _logControl('Custom bid success', 'auctionId=${widget.auctionId}, team=${team.name}, amount=$amount');
       }
     } finally {
       if (mounted) setState(() => _isPlacingCustomBid = false);
@@ -187,6 +239,8 @@ class _LiveAuctionControlScreenState
     String mode = 'auto',
     String? category,
   }) async {
+    _logControl('Pick previous player', 'auctionId=${widget.auctionId}, mode=$mode');
+
     final result = await ref
         .read(liveAuctionClientProvider)
         .pickNextPlayer(
@@ -195,6 +249,7 @@ class _LiveAuctionControlScreenState
           category: category,
         );
     if (!result.success && mounted) {
+      _logControlError('Pick previous player failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(
         context,
         result.errorMessage ?? 'Failed to pick previous player',
@@ -211,6 +266,8 @@ class _LiveAuctionControlScreenState
   }
 
   Future<void> _sellPlayer() async {
+    _logControl('Sell player', 'auctionId=${widget.auctionId}');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Sell Player?',
@@ -218,17 +275,25 @@ class _LiveAuctionControlScreenState
           'Sell the current player to the leading bidder at the current bid amount?',
       confirmText: 'Sell',
     );
-    if (confirm != true) return;
+    if (confirm != true) {
+      _logControl('Sell cancelled', 'auctionId=${widget.auctionId}');
+      return;
+    }
 
     final result = await ref
         .read(liveAuctionClientProvider)
         .sellPlayer(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('Sell player failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Sell failed');
+    } else {
+      _logControl('Sell player success', 'auctionId=${widget.auctionId}');
     }
   }
 
   Future<void> _markUnsold() async {
+    _logControl('Mark unsold', 'auctionId=${widget.auctionId}');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Mark Unsold?',
@@ -236,35 +301,53 @@ class _LiveAuctionControlScreenState
           'Mark the current player as unsold? No team will acquire this player.',
       confirmText: 'Unsold',
     );
-    if (confirm != true) return;
+    if (confirm != true) {
+      _logControl('Mark unsold cancelled', 'auctionId=${widget.auctionId}');
+      return;
+    }
 
     final result = await ref
         .read(liveAuctionClientProvider)
         .markUnsold(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('Mark unsold failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Unsold failed');
+    } else {
+      _logControl('Mark unsold success', 'auctionId=${widget.auctionId}');
     }
   }
 
   Future<void> _pauseAuction() async {
+    _logControl('Pause auction', 'auctionId=${widget.auctionId}');
+
     final result = await ref
         .read(liveAuctionClientProvider)
         .pauseAuction(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('Pause failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Pause failed');
+    } else {
+      _logControl('Pause success', 'auctionId=${widget.auctionId}');
     }
   }
 
   Future<void> _resumeAuction() async {
+    _logControl('Resume auction', 'auctionId=${widget.auctionId}');
+
     final result = await ref
         .read(liveAuctionClientProvider)
         .resumeAuction(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('Resume failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Resume failed');
+    } else {
+      _logControl('Resume success', 'auctionId=${widget.auctionId}');
     }
   }
 
   Future<void> _endAuction() async {
+    _logControl('End auction', 'auctionId=${widget.auctionId}');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'End Auction?',
@@ -273,20 +356,27 @@ class _LiveAuctionControlScreenState
       confirmText: 'End',
       isDestructive: true,
     );
-    if (confirm != true) return;
+    if (confirm != true) {
+      _logControl('End cancelled', 'auctionId=${widget.auctionId}');
+      return;
+    }
 
     final result = await ref
         .read(liveAuctionClientProvider)
         .completeAuction(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('End auction failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'End auction failed');
     } else if (mounted) {
+      _logControl('End auction success', 'auctionId=${widget.auctionId}');
       AppToast.showSuccess(context, 'Auction completed.');
       context.go('/operator-dashboard');
     }
   }
 
   Future<void> _restartAuction() async {
+    _logControl('Restart auction', 'auctionId=${widget.auctionId}');
+
     final confirm = await AppConfirmDialog.show(
       context,
       title: 'Restart Auction?',
@@ -295,14 +385,19 @@ class _LiveAuctionControlScreenState
       confirmText: 'Restart',
       isDestructive: false,
     );
-    if (confirm != true) return;
+    if (confirm != true) {
+      _logControl('Restart cancelled', 'auctionId=${widget.auctionId}');
+      return;
+    }
 
     final result = await ref
         .read(liveAuctionClientProvider)
         .restartAuction(auctionId: widget.auctionId);
     if (!result.success && mounted) {
+      _logControlError('Restart failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(context, result.errorMessage ?? 'Restart failed');
     } else if (mounted) {
+      _logControl('Restart success', 'auctionId=${widget.auctionId}');
       AppToast.showSuccess(context, 'Auction restarted.');
     }
   }
@@ -311,6 +406,8 @@ class _LiveAuctionControlScreenState
     String mode = 'auto',
     String? category,
   }) async {
+    _logControl('Pick next player', 'auctionId=${widget.auctionId}, mode=$mode');
+
     final result = await ref
         .read(liveAuctionClientProvider)
         .pickNextPlayer(
@@ -319,6 +416,7 @@ class _LiveAuctionControlScreenState
           category: category,
         );
     if (!result.success && mounted) {
+      _logControlError('Pick next player failed', result.errorMessage ?? 'Unknown error');
       AppToast.showError(
         context,
         result.errorMessage ?? 'Failed to pick next player',
@@ -328,10 +426,16 @@ class _LiveAuctionControlScreenState
 
     final playerId = result.data?['player_id'] as String?;
     if (playerId != null && mounted) {
-      // Auto-start the picked player
       final players = ref.read(liveAuctionStateProvider).players;
-      final player = players.firstWhere((p) => p.id == playerId);
-      await _startPlayer(player);
+      try {
+        final player = players.firstWhere((p) => p.id == playerId);
+        await _startPlayer(player);
+      } catch (e) {
+        _logControlError('Player not found in state', playerId, StackTrace.current);
+        if (mounted) {
+          AppToast.showError(context, 'Picked player not found in state.');
+        }
+      }
     }
   }
 
@@ -417,6 +521,7 @@ class _LiveAuctionControlScreenState
           const SizedBox(width: 10),
           GradientButton(
             onPressed: () {
+              _logControl('Back clicked', 'auctionId=${widget.auctionId}');
               _releaseControl();
               context.go('/operator-dashboard');
             },
@@ -427,6 +532,7 @@ class _LiveAuctionControlScreenState
           const SizedBox(width: 10),
           GradientButton(
             onPressed: () {
+              _logControl('Refresh clicked', 'auctionId=${widget.auctionId}');
               ref.read(liveAuctionNotifierProvider.notifier).start(widget.auctionId);
             },
             icon: Icons.refresh_rounded,
@@ -532,10 +638,8 @@ class _LiveAuctionControlScreenState
                         leadingTeam: leadingTeam,
                         teams: teams,
                         nextBid: nextBidAmount,
-                        onBid: _hasControl && !isPaused && isLive
-                            ? (team) => _placeBid(team, nextBidAmount)
-                            : null,
-                        ),
+                        onBid: (team) => _placeBid(team, nextBidAmount),
+                      ),
                       const SizedBox(height: 16),
 
                       // Custom Bid
@@ -545,9 +649,7 @@ class _LiveAuctionControlScreenState
                         onTeamSelected: (team) =>
                             setState(() => _selectedBidTeam = team),
                         customBidController: _customBidController!,
-                        onPlaceCustomBid: _hasControl && !isPaused && isLive
-                            ? _placeCustomBid
-                            : null,
+                        onPlaceCustomBid: _placeCustomBid,
                         isPlacing: _isPlacingCustomBid,
                       ),
                       const SizedBox(height: 16),
@@ -557,25 +659,15 @@ class _LiveAuctionControlScreenState
                         isLive: isLive,
                         isPaused: isPaused,
                         currentPlayer: currentPlayer,
-                        onStartPlayer: _hasControl && isLive
-                            ? (_) => _startPlayer(null)
-                            : null,
-                        onSell: _hasControl && isLive ? _sellPlayer : null,
-                        onUnsold: _hasControl && isLive ? _markUnsold : null,
-                        onPause: _hasControl && isLive && !isPaused
-                            ? _pauseAuction
-                            : null,
-                        onResume: _hasControl && isLive && isPaused
-                            ? _resumeAuction
-                            : null,
-                        onRestart: _hasControl ? _restartAuction : null,
-                        onEnd: _hasControl ? _endAuction : null,
-                        onPickNext: _hasControl && isLive
-                            ? () => _pickNextPlayer()
-                            : null,
-                        onPickPrevious: _hasControl && isLive
-                            ? () => _pickPreviousPlayer()
-                            : null,
+                        onStartPlayer: (_) => _startPlayer(null),
+                        onSell: _sellPlayer,
+                        onUnsold: _markUnsold,
+                        onPause: _pauseAuction,
+                        onResume: _resumeAuction,
+                        onRestart: _restartAuction,
+                        onEnd: _endAuction,
+                        onPickNext: () => _pickNextPlayer(),
+                        onPickPrevious: () => _pickPreviousPlayer(),
                       ),
                       const SizedBox(height: 20),
 
@@ -588,9 +680,7 @@ class _LiveAuctionControlScreenState
                         players.where(
                           (p) => p.status == PlayerStatus.available,
                         ).toList(),
-                        onSelect: _hasControl && isLive
-                            ? (p) => _startPlayer(p)
-                            : null,
+                        onSelect: (p) => _startPlayer(p),
                       ),
                       const SizedBox(height: 20),
 
@@ -917,24 +1007,21 @@ class _LiveAuctionControlScreenState
           ),
           const SizedBox(height: 16),
           if (onBid != null)
-            Row(
-              children: [
-                Expanded(
-                  child: GradientButton(
-                    height: 40,
-                    onPressed: () {
-                      final leading = teams.firstWhere(
-                        (t) => t.id == leadingTeam?.id,
-                        orElse: () => teams.first,
-                      );
-                      onBid(leading);
-                    },
-                    icon: Icons.add_circle_rounded,
-                    label: 'Bid+ ₹${nextBid.toInt()}',
-                    width: double.infinity,
-                  ),
-                ),
-              ],
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: teams.map((team) {
+                return GradientButton(
+                  height: 36,
+                  onPressed: () {
+                    _logControl('Bid clicked', 'team=${team.name}, amount=${nextBid.toInt()}, auctionId=${widget.auctionId}');
+                    onBid(team);
+                  },
+                  icon: Icons.add_circle_rounded,
+                  label: 'Bid+ ₹${nextBid.toInt()}',
+                  width: 120,
+                );
+              }).toList(),
             ),
         ],
       ),

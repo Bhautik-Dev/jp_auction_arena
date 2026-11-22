@@ -13,6 +13,28 @@ import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../shared/widgets/app_ui_feedback.dart';
 
+/// Debug logging helper for operator operations.
+void _logOperator(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[OPERATOR]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
+
+/// Debug logging helper for errors.
+void _logError(String tag, Object error, [StackTrace? stackTrace]) {
+  final prefix = '[ERROR]';
+  debugPrint('$prefix $tag: $error${stackTrace != null ? '\n$stackTrace' : ''}');
+}
+
+/// Debug logging helper for navigation.
+void _logNavigation(String tag, String message, {Object? error, StackTrace? stackTrace}) {
+  final prefix = '[NAVIGATION]';
+  final suffix = error != null ? ' ERROR: $error' : '';
+  final trace = stackTrace != null ? '\n$stackTrace' : '';
+  debugPrint('$prefix $tag $message$suffix$trace');
+}
+
 class OperatorDashboardScreen extends ConsumerStatefulWidget {
   const OperatorDashboardScreen({super.key});
 
@@ -24,6 +46,9 @@ class OperatorDashboardScreen extends ConsumerStatefulWidget {
 class _OperatorDashboardScreenState
     extends ConsumerState<OperatorDashboardScreen> {
   bool _isRefreshing = false;
+  final Set<String> _controllingAuctions = {};
+
+  bool _isControlling(String auctionId) => _controllingAuctions.contains(auctionId);
 
   @override
   void initState() {
@@ -31,22 +56,55 @@ class _OperatorDashboardScreenState
   }
 
   Future<void> _refresh() async {
+    _logOperator('Refresh clicked', 'Refreshing operator dashboard');
     setState(() => _isRefreshing = true);
     // StreamBuilder will auto-refresh on rebuild
     if (mounted) setState(() => _isRefreshing = false);
   }
 
   Future<void> _takeControl(String auctionId, String auctionName) async {
-    if (mounted) {
+    _logOperator('Control clicked', 'auctionId=$auctionId, name="$auctionName"');
+
+    setState(() => _controllingAuctions.add(auctionId));
+
+    try {
+      _logOperator('Navigation started', 'Navigating to LiveAuctionControlScreen auctionId=$auctionId');
+
+      // Claim control via RPC — fire and forget, don't block navigation
+      final client = SupabaseClientService.instance.client;
+      if (client != null) {
+        _logOperator('Claiming control', 'auctionId=$auctionId');
+        client.rpc('claim_auction_control', params: {
+          'p_auction_id': auctionId,
+          'p_operator_id': 'operator',
+        }).then((_) {
+          _logOperator('Control claimed', 'auctionId=$auctionId');
+        }).catchError((claimError) {
+          _logOperator('Claim control failed', 'auctionId=$auctionId', error: claimError);
+        });
+      }
+
       ref.read(activeAuctionIdProvider.notifier).setAuctionId(auctionId);
-      context.go(RouteNames.liveAuctionPath.replaceAll(':auctionId', auctionId));
+
+      final targetPath = RouteNames.liveAuctionPath.replaceAll(':auctionId', auctionId);
+      _logNavigation('Navigating to', targetPath);
+      if (mounted) {
+        context.go(targetPath);
+      }
+
+      _logOperator('Navigation complete', 'auctionId=$auctionId');
+    } catch (e, st) {
+      _logError('Control navigation failed', e, st);
+      if (mounted) {
+        AppToast.showError(context, 'Failed to open control: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _controllingAuctions.remove(auctionId));
     }
   }
 
   Widget _buildControlStatus(Map<String, dynamic> state) {
-    final controllingOpId = state['controlling_operator_id'] as String?;
     final isLive = state['is_live'] as bool? ?? false;
-    final currentUserId = '';
 
     if (!isLive) {
       return const Text(
@@ -55,32 +113,10 @@ class _OperatorDashboardScreenState
       );
     }
 
-    if (controllingOpId == null || controllingOpId.isEmpty) {
-      return Text(
-        'Available',
-        style: TextStyle(
-          color: AppColors.success,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      );
-    }
-
-    if (controllingOpId == currentUserId) {
-      return Text(
-        'You Control',
-        style: TextStyle(
-          color: AppColors.primaryBlue,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      );
-    }
-
     return Text(
-      'In Use',
+      'Available',
       style: TextStyle(
-        color: AppColors.warning,
+        color: AppColors.success,
         fontSize: 11,
         fontWeight: FontWeight.w700,
       ),
@@ -293,11 +329,6 @@ class _OperatorDashboardScreenState
                                   .maybeSingle(),
                               builder: (ctx, stateSnap) {
                                 final state = stateSnap.data ?? {};
-                                final isControlling =
-                                    state['controlling_operator_id'] ==
-                                        '' ||
-                                    state['controlling_operator_id'] ==
-                                        null;
 
                                 return GlassCard(
                                   margin: const EdgeInsets.only(bottom: 10),
@@ -438,19 +469,16 @@ class _OperatorDashboardScreenState
                                                 const SizedBox(height: 8),
                                                 GradientButton(
                                                   height: 36,
-                                                  onPressed:
-                                                      isControlling
-                                                          ? () =>
-                                                              _takeControl(
-                                                            auction.id,
-                                                            auction.name,
-                                                          )
-                                                          : null,
+                                                  onPressed: () =>
+                                                      _takeControl(
+                                                        auction.id,
+                                                        auction.name,
+                                                      ),
                                                   icon: Icons
                                                       .supervised_user_circle_rounded,
                                                   label: 'Control',
                                                   width: double.infinity,
-                                                  isLoading: false,
+                                                  isLoading: _isControlling(auction.id),
                                                 ),
                                                 const SizedBox(height: 8),
                                                 _buildPendingBadge('Pending API'),

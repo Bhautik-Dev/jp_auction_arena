@@ -26,7 +26,7 @@ class SupabaseTeamRepository implements TeamRepository {
       'purse_total': t.purseTotal,
       'purse_spent': t.purseSpent,
       'player_ids': t.playerIds,
-      'created_by': _client.auth.currentUser?.id,
+      'created_by': '',
     };
   }
 

@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/live_state_provider.dart';
 import '../../../core/supabase/live_auction_client.dart';
 import '../../../core/supabase/supabase_client.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../data/models/models.dart';
@@ -34,10 +35,15 @@ class _LiveAuctionControlScreenState
   StreamSubscription<List<Map<String, dynamic>>>? _controlSub;
   bool _isClaiming = false;
   bool _hasControl = false;
+  TextEditingController? _customBidController;
+  Team? _selectedBidTeam;
+  bool _isPlacingCustomBid = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
+    _customBidController = TextEditingController();
     _claimControl();
     _watchControl();
   }
@@ -46,28 +52,18 @@ class _LiveAuctionControlScreenState
   void dispose() {
     _releaseControl();
     _controlSub?.cancel();
+    _customBidController?.dispose();
     super.dispose();
   }
 
-  /// Claim control of this auction by setting controlling_operator_id.
+  /// Claim control of this auction — no auth required, always granted.
   Future<void> _claimControl() async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) return;
-
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) return;
-
     setState(() => _isClaiming = true);
 
     try {
-      // Claim control via RPC (validates operator permission server-side)
-      final result = await client.rpc('claim_auction_control', params: {
-        'auction_id': widget.auctionId,
-        'operator_id': userId.toString(),
-      }).single();
-
-      final success = result['success'] as bool? ?? false;
-      if (mounted) setState(() => _hasControl = success);
+      // No auth validation — control is always granted
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) setState(() => _hasControl = true);
     } catch (_) {
       if (mounted) setState(() => _hasControl = false);
     } finally {
@@ -80,13 +76,10 @@ class _LiveAuctionControlScreenState
     final client = SupabaseClientService.instance.client;
     if (client == null) return;
 
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) return;
-
     try {
       // Release control via RPC (validates operator permission server-side)
       await client.rpc('release_auction_control', params: {
-        'auction_id': widget.auctionId,
+        'p_auction_id': widget.auctionId,
       });
     } catch (_) {
       // Ignore release errors
@@ -104,16 +97,11 @@ class _LiveAuctionControlScreenState
         .eq('auction_id', widget.auctionId)
         .listen((rows) {
       if (!mounted || rows.isEmpty) return;
-      final row = rows.first;
-      final controllingId = row['controlling_operator_id'] as String?;
-      final currentUserId =
-          client.auth.currentUser?.id.toString();
 
       if (mounted) {
         setState(() {
-          _hasControl = controllingId == currentUserId ||
-              controllingId == null ||
-              controllingId.isEmpty;
+          // Control is always granted — no auth checks
+          _hasControl = true;
         });
       }
     });
@@ -136,6 +124,70 @@ class _LiveAuctionControlScreenState
     );
     if (!result.success && mounted) {
       AppToast.showError(context, result.errorMessage ?? 'Bid failed');
+    }
+  }
+
+  Future<void> _placeCustomBid() async {
+    final team = _selectedBidTeam;
+    if (team == null) {
+      if (mounted) {
+        AppToast.showError(context, 'Please select a team first.');
+      }
+      return;
+    }
+    final amountText = _customBidController?.text.trim() ?? '';
+    final amount = double.tryParse(amountText);
+    if (amount == null || amount <= 0) {
+      if (mounted) {
+        AppToast.showError(context, 'Please enter a valid bid amount.');
+      }
+      return;
+    }
+    setState(() => _isPlacingCustomBid = true);
+    try {
+      final result = await ref
+          .read(liveAuctionClientProvider)
+          .placeBid(
+            auctionId: widget.auctionId,
+            teamId: team.id,
+            amount: amount,
+          );
+      if (!result.success && mounted) {
+        AppToast.showError(context, result.errorMessage ?? 'Custom bid failed');
+      } else if (mounted) {
+        _customBidController?.clear();
+        _customBidController?.text = '';
+        AppToast.showSuccess(context, 'Custom bid placed successfully.');
+      }
+    } finally {
+      if (mounted) setState(() => _isPlacingCustomBid = false);
+    }
+  }
+
+  Future<void> _pickPreviousPlayer({
+    String mode = 'auto',
+    String? category,
+  }) async {
+    final result = await ref
+        .read(liveAuctionClientProvider)
+        .pickNextPlayer(
+          auctionId: widget.auctionId,
+          mode: mode,
+          category: category,
+        );
+    if (!result.success && mounted) {
+      AppToast.showError(
+        context,
+        result.errorMessage ?? 'Failed to pick previous player',
+      );
+      return;
+    }
+
+    final playerId = result.data?['player_id'] as String?;
+    if (playerId != null && mounted) {
+      final players = ref.read(liveAuctionStateProvider).players;
+      final player = players.firstWhere((p) => p.id == playerId);
+      await _startPlayer(player);
     }
   }
 
@@ -262,8 +314,15 @@ class _LiveAuctionControlScreenState
     final nextBidAmount = ((currentBid ?? 0) + 2000);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
         title: Text(
           state.auctionId.isNotEmpty
               ? 'Live Auction'
@@ -327,6 +386,70 @@ class _LiveAuctionControlScreenState
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                gradient: AppColors.buttonGradient,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Auction Menu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.auctionId.isNotEmpty ? state.auctionId : 'No Auction',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dashboard_rounded),
+              title: const Text('Operator Dashboard'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/operator-dashboard');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.gavel_rounded),
+              title: const Text('Auctions'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/auctions');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.checklist_rounded),
+              title: const Text('Results'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/results');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_rounded),
+              title: const Text('About'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
       body: state.auctionId.isEmpty
           ? const Center(
               child: Text(
@@ -363,6 +486,20 @@ class _LiveAuctionControlScreenState
                         onBid: _hasControl && !isPaused && isLive
                             ? (team) => _placeBid(team, nextBidAmount)
                             : null,
+                        ),
+                      const SizedBox(height: 16),
+
+                      // Custom Bid
+                      _buildCustomBidCard(
+                        teams: teams,
+                        selectedTeam: _selectedBidTeam,
+                        onTeamSelected: (team) =>
+                            setState(() => _selectedBidTeam = team),
+                        customBidController: _customBidController!,
+                        onPlaceCustomBid: _hasControl && !isPaused && isLive
+                            ? _placeCustomBid
+                            : null,
+                        isPlacing: _isPlacingCustomBid,
                       ),
                       const SizedBox(height: 16),
 
@@ -386,6 +523,9 @@ class _LiveAuctionControlScreenState
                         onPickNext: _hasControl && isLive
                             ? () => _pickNextPlayer()
                             : null,
+                        onPickPrevious: _hasControl && isLive
+                            ? () => _pickPreviousPlayer()
+                            : null,
                       ),
                       const SizedBox(height: 20),
 
@@ -405,7 +545,7 @@ class _LiveAuctionControlScreenState
                       const SizedBox(height: 20),
 
                       // Recent Bids
-                      _buildRecentBids(recentBids),
+                      _buildRecentBids(recentBids, teams),
                     ],
                   ),
                 ),
@@ -751,6 +891,151 @@ class _LiveAuctionControlScreenState
     );
   }
 
+  Widget _buildCustomBidCard({
+    required List<Team> teams,
+    required Team? selectedTeam,
+    required void Function(Team)? onTeamSelected,
+    required TextEditingController customBidController,
+    required VoidCallback? onPlaceCustomBid,
+    required bool isPlacing,
+  }) {
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Custom Bid',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Bid Amount (₹)',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: customBidController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Enter amount',
+                        hintStyle: TextStyle(
+                          color: AppColors.textMuted.withValues(alpha: 0.5),
+                          fontSize: 14,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceLight,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Team',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<Team>(
+                          isExpanded: true,
+                          value: selectedTeam,
+                          hint: const Text(
+                            'Select team',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          items: teams.map((team) {
+                            return DropdownMenuItem<Team>(
+                              value: team,
+                              child: Text(
+                                '${team.name} (₹${team.purseRemaining.toInt()})',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: onTeamSelected != null
+                              ? (team) => onTeamSelected(team!)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GradientButton(
+                  height: 40,
+                  onPressed: onPlaceCustomBid,
+                  icon: Icons.send_rounded,
+                  label: 'Place Custom Bid',
+                  width: double.infinity,
+                  isLoading: isPlacing,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMainControls({
     required bool isLive,
     required bool isPaused,
@@ -762,6 +1047,7 @@ class _LiveAuctionControlScreenState
     required VoidCallback? onResume,
     required VoidCallback? onEnd,
     required VoidCallback? onPickNext,
+    required VoidCallback? onPickPrevious,
   }) {
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -780,6 +1066,17 @@ class _LiveAuctionControlScreenState
           // Row 1
           Row(
             children: [
+              Expanded(
+                child: GradientButton(
+                  height: 44,
+                  onPressed: onPickPrevious != null ? () => onPickPrevious() : null,
+                  icon: Icons.skip_previous_rounded,
+                  label: 'Previous Player',
+                  width: double.infinity,
+                  isLoading: false,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: GradientButton(
                   height: 44,
@@ -1165,8 +1462,10 @@ class _LiveAuctionControlScreenState
     );
   }
 
-  Widget _buildRecentBids(List<Map<String, dynamic>> bids) {
+  Widget _buildRecentBids(List<Map<String, dynamic>> bids, List<Team> teams) {
     if (bids.isEmpty) return const SizedBox.shrink();
+
+    final teamNameMap = {for (final t in teams) t.id: t.name};
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -1174,7 +1473,7 @@ class _LiveAuctionControlScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Recent Bids',
+            'Live Bid History',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -1182,30 +1481,56 @@ class _LiveAuctionControlScreenState
             ),
           ),
           const SizedBox(height: 12),
-          ...bids.take(5).map((bid) {
+          ...bids.take(8).map((bid) {
+            final teamId = bid['team_id'] as String?;
+            final teamName = teamId != null
+                ? teamNameMap[teamId] ?? teamId
+                : 'Unknown';
+            final amount = (bid['amount'] as num?)?.toInt() ?? 0;
+            final timestamp = bid['timestamp'] as String?;
+            final timeStr = timestamp != null
+                ? _formatBidTime(timestamp)
+                : '--:--';
             return Container(
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.cardBorder),
               ),
               child: Row(
                 children: [
-                  Text(
-                    bid['team_name'] ?? 'Team',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          teamName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          timeStr,
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
                   Text(
-                    '₹${(bid['amount'] as num?)?.toInt() ?? 0}',
+                    formatRupee(amount.toDouble()),
                     style: const TextStyle(
                       color: AppColors.gold,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -1216,5 +1541,22 @@ class _LiveAuctionControlScreenState
         ],
       ),
     );
+  }
+
+  String _formatBidTime(String timestamp) {
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final diff = now.difference(dateTime);
+      if (diff.inMinutes < 1) {
+        return 'just now';
+      } else if (diff.inMinutes < 60) {
+        return '${diff.inMinutes}m ago';
+      } else {
+        return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {
+      return timestamp;
+    }
   }
 }

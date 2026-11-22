@@ -37,60 +37,16 @@ class _OperatorDashboardScreenState
   }
 
   Future<void> _takeControl(String auctionId, String auctionName) async {
-    final client = SupabaseClientService.instance.client;
-    if (client == null) {
-      if (mounted) {
-        AppToast.showError(context, 'Supabase not connected.');
-      }
-      return;
-    }
-
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) {
-      if (mounted) {
-        AppToast.showError(context, 'Authentication required.');
-      }
-      return;
-    }
-
-    try {
-      // Claim control via RPC (validates operator permission server-side)
-      final result = await client.rpc('claim_auction_control', params: {
-        'auction_id': auctionId,
-        'operator_id': userId.toString(),
-      }).single();
-
-      final success = result['success'] as bool? ?? false;
-      final errorMessage = result['error_message'] as String?;
-
-      if (!success) {
-        if (mounted) {
-          AppToast.showError(context, errorMessage ?? 'Failed to take control');
-        }
-        return;
-      }
-
-      if (mounted) {
-        AppToast.showSuccess(
-          context,
-          'You are now controlling "$auctionName".',
-        );
-        ref.read(activeAuctionIdProvider.notifier).setAuctionId(auctionId);
-        context.go(RouteNames.liveAuctionPath.replaceAll(':auctionId', auctionId));
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to take control: $e');
-      }
+    if (mounted) {
+      ref.read(activeAuctionIdProvider.notifier).setAuctionId(auctionId);
+      context.go(RouteNames.liveAuctionPath.replaceAll(':auctionId', auctionId));
     }
   }
 
   Widget _buildControlStatus(Map<String, dynamic> state) {
     final controllingOpId = state['controlling_operator_id'] as String?;
     final isLive = state['is_live'] as bool? ?? false;
-    final client = SupabaseClientService.instance.client;
-    final currentUser = client!.auth.currentUser;
-    final currentUserId = currentUser?.id.toString();
+    final currentUserId = '';
 
     if (!isLive) {
       return const Text(
@@ -339,9 +295,9 @@ class _OperatorDashboardScreenState
                                 final state = stateSnap.data ?? {};
                                 final isControlling =
                                     state['controlling_operator_id'] ==
-                                        client.auth.currentUser?.id.toString() ||
-                                        state['controlling_operator_id'] ==
-                                            null;
+                                        '' ||
+                                    state['controlling_operator_id'] ==
+                                        null;
 
                                 return GlassCard(
                                   margin: const EdgeInsets.only(bottom: 10),

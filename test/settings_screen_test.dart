@@ -77,7 +77,7 @@ void main() {
     // Verify Title & Headers
     expect(find.text('Application Settings'), findsOneWidget);
     expect(find.text('Profile & Organization'), findsOneWidget);
-    expect(find.text('Security & Account Access'), findsOneWidget);
+    expect(find.text('General Settings'), findsOneWidget);
     expect(find.text('Notifications & Live Auction Audio'), findsOneWidget);
     expect(find.text('Appearance, Language & Display'), findsOneWidget);
     expect(find.text('Data Management & Offline Sync'), findsOneWidget);

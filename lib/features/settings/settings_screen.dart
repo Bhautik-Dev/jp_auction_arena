@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/glass_card.dart';
@@ -598,84 +597,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   // ==========================================
-  // SECTION 2: Security (Supabase Auth)
+  // SECTION 2: General Settings
   // ==========================================
   Widget _buildSecuritySection() {
-    return Consumer(
-      builder: (context, ref, child) {
-        final authState = ref.watch(authProvider);
-
-        return GlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
-              const Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                children: [
-                  Icon(Icons.shield_outlined, color: AppColors.accentPink, size: 20),
-                  Text(
-                    'Security & Account Access',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Icon(Icons.settings_outlined, color: AppColors.accentPink, size: 20),
+              Text(
+                'General Settings',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Manage your Supabase account session, password, and device access.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-              ),
-              const SizedBox(height: 18),
-              if (authState.isAuthenticated) ...[
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.person_outlined, color: AppColors.textSecondary, size: 20),
-                  title: const Text('Email Address', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: Text(authState.email.isNotEmpty ? authState.email : 'No email',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
-                  title: const Text('Logout', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Sign out of this device',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
-                  onTap: () async {
-                    await ref.read(authProvider.notifier).logout();
-                    if (context.mounted) context.go('/login');
-                  },
-                ),
-              ] else ...[
-                Center(
-                  child: Column(
-                    children: [
-                      const Icon(Icons.login_outlined, color: AppColors.textMuted, size: 48),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Not signed in',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sign in to manage your account security.',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                      ),
-                      const SizedBox(height: 16),
-                      GradientButton(
-                        onPressed: () => context.go('/login'),
-                        icon: Icons.login_rounded,
-                        label: 'Sign In',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
-        );
-      },
+          const SizedBox(height: 4),
+          const Text(
+            'Application settings and preferences.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 18),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.info_outlined, color: AppColors.textSecondary, size: 20),
+            title: const Text('App Version', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            subtitle: const Text('JP Auction Arena v1.0', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          ),
+        ],
+      ),
     );
   }
 

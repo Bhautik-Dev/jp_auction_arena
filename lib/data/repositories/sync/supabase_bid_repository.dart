@@ -22,7 +22,7 @@ class SupabaseBidRepository implements BidRepository {
       'team_id': b.teamId,
       'amount': b.amount,
       'timestamp': b.timestamp.toIso8601String(),
-      'created_by': _client.auth.currentUser?.id,
+      'created_by': '',
     };
   }
 

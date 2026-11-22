@@ -37,10 +37,6 @@ class LiveAuctionException implements Exception {
 class LiveAuctionErrorMessages {
   static String forCode(String? code, String? fallback) {
     switch (code) {
-      case 'auth_required':
-        return 'Authentication required. Please sign in.';
-      case 'not_authorized':
-        return 'Only the auction operator can perform this action.';
       case 'auction_not_found':
         return 'Auction not found.';
       case 'player_not_found':
@@ -105,8 +101,8 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('start_player', params: {
-        'auction_id': auctionId,
-        'player_id': playerId,
+        'p_auction_id': auctionId,
+        'p_player_id': playerId,
       }).single();
 
       return LiveAuctionResult(
@@ -142,9 +138,9 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('place_bid', params: {
-        'auction_id': auctionId,
-        'team_id': teamId,
-        'amount': amount,
+        'p_auction_id': auctionId,
+        'p_team_id': teamId,
+        'p_amount': amount,
       }).single();
 
       return LiveAuctionResult(
@@ -178,7 +174,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('undo_last_bid', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -212,7 +208,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('pause_auction', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -246,7 +242,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('resume_auction', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -280,7 +276,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('sell_player', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -314,7 +310,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('mark_unsold', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -348,7 +344,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('reset_player', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -382,7 +378,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('reauction_unsold', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -416,7 +412,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('release_player', params: {
-        'player_id': playerId,
+        'p_player_id': playerId,
       }).single();
 
       return LiveAuctionResult(
@@ -450,7 +446,7 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('complete_auction', params: {
-        'auction_id': auctionId,
+        'p_auction_id': auctionId,
       }).single();
 
       return LiveAuctionResult(
@@ -486,9 +482,9 @@ class LiveAuctionClient {
 
     try {
       final result = await client.rpc('pick_next_player', params: {
-        'auction_id': auctionId,
-        'mode': mode,
-        'category': category,
+        'p_auction_id': auctionId,
+        'p_mode': mode,
+        'p_category': category,
       }).single();
 
       return LiveAuctionResult(

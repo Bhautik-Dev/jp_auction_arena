@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/routing/route_names.dart';
 import '../../data/models/enums.dart';
-import '../../data/repositories/auth_provider.dart';
 import 'app_sidebar.dart';
 import 'connection_indicator.dart';
 import 'nav_items.dart';
@@ -20,9 +18,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
   });
 
   void _showMoreMenu(BuildContext context, WidgetRef ref, String currentPath) {
-    final authState = ref.read(authProvider);
-    final userRole = authState.currentRole ?? UserRole.admin;
-    final secondaryItems = getFilteredSecondaryNavItems(userRole);
+    final secondaryItems = getFilteredSecondaryNavItems(UserRole.admin);
 
     showModalBottomSheet(
       context: context,
@@ -44,10 +40,10 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'More Auction Tools',
                             style: TextStyle(
                               color: Colors.white,
@@ -56,8 +52,8 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            'Signed in as ${authState.profileName.isNotEmpty ? authState.profileName : "User"} (${userRole.displayName})',
-                            style: const TextStyle(
+                            'JP Arena User',
+                            style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 11,
                             ),
@@ -124,17 +120,6 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
-                const Divider(),
-                // Quick Logout button in bottom sheet
-                ListTile(
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error),
-                  title: const Text('Log Out', style: TextStyle(color: AppColors.error)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    ref.read(authProvider.notifier).logout();
-                    context.go(RouteNames.auctionsPath);
-                  },
-                ),
               ],
             ),
           ),
@@ -146,9 +131,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentPath = state.matchedLocation;
-    final authState = ref.watch(authProvider);
-    final userRole = authState.currentRole ?? UserRole.admin;
-    final primaryItems = getFilteredPrimaryNavItems(userRole);
+    final primaryItems = getFilteredPrimaryNavItems(UserRole.admin);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -210,35 +193,7 @@ class ResponsiveScaffoldShell extends ConsumerWidget {
               ],
             ),
             actions: [
-              // User role tag
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Center(
-                  child: Text(
-                    userRole.displayName.toUpperCase(),
-                    style: const TextStyle(
-                      color: AppColors.accentPink,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
               const ConnectionIndicator(compact: true),
-              IconButton(
-                tooltip: 'Logout',
-                icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary, size: 20),
-                onPressed: () {
-                  ref.read(authProvider.notifier).logout();
-                  context.go(RouteNames.auctionsPath);
-                },
-              ),
             ],
           ),
           body: Container(

@@ -210,9 +210,9 @@ class SupabaseAuthService {
     }
 
     final result = await client.rpc('add_auction_member', params: {
-      'auction_id': auctionId,
-      'email': email,
-      'role': role,
+      'p_auction_id': auctionId,
+      'p_email': email,
+      'p_role': role,
     });
 
     return result;
@@ -229,8 +229,8 @@ class SupabaseAuthService {
     }
 
     final result = await client.rpc('remove_auction_member', params: {
-      'auction_id': auctionId,
-      'email': email,
+      'p_auction_id': auctionId,
+      'p_email': email,
     });
 
     return result;

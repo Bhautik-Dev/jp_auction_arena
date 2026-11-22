@@ -1194,7 +1194,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
           'last_sold_price': null,
           'bid_count': 0,
           'updated_at': DateTime.now().toIso8601String(),
-          'updated_by': client.auth.currentUser?.id,
+          'updated_by': '',
           'controlling_operator_id': null,
         });
       }

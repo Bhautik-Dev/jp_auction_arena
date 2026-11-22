@@ -204,6 +204,9 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
               // Team purses
               _buildTeamPursesCard(teams),
               const SizedBox(height: 20),
+              // Bid history
+              _buildBidHistoryCard(recentBids, teams),
+              const SizedBox(height: 20),
               // Next player
               _buildNextPlayerCard(nextPlayer),
               const Spacer(),
@@ -260,6 +263,8 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
         ),
         const SizedBox(height: 10),
         _buildTeamPursesCard(teams),
+        const SizedBox(height: 10),
+        _buildBidHistoryCard(recentBids, teams),
         const SizedBox(height: 10),
         _buildNextPlayerCard(nextPlayer),
         const SizedBox(height: 10),
@@ -865,6 +870,150 @@ class _ProjectorScreenState extends ConsumerState<ProjectorScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildBidHistoryCard(List<Map<String, dynamic>> bids, List<Team> teams) {
+    if (bids.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'LIVE BID HISTORY',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text(
+                'No bids yet',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final teamNameMap = {for (final t in teams) t.id: t.name};
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'LIVE BID HISTORY',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
+              ),
+              Text(
+                '${bids.length} bids',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...bids.take(6).map((bid) {
+            final teamId = bid['team_id'] as String?;
+            final teamName = teamId != null
+                ? teamNameMap[teamId] ?? teamId
+                : 'Unknown';
+            final amount = (bid['amount'] as num?)?.toInt() ?? 0;
+            final timestamp = bid['timestamp'] as String?;
+            final timeStr = timestamp != null ? _formatBidTime(timestamp) : '--:--';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceHighlight.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          teamName.length > 12 ? '${teamName.substring(0, 12)}..' : teamName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          timeStr,
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    formatRupee(amount.toDouble()),
+                    style: const TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _formatBidTime(String timestamp) {
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final diff = now.difference(dateTime);
+      if (diff.inMinutes < 1) {
+        return 'just now';
+      } else if (diff.inMinutes < 60) {
+        return '${diff.inMinutes}m ago';
+      } else {
+        return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {
+      return timestamp;
+    }
   }
 
   Widget _buildConnectionStatusCard() {

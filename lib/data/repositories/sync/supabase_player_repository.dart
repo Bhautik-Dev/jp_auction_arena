@@ -44,7 +44,7 @@ class SupabasePlayerRepository implements PlayerRepository {
       'status': p.status.name,
       'sold_price': p.soldPrice,
       'sold_team_id': p.soldTeamId,
-      'created_by': _client.auth.currentUser?.id,
+      'created_by': '',
     };
   }
 

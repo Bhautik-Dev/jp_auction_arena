@@ -45,7 +45,7 @@ class SupabaseAuctionRepository implements AuctionRepository {
       'category_base_prices': a.categoryBasePrices,
       'reserve_purse_rule': a.reservePurseRule,
       'smart_bid_slabs': a.smartBidSlabs,
-      'created_by': _client.auth.currentUser?.id,
+      'created_by': '',
     };
   }
 
@@ -125,10 +125,6 @@ class SupabaseAuctionRepository implements AuctionRepository {
     required Auction auction,
     required List<Team> teams,
   }) async {
-    if (_client.auth.currentUser == null) {
-      throw StateError('Supabase client not initialized.');
-    }
-
     final auctionJson = _toSupabase(auction);
     final teamsJson = teams.map((t) => {
       'id': t.id,
@@ -163,7 +159,7 @@ class SupabaseAuctionRepository implements AuctionRepository {
         'purse_total': team.purseTotal,
         'purse_spent': 0,
         'player_ids': [],
-        'created_by': _client.auth.currentUser?.id,
+        'created_by': '',
       });
     }
 

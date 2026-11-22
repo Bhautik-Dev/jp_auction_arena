@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/routing/route_names.dart';
 import '../../data/models/enums.dart';
-import '../../data/repositories/auth_provider.dart';
 import 'connection_indicator.dart';
 import 'nav_items.dart';
 
@@ -18,10 +16,8 @@ class AppSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final userRole = authState.currentRole ?? UserRole.admin;
-    final primaryItems = getFilteredPrimaryNavItems(userRole);
-    final secondaryItems = getFilteredSecondaryNavItems(userRole);
+    final primaryItems = getFilteredPrimaryNavItems(UserRole.admin);
+    final secondaryItems = getFilteredSecondaryNavItems(UserRole.admin);
 
     return Container(
       width: 260,
@@ -95,78 +91,6 @@ class AppSidebar extends ConsumerWidget {
           ),
           const Divider(height: 1),
 
-          // User Profile & Role badge pill
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppColors.accentPink.withValues(alpha: 0.2),
-                          child: Text(
-                            authState.profileName.isNotEmpty
-                                ? authState.profileName[0].toUpperCase()
-                                : 'U',
-                      style: const TextStyle(
-                        color: AppColors.accentPink,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          authState.profileName.isNotEmpty
-                              ? authState.profileName
-                              : 'JP Arena User',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Role: ${userRole.displayName.toUpperCase()}',
-                          style: TextStyle(
-                            color: userRole == UserRole.admin
-                                ? AppColors.gold
-                                : (userRole == UserRole.operator
-                                    ? AppColors.primaryBlue
-                                    : AppColors.success),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Logout icon
-                  IconButton(
-                    icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.textMuted),
-                    tooltip: 'Logout',
-                    onPressed: () {
-                      ref.read(authProvider.notifier).logout();
-                      context.go(RouteNames.auctionsPath);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

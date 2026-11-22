@@ -39,6 +39,7 @@ class _LiveAuctionControlScreenState
   void initState() {
     super.initState();
     _customBidController = TextEditingController();
+    ref.read(liveAuctionNotifierProvider.notifier).start(widget.auctionId);
     _claimControl();
     _watchControl();
   }
@@ -421,6 +422,15 @@ class _LiveAuctionControlScreenState
             },
             icon: Icons.arrow_back_rounded,
             label: 'Back',
+            width: 90,
+          ),
+          const SizedBox(width: 10),
+          GradientButton(
+            onPressed: () {
+              ref.read(liveAuctionNotifierProvider.notifier).start(widget.auctionId);
+            },
+            icon: Icons.refresh_rounded,
+            label: 'Refresh',
             width: 90,
           ),
         ],

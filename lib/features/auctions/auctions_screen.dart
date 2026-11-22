@@ -974,6 +974,13 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
       ),
       onSelected: (value) async {
         switch (value) {
+          case 'control':
+            ref.read(activeAuctionIdProvider.notifier).setAuctionId(auction.id);
+            context.go(RouteNames.liveAuctionPath.replaceAll(':auctionId', auction.id));
+            break;
+          case 'end_auction':
+            _handleEndAuction(auction);
+            break;
           case 'reopen':
             _handleReopenAuction(auction);
             break;
@@ -995,6 +1002,35 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
         }
       },
       itemBuilder: (ctx) => [
+        const PopupMenuItem(
+          value: 'control',
+          child: Row(
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                size: 18,
+                color: AppColors.primaryBlue,
+              ),
+              SizedBox(width: 10),
+              Text('Control Auction'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'end_auction',
+          child: Row(
+            children: [
+              Icon(
+                Icons.stop_circle_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
+              SizedBox(width: 10),
+              Text('End Auction', style: TextStyle(color: AppColors.error)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'reopen',
           child: Row(
@@ -1273,6 +1309,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
       if (mounted) {
         AppToast.showSuccess(context, 'Auction "${auction.name}" paused.');
+        await _handleRefresh();
       }
     } catch (e) {
       if (mounted) {
@@ -1299,6 +1336,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
       if (mounted) {
         AppToast.showSuccess(context, 'Auction "${auction.name}" resumed.');
+        await _handleRefresh();
       }
     } catch (e) {
       if (mounted) {
@@ -1326,6 +1364,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
       if (mounted) {
         AppToast.showSuccess(context, 'Auction "${auction.name}" restarted.');
+        await _handleRefresh();
       }
     } catch (e) {
       if (mounted) {
@@ -1353,6 +1392,7 @@ class _AuctionsScreenState extends ConsumerState<AuctionsScreen> {
 
       if (mounted) {
         AppToast.showSuccess(context, 'Auction "${auction.name}" ended.');
+        await _handleRefresh();
       }
     } catch (e) {
       if (mounted) {
